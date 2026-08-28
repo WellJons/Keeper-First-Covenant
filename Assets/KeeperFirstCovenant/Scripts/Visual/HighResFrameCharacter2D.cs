@@ -99,10 +99,16 @@ namespace KeeperFirstCovenant.Visual
             if (clip == null)
                 return;
 
+            if (state == nextState && _activeBaseClip == clip && clip.loop)
+                return;
+
+            if (IsOneShotPlaying && !_finishedEmitted)
+                return;
+
             if (!clip.loop)
                 Debug.LogWarning($"{name}: {nextState} is configured as one-shot but PlayLoop was requested.");
 
-            RestartState(nextState, state == nextState);
+            RestartState(nextState, true);
         }
 
         public void PlayOneShot(CharacterFrameState nextState, bool restartIfSame = true)
