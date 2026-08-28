@@ -34,6 +34,8 @@ namespace KeeperFirstCovenant.Visual
         public Transform WeaponSocket => weaponSocket;
         public PaperDollAppearanceDefinition BaseAppearance => baseAppearance;
         public IReadOnlyList<EquipmentVisualDefinition> EquippedVisuals => equippedVisuals;
+        public int LayerCount => _renderers.Count;
+        public bool HasWeaponRenderer => weaponRenderer != null;
 
         private void Awake()
         {
