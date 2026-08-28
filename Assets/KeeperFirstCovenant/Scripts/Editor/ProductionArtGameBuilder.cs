@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using KeeperFirstCovenant.Characters;
 using KeeperFirstCovenant.Combat;
+using KeeperFirstCovenant.Visual;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
