@@ -1,0 +1,411 @@
+#if UNITY_EDITOR
+using KeeperFirstCovenant.Characters;
+using KeeperFirstCovenant.Combat;
+using KeeperFirstCovenant.Inventory;
+using UnityEditor;
+using UnityEngine;
+
+namespace KeeperFirstCovenant.EditorTools
+{
+    public static class PrototypeDeveloperTestContent
+    {
+        private const string DataRoot =
+            "Assets/KeeperFirstCovenant/Generated/Data";
+
+        public static void Build()
+        {
+            if (!AssetDatabase.IsValidFolder(
+                    "Assets/KeeperFirstCovenant/Generated"))
+            {
+                return;
+            }
+
+            CombatActionDefinition swordSlash =
+                AssetDatabase.LoadAssetAtPath<
+                    CombatActionDefinition>(
+                    DataRoot +
+                    "/Action_SwordSlash.asset");
+
+            CombatActionDefinition emberBolt =
+                GetAction(
+                    "EmberBolt",
+                    "Ember Bolt",
+                    DamageType.Fire,
+                    new DiceFormula(2, 4),
+                    9f,
+                    AbilityAttribute.Intellect);
+
+            CombatActionDefinition shockNeedle =
+                GetAction(
+                    "ShockNeedle",
+                    "Shock Needle",
+                    DamageType.Lightning,
+                    new DiceFormula(1, 8),
+                    10f,
+                    AbilityAttribute.Intellect);
+
+            CreateEnemy(
+                "dev_bandit_skirmisher",
+                "DEV Bandit Skirmisher",
+                32,
+                0,
+                0,
+                0,
+                10.5f,
+                10,
+                14,
+                8,
+                9,
+                12,
+                swordSlash != null
+                    ? new[] { swordSlash }
+                    : System.Array.Empty<
+                        CombatActionDefinition>(),
+                System.Array.Empty<DamageAffinity>());
+
+            CreateEnemy(
+                "dev_ash_cultist",
+                "DEV Ash Cultist",
+                42,
+                28,
+                0,
+                3,
+                8.5f,
+                8,
+                10,
+                15,
+                12,
+                11,
+                new[] { emberBolt },
+                new[]
+                {
+                    new DamageAffinity
+                    {
+                        damageType = DamageType.Fire,
+                        multiplier = 0.5f
+                    },
+                    new DamageAffinity
+                    {
+                        damageType = DamageType.Frost,
+                        multiplier = 1.5f
+                    }
+                });
+
+            CreateEnemy(
+                "dev_storm_guard",
+                "DEV Storm Guard",
+                62,
+                18,
+                3,
+                2,
+                7.5f,
+                14,
+                10,
+                11,
+                12,
+                10,
+                swordSlash != null
+                    ? new[]
+                    {
+                        swordSlash,
+                        shockNeedle
+                    }
+                    : new[] { shockNeedle },
+                new[]
+                {
+                    new DamageAffinity
+                    {
+                        damageType =
+                            DamageType.Lightning,
+                        multiplier = 0.45f
+                    },
+                    new DamageAffinity
+                    {
+                        damageType =
+                            DamageType.Arcane,
+                        multiplier = 1.4f
+                    }
+                });
+
+            CreateWeapon(
+                "dev_iron_sword",
+                "DEV Iron Sword",
+                WeaponClass.Sword,
+                new DiceFormula(1, 8),
+                DamageType.Physical,
+                AbilityAttribute.Strength,
+                1.8f,
+                false,
+                false,
+                false,
+                3.0f,
+                35);
+
+            CreateWeapon(
+                "dev_hunter_dagger",
+                "DEV Hunter Dagger",
+                WeaponClass.Dagger,
+                new DiceFormula(1, 4),
+                DamageType.Physical,
+                AbilityAttribute.Finesse,
+                1.4f,
+                false,
+                true,
+                false,
+                0.8f,
+                22);
+
+            CreateWeapon(
+                "dev_iron_greatsword",
+                "DEV Iron Greatsword",
+                WeaponClass.Greatsword,
+                new DiceFormula(2, 6),
+                DamageType.Physical,
+                AbilityAttribute.Strength,
+                2.0f,
+                true,
+                false,
+                false,
+                5.5f,
+                58);
+
+            CreateWeapon(
+                "dev_ritual_staff",
+                "DEV Ritual Staff",
+                WeaponClass.Staff,
+                new DiceFormula(1, 6),
+                DamageType.Arcane,
+                AbilityAttribute.Intellect,
+                2.0f,
+                true,
+                false,
+                true,
+                3.4f,
+                75);
+
+            CreateWeapon(
+                "dev_hunter_spear",
+                "DEV Hunter Spear",
+                WeaponClass.Spear,
+                new DiceFormula(1, 6, 1),
+                DamageType.Physical,
+                AbilityAttribute.Strength,
+                2.6f,
+                true,
+                false,
+                false,
+                3.8f,
+                44);
+
+            CreateBasicItem(
+                "dev_healing_draught",
+                "DEV Healing Draught",
+                ItemCategory.Consumable,
+                ItemRarity.Common,
+                0.25f,
+                12,
+                true,
+                10,
+                "Prototype healing consumable for inventory tests.");
+
+            CreateBasicItem(
+                "dev_lockpick",
+                "DEV Lockpick",
+                ItemCategory.Miscellaneous,
+                ItemRarity.Common,
+                0.05f,
+                4,
+                true,
+                20,
+                "Prototype lockpick for future exploration tests.");
+
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+        }
+
+        private static CombatActionDefinition GetAction(
+            string id,
+            string displayName,
+            DamageType damageType,
+            DiceFormula damage,
+            float range,
+            AbilityAttribute scaling)
+        {
+            CombatActionDefinition action =
+                GetOrCreate<
+                    CombatActionDefinition>(
+                    DataRoot +
+                    "/Action_" +
+                    id +
+                    ".asset");
+
+            action.actionId = id;
+            action.displayName = displayName;
+            action.category =
+                CombatActionCategory.Spell;
+            action.targetKind =
+                TargetKind.Enemy;
+            action.actionPointCost = 1;
+            action.manaCost = 2;
+            action.rangeMeters = range;
+            action.areaRadius = 0f;
+            action.areaTargetRule =
+                AreaTargetRule.PrimaryOnly;
+            action.requiresLineOfSight = true;
+            action.ignoresCover = false;
+            action.usesHeightAdvantage = true;
+            action.requiresAttackRoll = true;
+            action.baseHitChance = 78;
+            action.damage = damage;
+            action.damageType = damageType;
+            action.scalingAttribute = scaling;
+            action.scalingMultiplier = 1f;
+
+            EditorUtility.SetDirty(action);
+            return action;
+        }
+
+        private static void CreateEnemy(
+            string id,
+            string displayName,
+            int hp,
+            int mana,
+            int armor,
+            int magicGuard,
+            float movement,
+            int strength,
+            int finesse,
+            int intellect,
+            int willpower,
+            int perception,
+            CombatActionDefinition[] actions,
+            DamageAffinity[] affinities)
+        {
+            CharacterDefinition enemy =
+                GetOrCreate<CharacterDefinition>(
+                    DataRoot +
+                    "/Character_" +
+                    id +
+                    ".asset");
+
+            enemy.characterId = id;
+            enemy.displayName = displayName;
+            enemy.faction =
+                CombatFaction.Enemy;
+            enemy.maxHealth = hp;
+            enemy.maxMana = mana;
+            enemy.armor = armor;
+            enemy.magicGuard = magicGuard;
+            enemy.actionPoints = 2;
+            enemy.movementMeters = movement;
+            enemy.strength = strength;
+            enemy.finesse = finesse;
+            enemy.intellect = intellect;
+            enemy.willpower = willpower;
+            enemy.perception = perception;
+            enemy.startingActions = actions;
+            enemy.damageAffinities = affinities;
+
+            EditorUtility.SetDirty(enemy);
+        }
+
+        private static void CreateWeapon(
+            string id,
+            string displayName,
+            WeaponClass weaponClass,
+            DiceFormula damage,
+            DamageType damageType,
+            AbilityAttribute scaling,
+            float range,
+            bool twoHanded,
+            bool finesse,
+            bool magicalFocus,
+            float weight,
+            int value)
+        {
+            WeaponDefinition weapon =
+                GetOrCreate<WeaponDefinition>(
+                    DataRoot +
+                    "/Weapon_" +
+                    id +
+                    ".asset");
+
+            weapon.itemId = id;
+            weapon.displayName = displayName;
+            weapon.category =
+                ItemCategory.Weapon;
+            weapon.rarity =
+                ItemRarity.Common;
+            weapon.weaponClass =
+                weaponClass;
+            weapon.damage = damage;
+            weapon.damageType = damageType;
+            weapon.scalingAttribute = scaling;
+            weapon.rangeMeters = range;
+            weapon.twoHanded = twoHanded;
+            weapon.finesse = finesse;
+            weapon.magicalFocus =
+                magicalFocus;
+            weapon.weight = weight;
+            weapon.valueSilver = value;
+            weapon.stackable = false;
+            weapon.maxStack = 1;
+
+            EditorUtility.SetDirty(weapon);
+        }
+
+        private static void CreateBasicItem(
+            string id,
+            string displayName,
+            ItemCategory category,
+            ItemRarity rarity,
+            float weight,
+            int value,
+            bool stackable,
+            int maxStack,
+            string description)
+        {
+            ItemDefinition item =
+                GetOrCreate<ItemDefinition>(
+                    DataRoot +
+                    "/Item_" +
+                    id +
+                    ".asset");
+
+            item.itemId = id;
+            item.displayName = displayName;
+            item.category = category;
+            item.rarity = rarity;
+            item.weight = weight;
+            item.valueSilver = value;
+            item.stackable = stackable;
+            item.maxStack = maxStack;
+            item.description = description;
+
+            EditorUtility.SetDirty(item);
+        }
+
+        private static T GetOrCreate<T>(
+            string path)
+            where T : ScriptableObject
+        {
+            T asset =
+                AssetDatabase.LoadAssetAtPath<T>(
+                    path);
+
+            if (asset != null)
+                return asset;
+
+            asset =
+                ScriptableObject
+                    .CreateInstance<T>();
+
+            AssetDatabase.CreateAsset(
+                asset,
+                path);
+
+            return asset;
+        }
+    }
+}
+#endif
