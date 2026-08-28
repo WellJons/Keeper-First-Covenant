@@ -264,8 +264,12 @@ namespace KeeperFirstCovenant.Combat
             AreaTargetRule rule,
             CombatantRuntime primaryTarget)
         {
-            if (actor == null || candidate == null || !candidate.IsAlive)
+            if (actor == null ||
+                candidate == null ||
+                !candidate.CanBeTargeted)
+            {
                 return false;
+            }
 
             switch (rule)
             {
@@ -300,7 +304,7 @@ namespace KeeperFirstCovenant.Combat
                     FindObjectsSortMode.None)
                 .Count(candidate =>
                     candidate != null &&
-                    candidate.IsAlive &&
+                    candidate.CanBeTargeted &&
                     Vector3.Distance(candidate.transform.position, effectPoint)
                         <= action.areaRadius + 0.05f &&
                     MatchesAreaRule(
@@ -323,7 +327,7 @@ namespace KeeperFirstCovenant.Combat
 
                 case TargetKind.Ally:
                     return target != null &&
-                           target.IsAlive &&
+                           target.CanBeTargeted &&
                            IsFriendly(actor.Faction, target.Faction);
 
                 case TargetKind.Enemy:
@@ -333,7 +337,8 @@ namespace KeeperFirstCovenant.Combat
                            target.Faction != CombatFaction.Neutral;
 
                 case TargetKind.AnyCombatant:
-                    return target != null && target.IsAlive;
+                    return target != null &&
+                           target.CanBeTargeted;
 
                 case TargetKind.Ground:
                     return groundPoint.HasValue;
