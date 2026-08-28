@@ -242,12 +242,45 @@ namespace KeeperFirstCovenant.Combat
             RaiseDeath();
         }
 
+        public int GetDamageMitigation(
+            DamageType damageType)
+        {
+            return damageType ==
+                       DamageType.Physical
+                ? GetArmor()
+                : GetMagicGuard();
+        }
+
+        public float GetDamageMultiplier(
+            DamageType damageType)
+        {
+            return definition != null
+                ? definition.GetDamageMultiplier(
+                    damageType)
+                : 1f;
+        }
+
         public void ApplyDamage(DamagePacket packet)
         {
             if (!IsAlive)
                 return;
 
-            int remaining = packet.Amount;
+            float multiplier =
+                GetDamageMultiplier(packet.Type);
+
+            int remaining =
+                Mathf.Max(
+                    0,
+                    Mathf.RoundToInt(
+                        packet.Amount *
+                        multiplier));
+
+            if (remaining <= 0)
+            {
+                Damaged?.Invoke(this, packet);
+                Changed?.Invoke(this);
+                return;
+            }
 
             if (_barrier > 0)
             {
@@ -259,9 +292,8 @@ namespace KeeperFirstCovenant.Combat
             if (remaining > 0)
             {
                 int mitigation =
-                    packet.Type == DamageType.Physical
-                        ? GetArmor()
-                        : GetMagicGuard();
+                    GetDamageMitigation(
+                        packet.Type);
 
                 int applied = Mathf.Max(
                     1,
