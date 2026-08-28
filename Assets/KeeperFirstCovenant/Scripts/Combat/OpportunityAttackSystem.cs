@@ -92,7 +92,7 @@ namespace KeeperFirstCovenant.Combat
             CombatantRuntime combatant)
         {
             CombatActionDefinition[] actions =
-                combatant.Definition?.startingActions;
+                combatant.GetAvailableActions();
 
             if (actions == null)
                 return null;
