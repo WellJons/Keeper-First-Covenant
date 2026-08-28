@@ -71,8 +71,8 @@ namespace KeeperFirstCovenant.UI
                 new Rect(
                     18f,
                     18f,
-                    450f,
-                    410f),
+                    470f,
+                    520f),
                 _box);
 
             GUILayout.Label(
@@ -85,6 +85,8 @@ namespace KeeperFirstCovenant.UI
                 $"State: {director.State}    " +
                 $"Round: {director.Round}",
                 _text);
+
+            DrawPartyState();
 
             CombatantRuntime actor =
                 director.CurrentActor;
@@ -149,6 +151,50 @@ namespace KeeperFirstCovenant.UI
             }
 
             GUILayout.EndArea();
+        }
+
+        private void DrawPartyState()
+        {
+            CombatantRuntime[] party =
+                FindObjectsByType<
+                    CombatantRuntime>(
+                    FindObjectsSortMode.None);
+
+            bool any = false;
+
+            foreach (CombatantRuntime member in party)
+            {
+                if (member == null ||
+                    member.Definition == null ||
+                    (member.Faction !=
+                         CombatFaction.Player &&
+                     member.Faction !=
+                         CombatFaction.Ally))
+                {
+                    continue;
+                }
+
+                if (!any)
+                {
+                    GUILayout.Space(5f);
+                    GUILayout.Label("PARTY", _title);
+                    any = true;
+                }
+
+                string state =
+                    member.IsDowned
+                        ? $"DOWNED ({member.DownedRoundsRemaining}r)"
+                        : member.IsDead
+                            ? "DEAD"
+                            : $"HP {member.CurrentHealth}/{member.Definition.maxHealth}";
+
+                GUILayout.Label(
+                    $"{member.Definition.displayName}: {state}",
+                    _text);
+            }
+
+            if (any)
+                GUILayout.Space(5f);
         }
 
         private void DrawAbilities(
