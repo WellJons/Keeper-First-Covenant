@@ -69,8 +69,10 @@ namespace KeeperFirstCovenant.EditorTools
 
             ProductionSheetSpriteFactory.ClearSpriteSubAssets(library);
 
-            Material cutout =
-                ProductionSheetSpriteFactory.GetOrCreateSheetMaterial();
+            // World props are raster-extracted to alpha textures as well.
+            // A cutout material remains in the project for source-sheet debugging,
+            // but generated production prefabs use ordinary sprite rendering.
+            Material cutout = null;
 
             List<WorldSpriteEntry> entries =
                 new List<WorldSpriteEntry>();
@@ -78,7 +80,7 @@ namespace KeeperFirstCovenant.EditorTools
             foreach (PropSpec spec in Specs())
             {
                 Sprite sprite =
-                    ProductionSheetSpriteFactory.CreatePersistentSprite(
+                    ProductionSheetSpriteFactory.CreateExtractedWorldSprite(
                         sheet,
                         spec.Rect,
                         "World_" + spec.Id,
@@ -390,7 +392,10 @@ namespace KeeperFirstCovenant.EditorTools
                 visual.AddComponent<SpriteRenderer>();
 
             renderer.sprite = entry.sprite;
-            renderer.sharedMaterial = cutout;
+
+            if (cutout != null)
+                renderer.sharedMaterial = cutout;
+
             renderer.sortingOrder =
                 entry.horizontal ? -40 : 0;
 
