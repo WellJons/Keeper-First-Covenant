@@ -48,6 +48,8 @@ namespace KeeperFirstCovenant.EditorTools
                 return;
             }
 
+            PrototypeTacticalContentV2.Apply();
+
             GameObject systems =
                 director.gameObject;
 
