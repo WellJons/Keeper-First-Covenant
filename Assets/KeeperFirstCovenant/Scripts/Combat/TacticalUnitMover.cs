@@ -23,10 +23,9 @@ namespace KeeperFirstCovenant.Combat
         public bool TryMoveTo(
             TacticalGrid3D grid,
             Vector3 destination,
-            MonoBehaviour coroutineHost,
             System.Action onComplete = null)
         {
-            if (grid == null || coroutineHost == null || _combatant == null || !_combatant.IsAlive || IsMoving)
+            if (grid == null || _combatant == null || !_combatant.IsAlive || IsMoving)
                 return false;
 
             List<Vector3> path = grid.FindPath(transform.position, destination);
@@ -40,7 +39,7 @@ namespace KeeperFirstCovenant.Combat
             if (!_combatant.TrySpendMovement(pathLength))
                 return false;
 
-            _moveRoutine = coroutineHost.StartCoroutine(MoveRoutine(path, onComplete));
+            _moveRoutine = StartCoroutine(MoveRoutine(path, onComplete));
             return true;
         }
 
@@ -48,13 +47,11 @@ namespace KeeperFirstCovenant.Combat
             TacticalGrid3D grid,
             IReadOnlyList<Vector3> fullPath,
             float maxDistance,
-            MonoBehaviour coroutineHost,
             System.Action onComplete = null)
         {
             if (grid == null ||
                 fullPath == null ||
                 fullPath.Count == 0 ||
-                coroutineHost == null ||
                 _combatant == null ||
                 !_combatant.IsAlive ||
                 IsMoving)
@@ -89,7 +86,7 @@ namespace KeeperFirstCovenant.Combat
             if (!_combatant.TrySpendMovement(used))
                 return false;
 
-            _moveRoutine = coroutineHost.StartCoroutine(MoveRoutine(trimmed, onComplete));
+            _moveRoutine = StartCoroutine(MoveRoutine(trimmed, onComplete));
             return true;
         }
 
