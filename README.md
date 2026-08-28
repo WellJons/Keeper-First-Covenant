@@ -49,3 +49,18 @@ The first bootstrap establishes reusable systems before story scenes are built:
 10. an Editor prototype builder for the first recognizable visual test scene.
 
 Unity version is kept aligned with the existing Cats and Kills project for easier parallel development.
+
+
+## 2D production test
+
+The first playable visual pipeline is now a layered hand-drawn 2D rig rather than a 3D character.
+
+In Unity run:
+
+`Keeper First Covenant -> 2D Production -> Build Edward + World Kit`
+
+Then open:
+
+`Assets/KeeperFirstCovenant/Scenes/Edward_2D_Production_Test.unity`
+
+The builder generates Edward's separate directional body/equipment sprites, the production prefab and a reusable world-prop kit. Test controls are shown in-game; full details are in `Docs/EDWARD_2D_CHARACTER_PIPELINE.md`.
