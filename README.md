@@ -55,10 +55,20 @@ Unity version is kept aligned with the existing Cats and Kills project for easie
 
 The approved dark-fantasy anime production sheets are committed under `Assets/KeeperFirstCovenant/Art/ProductionSheets/` and are now consumed by the Unity project.
 
-In Unity run:
+When this branch is opened in Unity for the first time, the editor automatically builds the committed production sheets into actual Sprite sub-assets, character prefabs, independent world prefabs and the playable scene.
+
+Manual rebuild:
 
 `Keeper First Covenant -> Production Art -> BUILD EVERYTHING INTO GAME`
 
-This builds runtime Sprite assets, Edward/Eleanor/Aelis/White prefabs, independent world prefabs and `Assets/KeeperFirstCovenant/Scenes/ProductionArt_Playground.unity`.
+Validation:
+
+`Keeper First Covenant -> Production Art -> Validate In-Game Assets`
+
+Playable scene:
+
+`Assets/KeeperFirstCovenant/Scenes/ProductionArt_Playground.unity`
+
+The scene uses the new top-down camera follower, Edward as the controllable character, Eleanor/Aelis as animated followers and modular production-art world pieces.
 
 See `Docs/PRODUCTION_ART_INTEGRATION.md` for the current frame coverage and remaining directional-art work.
