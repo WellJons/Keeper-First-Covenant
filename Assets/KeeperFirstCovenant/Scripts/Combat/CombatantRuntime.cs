@@ -85,6 +85,15 @@ namespace KeeperFirstCovenant.Combat
             Changed?.Invoke(this);
         }
 
+        public void PrepareForCombat()
+        {
+            if (!IsAlive)
+                return;
+
+            _reactionsRemaining = 1;
+            Changed?.Invoke(this);
+        }
+
         public int RollInitiative()
         {
             int perception = definition != null
