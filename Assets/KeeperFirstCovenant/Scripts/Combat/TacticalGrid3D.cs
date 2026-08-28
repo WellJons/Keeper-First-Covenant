@@ -10,6 +10,7 @@ namespace KeeperFirstCovenant.Combat
             public int x;
             public int z;
             public Vector3 world;
+            public bool hasGround;
             public bool walkable;
             public float g;
             public float h;
@@ -77,10 +78,48 @@ namespace KeeperFirstCovenant.Combat
                         x = x,
                         z = z,
                         world = world,
+                        hasGround = hasGround,
                         walkable = hasGround && !blocked
                     };
                 }
             }
+        }
+
+        public bool TryGetDirectCellInfo(
+            Vector3 world,
+            out Vector3 cellWorld,
+            out bool hasGround,
+            out bool walkable)
+        {
+            EnsureBuilt();
+
+            int x =
+                Mathf.FloorToInt(
+                    (world.x - _origin.x) /
+                    cellSize);
+
+            int z =
+                Mathf.FloorToInt(
+                    (world.z - _origin.z) /
+                    cellSize);
+
+            if (x < 0 ||
+                z < 0 ||
+                x >= _width ||
+                z >= _height)
+            {
+                cellWorld = world;
+                hasGround = false;
+                walkable = false;
+                return false;
+            }
+
+            Node node = _nodes[x, z];
+
+            cellWorld = node.world;
+            hasGround = node.hasGround;
+            walkable = node.walkable;
+            return true;
         }
 
         public Vector3 SnapToCell(Vector3 world)
