@@ -34,7 +34,10 @@ namespace KeeperFirstCovenant.Visual
         public CharacterFrameState State => state;
         public SpriteFacing8 Facing => facing;
         public int FrameIndex => _frameIndex;
-        public bool IsOneShotPlaying => _activeBaseClip != null && !_activeBaseClip.loop;
+        public bool IsOneShotPlaying =>
+            _activeBaseClip != null &&
+            !_activeBaseClip.loop &&
+            !_finishedEmitted;
 
         public event Action<CharacterFrameState> StateChanged;
         public event Action<CharacterFrameState> Impact;
