@@ -1,3 +1,4 @@
+using System.Linq;
 using KeeperFirstCovenant.Combat;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -137,11 +138,27 @@ namespace KeeperFirstCovenant.Player
                 return;
             }
 
+            Vector3 destination = grid.SnapToCell(hit.point);
+            if (IsOccupied(destination))
+                return;
+
             TacticalUnitMover mover = _currentActor.GetComponent<TacticalUnitMover>();
             if (mover == null)
                 mover = _currentActor.gameObject.AddComponent<TacticalUnitMover>();
 
-            mover.TryMoveTo(grid, grid.SnapToCell(hit.point), this);
+            mover.TryMoveTo(grid, destination);
+        }
+
+        private bool IsOccupied(Vector3 destination)
+        {
+            float radius = grid != null ? grid.CellSize * 0.45f : 0.6f;
+
+            return FindObjectsByType<CombatantRuntime>(FindObjectsSortMode.None)
+                .Any(x =>
+                    x != null &&
+                    x != _currentActor &&
+                    x.IsAlive &&
+                    Vector3.Distance(x.transform.position, destination) <= radius);
         }
 
         private void TryUseSelectedAction(Vector2 screenPosition)
