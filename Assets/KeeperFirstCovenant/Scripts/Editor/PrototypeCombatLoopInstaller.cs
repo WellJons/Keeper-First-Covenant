@@ -90,6 +90,10 @@ namespace KeeperFirstCovenant.EditorTools
                     systems);
 
             AddIfMissing<
+                ForcedMovementSystem>(
+                    systems);
+
+            AddIfMissing<
                 TacticalTargetingIndicator>(
                     systems);
 
