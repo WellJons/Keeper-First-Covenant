@@ -52,6 +52,13 @@ namespace KeeperFirstCovenant.Combat
         [Header("Status")]
         public StatusApplication[] statusApplications;
 
+        [Header("Forced movement")]
+        [Min(0f)]
+        public float pushDistanceMeters;
+
+        [Tooltip("If true, push direction is away from the acting combatant.")]
+        public bool pushAwayFromActor = true;
+
         [Header("Environment hook")]
         public SurfaceType createsSurface = SurfaceType.None;
         [Min(0f)] public float surfaceRadius;
