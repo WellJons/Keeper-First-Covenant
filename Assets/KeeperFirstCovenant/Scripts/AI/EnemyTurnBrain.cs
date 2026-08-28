@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using KeeperFirstCovenant.Combat;
 using UnityEngine;
@@ -59,26 +60,31 @@ namespace KeeperFirstCovenant.AI
             }
             else if (grid != null && actor.RemainingMovement > 0.01f)
             {
-                var path = grid.FindPath(actor.transform.position, target.transform.position);
+                List<Vector3> path = grid.FindPath(
+                    actor.transform.position,
+                    target.transform.position);
 
                 if (path.Count > 0)
                 {
+                    float desiredRange = action != null
+                        ? Mathf.Max(grid.CellSize * 0.75f, action.rangeMeters * 0.85f)
+                        : grid.CellSize;
+
+                    path = TrimBeforeTarget(path, target.transform.position, desiredRange);
+
                     TacticalUnitMover mover = actor.GetComponent<TacticalUnitMover>();
                     if (mover == null)
                         mover = actor.gameObject.AddComponent<TacticalUnitMover>();
 
-                    bool finished = false;
                     mover.TryMoveAlongPath(
                         grid,
                         path,
-                        actor.RemainingMovement,
-                        this,
-                        () => finished = true);
+                        actor.RemainingMovement);
 
                     while (mover.IsMoving && actor.IsAlive)
                         yield return null;
 
-                    if (finished && actor.IsAlive)
+                    if (actor.IsAlive)
                     {
                         action = ChooseAction(actor, target);
                         if (action != null && IsInRange(actor, target, action))
@@ -91,6 +97,47 @@ namespace KeeperFirstCovenant.AI
                 yield return new WaitForSeconds(finishDelay);
 
             EndTurn();
+        }
+
+        private static List<Vector3> TrimBeforeTarget(
+            List<Vector3> path,
+            Vector3 targetPosition,
+            float desiredRange)
+        {
+            if (path == null || path.Count == 0)
+                return path;
+
+            int stopIndex = -1;
+
+            for (int i = 0; i < path.Count; i++)
+            {
+                if (Vector3.Distance(path[i], targetPosition) <= desiredRange)
+                {
+                    stopIndex = i;
+                    break;
+                }
+            }
+
+            if (stopIndex < 0)
+            {
+                if (path.Count > 1)
+                    path.RemoveAt(path.Count - 1);
+
+                return path;
+            }
+
+            int keepCount = Mathf.Max(0, stopIndex + 1);
+
+            while (path.Count > keepCount)
+                path.RemoveAt(path.Count - 1);
+
+            if (path.Count > 0 &&
+                Vector3.Distance(path[path.Count - 1], targetPosition) < 0.2f)
+            {
+                path.RemoveAt(path.Count - 1);
+            }
+
+            return path;
         }
 
         private static CombatantRuntime FindBestTarget(CombatantRuntime actor)
@@ -131,7 +178,10 @@ namespace KeeperFirstCovenant.AI
                 float expectedDamage =
                     (action.damage.Minimum + action.damage.Maximum) * 0.5f;
 
-                float rangeBonus = IsInRange(actor, target, action) ? 1000f : action.rangeMeters;
+                float rangeBonus = IsInRange(actor, target, action)
+                    ? 1000f
+                    : action.rangeMeters;
+
                 float score = rangeBonus + expectedDamage;
 
                 if (score > bestScore)
