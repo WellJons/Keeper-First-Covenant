@@ -1094,7 +1094,7 @@ namespace KeeperFirstCovenant.Developer
                     FindObjectsSortMode.None)
                 .Where(x =>
                     x != null &&
-                    x.IsAlive &&
+                    x.CanBeTargeted &&
                     (x.Faction ==
                          CombatFaction.Player ||
                      x.Faction ==
