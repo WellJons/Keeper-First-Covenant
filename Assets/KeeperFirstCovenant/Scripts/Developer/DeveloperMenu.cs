@@ -406,6 +406,29 @@ namespace KeeperFirstCovenant.Developer
             LabelPair("Willpower", c.willpower);
             LabelPair("Perception", c.perception);
 
+            if (c.damageAffinities != null &&
+                c.damageAffinities.Length > 0)
+            {
+                GUILayout.Space(6f);
+                GUILayout.Label("Damage affinities:");
+
+                foreach (DamageAffinity affinity
+                         in c.damageAffinities)
+                {
+                    string read =
+                        affinity.multiplier <= 0f
+                            ? "IMMUNE"
+                            : affinity.multiplier < 1f
+                                ? $"RESIST x{affinity.multiplier:0.00}"
+                                : affinity.multiplier > 1f
+                                    ? $"VULNERABLE x{affinity.multiplier:0.00}"
+                                    : "NORMAL";
+
+                    GUILayout.Label(
+                        $"• {affinity.damageType}: {read}");
+                }
+            }
+
             GUILayout.Space(6f);
 
             GUILayout.Label("Abilities:");
