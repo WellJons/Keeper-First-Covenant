@@ -302,6 +302,12 @@ namespace KeeperFirstCovenant.EditorTools
                     Green / (float)Area + 8f &&
                 Red / (float)Area >
                     Blue / (float)Area + 8f;
+
+            public bool Bright =>
+                Area > 0 &&
+                (Red + Green + Blue) /
+                    (float)(Area * 3) >
+                    126f;
         }
 
         private static List<ComponentInfo> LabelComponents(
@@ -501,8 +507,12 @@ namespace KeeperFirstCovenant.EditorTools
                     dy <= 8 &&
                     component.Area >= 10;
 
+                // Edward's fire is warm, while Eleanor/Aelis use detached
+                // silver-white/cyan geometry. Keep both kinds of authored VFX
+                // when they live inside the tightly cropped animation frame.
                 bool effect =
-                    component.Warm &&
+                    (component.Warm ||
+                     component.Bright) &&
                     component.Area >= 6;
 
                 if (nearby || effect)
