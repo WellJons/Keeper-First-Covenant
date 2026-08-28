@@ -39,6 +39,9 @@ namespace KeeperFirstCovenant.EditorTools
                     .Concat(
                         FindAssets<WeaponDefinition>(
                             "t:WeaponDefinition"))
+                    .Concat(
+                        FindAssets<ArmorDefinition>(
+                            "t:ArmorDefinition"))
                     .Where(x => x != null)
                     .Distinct()
                     .OrderBy(x =>
