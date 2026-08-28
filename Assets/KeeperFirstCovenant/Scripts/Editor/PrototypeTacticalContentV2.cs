@@ -244,6 +244,97 @@ namespace KeeperFirstCovenant.EditorTools
                 EditorUtility.SetDirty(sealBolt);
             }
 
+            CombatActionDefinition healingLight =
+                GetOrCreateAction(
+                    "HealingLight",
+                    "Healing Light");
+
+            healingLight.category =
+                CombatActionCategory.Support;
+            healingLight.targetKind =
+                TargetKind.Ally;
+            healingLight.actionPointCost = 1;
+            healingLight.manaCost = 3;
+            healingLight.rangeMeters = 9f;
+            healingLight.areaRadius = 0f;
+            healingLight.areaTargetRule =
+                AreaTargetRule.PrimaryOnly;
+            healingLight.requiresLineOfSight = true;
+            healingLight.ignoresCover = true;
+            healingLight.usesHeightAdvantage = false;
+            healingLight.requiresAttackRoll = false;
+            healingLight.damage =
+                new DiceFormula(0, 2, 0);
+            healingLight.healing =
+                new DiceFormula(2, 6, 2);
+            healingLight.barrier =
+                new DiceFormula(0, 2, 0);
+            healingLight.scalingAttribute =
+                AbilityAttribute.Willpower;
+            healingLight.scalingMultiplier = 0.8f;
+            healingLight.createsSurface =
+                SurfaceType.None;
+            EditorUtility.SetDirty(healingLight);
+
+            CombatActionDefinition silverBarrier =
+                GetOrCreateAction(
+                    "SilverBarrier",
+                    "Silver Barrier");
+
+            silverBarrier.category =
+                CombatActionCategory.Support;
+            silverBarrier.targetKind =
+                TargetKind.Ally;
+            silverBarrier.actionPointCost = 1;
+            silverBarrier.manaCost = 4;
+            silverBarrier.rangeMeters = 8f;
+            silverBarrier.areaRadius = 0f;
+            silverBarrier.areaTargetRule =
+                AreaTargetRule.PrimaryOnly;
+            silverBarrier.requiresLineOfSight = true;
+            silverBarrier.ignoresCover = true;
+            silverBarrier.usesHeightAdvantage = false;
+            silverBarrier.requiresAttackRoll = false;
+            silverBarrier.damage =
+                new DiceFormula(0, 2, 0);
+            silverBarrier.healing =
+                new DiceFormula(0, 2, 0);
+            silverBarrier.barrier =
+                new DiceFormula(2, 6, 3);
+            silverBarrier.scalingAttribute =
+                AbilityAttribute.Willpower;
+            silverBarrier.scalingMultiplier = 0.6f;
+            silverBarrier.createsSurface =
+                SurfaceType.None;
+            EditorUtility.SetDirty(silverBarrier);
+
+            CharacterDefinition aelis =
+                GetOrCreateCharacter(
+                    "aelis",
+                    "Aelis");
+
+            aelis.faction =
+                CombatFaction.Ally;
+            aelis.maxHealth = 40;
+            aelis.maxMana = 38;
+            aelis.armor = 0;
+            aelis.magicGuard = 2;
+            aelis.actionPoints = 2;
+            aelis.movementMeters = 9f;
+            aelis.strength = 8;
+            aelis.finesse = 10;
+            aelis.intellect = 14;
+            aelis.willpower = 16;
+            aelis.perception = 13;
+            aelis.downedRounds = 3;
+            aelis.startingActions =
+                new[]
+                {
+                    healingLight,
+                    silverBarrier
+                };
+            EditorUtility.SetDirty(aelis);
+
             edward.startingActions =
                 new[]
                 {
@@ -302,6 +393,38 @@ namespace KeeperFirstCovenant.EditorTools
             swordSlash.usesHeightAdvantage = false;
 
             EditorUtility.SetDirty(swordSlash);
+        }
+
+        private static CharacterDefinition
+            GetOrCreateCharacter(
+                string id,
+                string displayName)
+        {
+            string path =
+                DataRoot +
+                "/Character_" +
+                id +
+                ".asset";
+
+            CharacterDefinition character =
+                AssetDatabase.LoadAssetAtPath<
+                    CharacterDefinition>(path);
+
+            if (character == null)
+            {
+                character =
+                    ScriptableObject.CreateInstance<
+                        CharacterDefinition>();
+
+                AssetDatabase.CreateAsset(
+                    character,
+                    path);
+            }
+
+            character.characterId = id;
+            character.displayName = displayName;
+
+            return character;
         }
 
         private static CombatActionDefinition
