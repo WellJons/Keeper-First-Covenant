@@ -52,7 +52,6 @@ namespace KeeperFirstCovenant.EditorTools
                     "/Action_SealBolt.asset");
 
             if (edward == null ||
-                lucian == null ||
                 swordSlash == null)
             {
                 Debug.LogError(
@@ -252,24 +251,28 @@ namespace KeeperFirstCovenant.EditorTools
                     fireBurst
                 };
 
-            lucian.startingActions =
-                sealBolt != null
-                    ? new[]
-                    {
-                        sealBolt,
-                        lightningArc,
-                        frostField,
-                        waterRune
-                    }
-                    : new[]
-                    {
-                        lightningArc,
-                        frostField,
-                        waterRune
-                    };
+            if (lucian != null)
+            {
+                lucian.startingActions =
+                    sealBolt != null
+                        ? new[]
+                        {
+                            sealBolt,
+                            lightningArc,
+                            frostField,
+                            waterRune
+                        }
+                        : new[]
+                        {
+                            lightningArc,
+                            frostField,
+                            waterRune
+                        };
+
+                EditorUtility.SetDirty(lucian);
+            }
 
             EditorUtility.SetDirty(edward);
-            EditorUtility.SetDirty(lucian);
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
