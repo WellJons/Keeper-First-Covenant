@@ -62,6 +62,7 @@ namespace KeeperFirstCovenant.Combat
 
             _registered.Add(combatant);
             combatant.Died += OnCombatantDied;
+            combatant.Downed += OnCombatantDowned;
         }
 
         public void Unregister(CombatantRuntime combatant)
@@ -70,6 +71,7 @@ namespace KeeperFirstCovenant.Combat
                 return;
 
             combatant.Died -= OnCombatantDied;
+            combatant.Downed -= OnCombatantDowned;
             _registered.Remove(combatant);
 
             int removedIndex = _turnOrder.FindIndex(x => x.combatant == combatant);
@@ -243,6 +245,12 @@ namespace KeeperFirstCovenant.Combat
                 {
                     _turnIndex = 0;
                     Round++;
+
+                    TickDownedCombatants();
+
+                    if (State != CombatState.Active)
+                        return;
+
                     RoundStarted?.Invoke(Round);
                 }
 
@@ -265,6 +273,18 @@ namespace KeeperFirstCovenant.Combat
             TryResolveCombat();
         }
 
+        private void OnCombatantDowned(
+            CombatantRuntime combatant)
+        {
+            if (State != CombatState.Active)
+                return;
+
+            if (combatant == CurrentActor)
+                AdvanceTurn();
+            else
+                TryResolveCombat();
+        }
+
         private void OnCombatantDied(CombatantRuntime combatant)
         {
             if (State != CombatState.Active)
@@ -274,6 +294,22 @@ namespace KeeperFirstCovenant.Combat
                 AdvanceTurn();
             else
                 TryResolveCombat();
+        }
+
+        private void TickDownedCombatants()
+        {
+            foreach (InitiativeEntry entry
+                     in _turnOrder.ToArray())
+            {
+                CombatantRuntime combatant =
+                    entry.combatant;
+
+                if (combatant != null &&
+                    combatant.IsDowned)
+                {
+                    combatant.AdvanceDownedRound();
+                }
+            }
         }
 
         private bool TryResolveCombat()
