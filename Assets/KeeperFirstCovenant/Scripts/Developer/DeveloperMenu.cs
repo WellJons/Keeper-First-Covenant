@@ -837,13 +837,39 @@ namespace KeeperFirstCovenant.Developer
 
         private void ClearDevSpawns()
         {
+            TurnCombatDirector director =
+                TurnCombatDirector.Instance;
+
+            bool removedAny = false;
+
             foreach (GameObject go in _spawned)
             {
-                if (go != null)
-                    Destroy(go);
+                if (go == null)
+                    continue;
+
+                CombatantRuntime runtime =
+                    go.GetComponent<
+                        CombatantRuntime>();
+
+                if (runtime != null &&
+                    director != null)
+                {
+                    director.Unregister(runtime);
+                }
+
+                Destroy(go);
+                removedAny = true;
             }
 
             _spawned.Clear();
+
+            if (removedAny &&
+                director != null &&
+                director.State ==
+                    CombatState.Active)
+            {
+                director.DebugRestartCombat();
+            }
         }
 
         private static IEnumerable<CombatantRuntime>
