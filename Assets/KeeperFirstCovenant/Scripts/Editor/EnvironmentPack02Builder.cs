@@ -432,6 +432,35 @@ namespace KeeperFirstCovenant.EditorTools
             return instance;
         }
 
+        public static void AddShowcaseToScene(Transform parent)
+        {
+            if (parent == null || !PrefabsPresent())
+                return;
+
+            Transform nature = new GameObject("EnvironmentPack02").transform;
+            nature.SetParent(parent, false);
+
+            Spawn(PrefabRoot + "/Trees/Tree_Living_A.prefab", new Vector3(-7.4f, 0f, 5.1f), nature);
+            Spawn(PrefabRoot + "/Trees/Tree_Living_B.prefab", new Vector3(7.2f, 0f, 4.8f), nature);
+            Spawn(PrefabRoot + "/Trees/Tree_Twisted_A.prefab", new Vector3(-7.6f, 0f, -4.5f), nature);
+            Spawn(PrefabRoot + "/Trees/Tree_Dead_A.prefab", new Vector3(7.4f, 0f, -4.4f), nature);
+
+            for (int i = 0; i < 12; i++)
+            {
+                float x = -5.5f + (i % 6) * 2.0f;
+                float z = -4.7f + (i / 6) * 8.8f;
+                string path = i % 3 == 0
+                    ? PrefabRoot + "/Nature/Grass_Tall_A.prefab"
+                    : PrefabRoot + "/Nature/Grass_Small_A.prefab";
+
+                Spawn(path, new Vector3(x, 0f, z), nature);
+            }
+
+            Spawn(PrefabRoot + "/Nature/Flower_Blue_A.prefab", new Vector3(2.7f, 0f, 3.6f), nature);
+            Spawn(PrefabRoot + "/Trees/Log_A.prefab", new Vector3(-4.4f, 0f, -3.7f), nature);
+            Spawn(PrefabRoot + "/Ground/Puddle_A.prefab", new Vector3(3.8f, 0.02f, -2.8f), nature);
+        }
+
         private static void BuildCamera(Transform parent)
         {
             GameObject go = new GameObject("Main Camera");
