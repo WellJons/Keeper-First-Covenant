@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using KeeperFirstCovenant.Characters;
+using KeeperFirstCovenant.Inventory;
 using UnityEngine;
 
 namespace KeeperFirstCovenant.Combat
@@ -85,6 +86,52 @@ namespace KeeperFirstCovenant.Combat
             Changed?.Invoke(this);
         }
 
+        public CombatActionDefinition[] GetAvailableActions()
+        {
+            var actions =
+                new List<CombatActionDefinition>();
+
+            if (definition?.startingActions != null)
+            {
+                foreach (CombatActionDefinition action
+                         in definition.startingActions)
+                {
+                    if (action != null &&
+                        !actions.Contains(action))
+                    {
+                        actions.Add(action);
+                    }
+                }
+            }
+
+            EquipmentComponent equipment =
+                GetComponent<EquipmentComponent>();
+
+            equipment?.CollectGrantedActions(actions);
+
+            return actions.ToArray();
+        }
+
+        public float GetMovementCapacity()
+        {
+            if (definition == null)
+                return 0f;
+
+            EquipmentComponent equipment =
+                GetComponent<EquipmentComponent>();
+
+            float baseMovement =
+                definition.movementMeters +
+                (equipment != null
+                    ? equipment.GetMovementBonus()
+                    : 0f);
+
+            return Mathf.Max(
+                0f,
+                baseMovement *
+                GetStatusMovementMultiplier());
+        }
+
         public void PrepareForCombat()
         {
             if (!IsAlive)
@@ -126,10 +173,8 @@ namespace KeeperFirstCovenant.Combat
                 definition.actionPoints +
                 GetStatusActionPointModifier());
 
-            _remainingMovement = Mathf.Max(
-                0f,
-                definition.movementMeters *
-                GetStatusMovementMultiplier());
+            _remainingMovement =
+                GetMovementCapacity();
 
             _reactionsRemaining = 1;
 
@@ -220,10 +265,8 @@ namespace KeeperFirstCovenant.Combat
                 definition.actionPoints +
                 GetStatusActionPointModifier());
 
-            _remainingMovement = Mathf.Max(
-                0f,
-                definition.movementMeters *
-                GetStatusMovementMultiplier());
+            _remainingMovement =
+                GetMovementCapacity();
 
             _reactionsRemaining = 1;
             Changed?.Invoke(this);
@@ -467,6 +510,12 @@ namespace KeeperFirstCovenant.Combat
                 }
             }
 
+            EquipmentComponent equipment =
+                GetComponent<EquipmentComponent>();
+
+            if (equipment != null)
+                value += equipment.GetArmorBonus();
+
             return Mathf.Max(0, value);
         }
 
@@ -486,6 +535,12 @@ namespace KeeperFirstCovenant.Combat
                         status.intensity;
                 }
             }
+
+            EquipmentComponent equipment =
+                GetComponent<EquipmentComponent>();
+
+            if (equipment != null)
+                value += equipment.GetMagicGuardBonus();
 
             return Mathf.Max(0, value);
         }
