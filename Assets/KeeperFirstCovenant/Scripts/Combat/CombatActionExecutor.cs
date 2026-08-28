@@ -1,5 +1,6 @@
 using System;
-using KeeperFirstCovenant.Characters;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace KeeperFirstCovenant.Combat
@@ -12,6 +13,7 @@ namespace KeeperFirstCovenant.Combat
         NotActorsTurn,
         InvalidTarget,
         OutOfRange,
+        NoLineOfSight,
         NotEnoughActionPoints,
         NotEnoughMana
     }
@@ -26,6 +28,7 @@ namespace KeeperFirstCovenant.Combat
         public readonly int Barrier;
         public readonly int HitRoll;
         public readonly int HitChance;
+        public readonly int AffectedTargets;
         public readonly ActionFailureReason Failure;
 
         public CombatActionResult(
@@ -37,6 +40,7 @@ namespace KeeperFirstCovenant.Combat
             int barrier,
             int hitRoll,
             int hitChance,
+            int affectedTargets,
             ActionFailureReason failure)
         {
             Executed = executed;
@@ -47,12 +51,24 @@ namespace KeeperFirstCovenant.Combat
             Barrier = barrier;
             HitRoll = hitRoll;
             HitChance = hitChance;
+            AffectedTargets = affectedTargets;
             Failure = failure;
         }
 
-        public static CombatActionResult Failed(ActionFailureReason reason)
+        public static CombatActionResult Failed(
+            ActionFailureReason reason)
         {
-            return new CombatActionResult(false, false, false, 0, 0, 0, 0, 0, reason);
+            return new CombatActionResult(
+                false,
+                false,
+                false,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                reason);
         }
     }
 
@@ -81,8 +97,14 @@ namespace KeeperFirstCovenant.Combat
 
     public static class CombatActionExecutor
     {
-        public static event Action<CombatActionDefinition, CombatantRuntime, CombatantRuntime, CombatActionResult> ActionResolved;
-        public static event Action<SurfaceRequest> SurfaceRequested;
+        public static event Action<
+            CombatActionDefinition,
+            CombatantRuntime,
+            CombatantRuntime,
+            CombatActionResult> ActionResolved;
+
+        public static event Action<SurfaceRequest>
+            SurfaceRequested;
 
         public static CombatActionResult Execute(
             CombatantRuntime actor,
@@ -90,28 +112,290 @@ namespace KeeperFirstCovenant.Combat
             CombatantRuntime target = null,
             Vector3? groundPoint = null)
         {
-            ActionFailureReason validation = Validate(actor, action, target, groundPoint);
-            if (validation != ActionFailureReason.None)
-                return CombatActionResult.Failed(validation);
+            return ExecuteInternal(
+                actor,
+                action,
+                target,
+                groundPoint,
+                false);
+        }
 
-            if (!actor.TrySpendActionPoints(action.actionPointCost))
-                return CombatActionResult.Failed(ActionFailureReason.NotEnoughActionPoints);
+        public static CombatActionResult ExecuteReaction(
+            CombatantRuntime actor,
+            CombatActionDefinition action,
+            CombatantRuntime target)
+        {
+            return ExecuteInternal(
+                actor,
+                action,
+                target,
+                null,
+                true);
+        }
 
-            if (!actor.TrySpendMana(action.manaCost))
+        private static CombatActionResult ExecuteInternal(
+            CombatantRuntime actor,
+            CombatActionDefinition action,
+            CombatantRuntime target,
+            Vector3? groundPoint,
+            bool reaction)
+        {
+            if (actor == null ||
+                !actor.IsAlive ||
+                actor.Definition == null)
             {
-                // This should not happen because validation checks mana first.
-                // AP is intentionally not refunded here to avoid hiding state bugs.
-                return CombatActionResult.Failed(ActionFailureReason.NotEnoughMana);
+                return CombatActionResult.Failed(
+                    ActionFailureReason.InvalidActor);
             }
 
-            int attributeModifier = actor.Definition != null
-                ? actor.Definition.GetModifier(action.scalingAttribute)
-                : 0;
+            if (action == null)
+            {
+                return CombatActionResult.Failed(
+                    ActionFailureReason.InvalidAction);
+            }
 
-            int hitChance = Mathf.Clamp(
-                action.baseHitChance + attributeModifier * 5,
-                5,
-                95);
+            if (!reaction)
+            {
+                TurnCombatDirector director =
+                    TurnCombatDirector.Instance;
+
+                if (director != null &&
+                    director.State == CombatState.Active &&
+                    director.CurrentActor != actor)
+                {
+                    return CombatActionResult.Failed(
+                        ActionFailureReason.NotActorsTurn);
+                }
+            }
+
+            TacticalTargetPreview preview =
+                CombatTargetingService.Analyze(
+                    actor,
+                    action,
+                    target,
+                    groundPoint);
+
+            if (!preview.Valid)
+                return CombatActionResult.Failed(
+                    preview.Failure);
+
+            if (!reaction)
+            {
+                if (actor.CurrentActionPoints <
+                    action.actionPointCost)
+                {
+                    return CombatActionResult.Failed(
+                        ActionFailureReason
+                            .NotEnoughActionPoints);
+                }
+
+                if (actor.CurrentMana <
+                    action.manaCost)
+                {
+                    return CombatActionResult.Failed(
+                        ActionFailureReason
+                            .NotEnoughMana);
+                }
+
+                if (!actor.TrySpendActionPoints(
+                        action.actionPointCost))
+                {
+                    return CombatActionResult.Failed(
+                        ActionFailureReason
+                            .NotEnoughActionPoints);
+                }
+
+                if (!actor.TrySpendMana(action.manaCost))
+                {
+                    return CombatActionResult.Failed(
+                        ActionFailureReason
+                            .NotEnoughMana);
+                }
+            }
+
+            Vector3 effectPoint =
+                preview.EffectPoint;
+
+            List<CombatantRuntime> affected =
+                CollectAffectedTargets(
+                    actor,
+                    action,
+                    target,
+                    effectPoint);
+
+            int totalDamage = 0;
+            int totalHealing = 0;
+            int totalBarrier = 0;
+            int firstRoll = 0;
+            int firstChance = preview.HitChance;
+            bool anyHit = affected.Count == 0 &&
+                          !action.requiresAttackRoll;
+            bool anyCritical = false;
+
+            if (affected.Count == 0)
+            {
+                anyHit = true;
+            }
+
+            foreach (CombatantRuntime candidate in affected)
+            {
+                TacticalTargetPreview candidatePreview =
+                    action.areaRadius <= 0.01f ||
+                    candidate == target
+                        ? CombatTargetingService.Analyze(
+                            actor,
+                            action,
+                            candidate,
+                            groundPoint)
+                        : preview;
+
+                int hitChance =
+                    candidatePreview.Valid
+                        ? candidatePreview.HitChance
+                        : preview.HitChance;
+
+                SingleTargetResolution resolved =
+                    ResolveTarget(
+                        actor,
+                        action,
+                        candidate,
+                        hitChance);
+
+                if (firstRoll == 0)
+                {
+                    firstRoll = resolved.hitRoll;
+                    firstChance = hitChance;
+                }
+
+                anyHit |= resolved.hit;
+                anyCritical |= resolved.critical;
+                totalDamage += resolved.damage;
+                totalHealing += resolved.healing;
+                totalBarrier += resolved.barrier;
+
+                var targetResult =
+                    new CombatActionResult(
+                        true,
+                        resolved.hit,
+                        resolved.critical,
+                        resolved.damage,
+                        resolved.healing,
+                        resolved.barrier,
+                        resolved.hitRoll,
+                        hitChance,
+                        1,
+                        ActionFailureReason.None);
+
+                ActionResolved?.Invoke(
+                    action,
+                    actor,
+                    candidate,
+                    targetResult);
+            }
+
+            bool surfaceCanAppear =
+                !action.requiresAttackRoll ||
+                anyHit ||
+                action.targetKind == TargetKind.Ground;
+
+            if (surfaceCanAppear &&
+                action.createsSurface !=
+                SurfaceType.None &&
+                action.surfaceRadius > 0f)
+            {
+                SurfaceRequested?.Invoke(
+                    new SurfaceRequest(
+                        action.createsSurface,
+                        effectPoint,
+                        action.surfaceRadius,
+                        Mathf.Max(
+                            1,
+                            action.surfaceDurationTurns),
+                        actor.gameObject));
+            }
+
+            var result = new CombatActionResult(
+                true,
+                anyHit,
+                anyCritical,
+                totalDamage,
+                totalHealing,
+                totalBarrier,
+                firstRoll,
+                firstChance,
+                affected.Count,
+                ActionFailureReason.None);
+
+            if (affected.Count == 0)
+            {
+                ActionResolved?.Invoke(
+                    action,
+                    actor,
+                    null,
+                    result);
+            }
+
+            return result;
+        }
+
+        private static List<CombatantRuntime>
+            CollectAffectedTargets(
+                CombatantRuntime actor,
+                CombatActionDefinition action,
+                CombatantRuntime primaryTarget,
+                Vector3 effectPoint)
+        {
+            if (action.areaRadius <= 0.01f)
+            {
+                return primaryTarget != null
+                    ? new List<CombatantRuntime>
+                    {
+                        primaryTarget
+                    }
+                    : new List<CombatantRuntime>();
+            }
+
+            if (action.areaTargetRule ==
+                AreaTargetRule.PrimaryOnly)
+            {
+                return primaryTarget != null
+                    ? new List<CombatantRuntime>
+                    {
+                        primaryTarget
+                    }
+                    : new List<CombatantRuntime>();
+            }
+
+            return UnityEngine.Object
+                .FindObjectsByType<CombatantRuntime>(
+                    FindObjectsSortMode.None)
+                .Where(candidate =>
+                    candidate != null &&
+                    candidate.IsAlive &&
+                    Vector3.Distance(
+                        candidate.transform.position,
+                        effectPoint)
+                    <= action.areaRadius + 0.05f &&
+                    CombatTargetingService.MatchesAreaRule(
+                        actor,
+                        candidate,
+                        action.areaTargetRule,
+                        primaryTarget))
+                .ToList();
+        }
+
+        private static SingleTargetResolution
+            ResolveTarget(
+                CombatantRuntime actor,
+                CombatActionDefinition action,
+                CombatantRuntime target,
+                int hitChance)
+        {
+            int attributeModifier =
+                actor.Definition != null
+                    ? actor.Definition.GetModifier(
+                        action.scalingAttribute)
+                    : 0;
 
             int hitRoll = 0;
             bool critical = false;
@@ -119,9 +403,13 @@ namespace KeeperFirstCovenant.Combat
 
             if (action.requiresAttackRoll)
             {
-                hitRoll = UnityEngine.Random.Range(1, 101);
+                hitRoll =
+                    UnityEngine.Random.Range(1, 101);
+
                 critical = hitRoll <= 5;
-                hit = critical || hitRoll <= hitChance;
+                hit =
+                    critical ||
+                    hitRoll <= hitChance;
             }
 
             int damage = 0;
@@ -130,135 +418,57 @@ namespace KeeperFirstCovenant.Combat
 
             if (hit && target != null)
             {
-                damage = RollScaled(action.damage, attributeModifier, action.scalingMultiplier, critical);
+                damage = RollScaled(
+                    action.damage,
+                    attributeModifier,
+                    action.scalingMultiplier,
+                    critical);
+
                 if (damage > 0)
-                    target.ApplyDamage(new DamagePacket(damage, action.damageType, actor.gameObject, critical));
+                {
+                    target.ApplyDamage(
+                        new DamagePacket(
+                            damage,
+                            action.damageType,
+                            actor.gameObject,
+                            critical));
+                }
 
-                healing = RollScaled(action.healing, attributeModifier, action.scalingMultiplier, false);
-                if (healing > 0)
-                    target.Heal(healing);
+                if (target.IsAlive)
+                {
+                    healing = RollScaled(
+                        action.healing,
+                        attributeModifier,
+                        action.scalingMultiplier,
+                        false);
 
-                barrier = RollScaled(action.barrier, attributeModifier, action.scalingMultiplier, false);
-                if (barrier > 0)
-                    target.AddBarrier(barrier);
+                    if (healing > 0)
+                        target.Heal(healing);
 
-                ApplyStatuses(action, target);
+                    barrier = RollScaled(
+                        action.barrier,
+                        attributeModifier,
+                        action.scalingMultiplier,
+                        false);
+
+                    if (barrier > 0)
+                        target.AddBarrier(barrier);
+
+                    ApplyStatuses(
+                        action,
+                        target);
+                }
             }
 
-            Vector3 effectPoint = groundPoint
-                ?? (target != null ? target.transform.position : actor.transform.position);
-
-            if (hit &&
-                action.createsSurface != SurfaceType.None &&
-                action.surfaceRadius > 0f)
+            return new SingleTargetResolution
             {
-                SurfaceRequested?.Invoke(new SurfaceRequest(
-                    action.createsSurface,
-                    effectPoint,
-                    action.surfaceRadius,
-                    Mathf.Max(1, action.surfaceDurationTurns),
-                    actor.gameObject));
-            }
-
-            var result = new CombatActionResult(
-                true,
-                hit,
-                critical,
-                damage,
-                healing,
-                barrier,
-                hitRoll,
-                hitChance,
-                ActionFailureReason.None);
-
-            ActionResolved?.Invoke(action, actor, target, result);
-            return result;
-        }
-
-        private static ActionFailureReason Validate(
-            CombatantRuntime actor,
-            CombatActionDefinition action,
-            CombatantRuntime target,
-            Vector3? groundPoint)
-        {
-            if (actor == null || !actor.IsAlive || actor.Definition == null)
-                return ActionFailureReason.InvalidActor;
-
-            if (action == null)
-                return ActionFailureReason.InvalidAction;
-
-            TurnCombatDirector director = TurnCombatDirector.Instance;
-            if (director != null &&
-                director.State == CombatState.Active &&
-                director.CurrentActor != actor)
-            {
-                return ActionFailureReason.NotActorsTurn;
-            }
-
-            if (!ValidateTarget(actor, action.targetKind, target, groundPoint))
-                return ActionFailureReason.InvalidTarget;
-
-            Vector3 destination = action.targetKind == TargetKind.Ground
-                ? groundPoint.Value
-                : target != null
-                    ? target.transform.position
-                    : actor.transform.position;
-
-            float distance = Vector3.Distance(actor.transform.position, destination);
-            if (distance > action.rangeMeters + 0.05f)
-                return ActionFailureReason.OutOfRange;
-
-            if (actor.CurrentActionPoints < action.actionPointCost)
-                return ActionFailureReason.NotEnoughActionPoints;
-
-            if (actor.CurrentMana < action.manaCost)
-                return ActionFailureReason.NotEnoughMana;
-
-            return ActionFailureReason.None;
-        }
-
-        private static bool ValidateTarget(
-            CombatantRuntime actor,
-            TargetKind kind,
-            CombatantRuntime target,
-            Vector3? groundPoint)
-        {
-            switch (kind)
-            {
-                case TargetKind.Self:
-                    return target == actor;
-
-                case TargetKind.Ally:
-                    return target != null &&
-                           target.IsAlive &&
-                           AreFriendly(actor.Faction, target.Faction);
-
-                case TargetKind.Enemy:
-                    return target != null &&
-                           target.IsAlive &&
-                           !AreFriendly(actor.Faction, target.Faction) &&
-                           target.Faction != CombatFaction.Neutral;
-
-                case TargetKind.AnyCombatant:
-                    return target != null && target.IsAlive;
-
-                case TargetKind.Ground:
-                    return groundPoint.HasValue;
-
-                default:
-                    return false;
-            }
-        }
-
-        private static bool AreFriendly(CombatFaction a, CombatFaction b)
-        {
-            if (a == CombatFaction.Neutral || b == CombatFaction.Neutral)
-                return a == b;
-
-            bool aFriendly = a == CombatFaction.Player || a == CombatFaction.Ally;
-            bool bFriendly = b == CombatFaction.Player || b == CombatFaction.Ally;
-
-            return aFriendly == bFriendly;
+                hit = hit,
+                critical = critical,
+                hitRoll = hitRoll,
+                damage = damage,
+                healing = healing,
+                barrier = barrier
+            };
         }
 
         private static int RollScaled(
@@ -267,18 +477,34 @@ namespace KeeperFirstCovenant.Combat
             float scalingMultiplier,
             bool critical)
         {
-            if (formula.diceCount <= 0 && formula.flatBonus == 0)
+            if (formula.diceCount <= 0 &&
+                formula.flatBonus == 0)
+            {
                 return 0;
+            }
 
             int value = formula.Roll();
 
-            if (critical && formula.diceCount > 0)
+            if (critical &&
+                formula.diceCount > 0)
             {
-                for (int i = 0; i < formula.diceCount; i++)
-                    value += UnityEngine.Random.Range(1, Mathf.Max(2, formula.dieSides) + 1);
+                for (int i = 0;
+                     i < formula.diceCount;
+                     i++)
+                {
+                    value +=
+                        UnityEngine.Random.Range(
+                            1,
+                            Mathf.Max(
+                                2,
+                                formula.dieSides) + 1);
+                }
             }
 
-            value += Mathf.RoundToInt(attributeModifier * scalingMultiplier);
+            value += Mathf.RoundToInt(
+                attributeModifier *
+                scalingMultiplier);
+
             return Mathf.Max(0, value);
         }
 
@@ -289,16 +515,32 @@ namespace KeeperFirstCovenant.Combat
             if (action.statusApplications == null)
                 return;
 
-            foreach (StatusApplication application in action.statusApplications)
+            foreach (StatusApplication application
+                     in action.statusApplications)
             {
                 if (application.effect == null)
                     continue;
 
-                if (UnityEngine.Random.value > application.chance)
+                if (UnityEngine.Random.value >
+                    application.chance)
+                {
                     continue;
+                }
 
-                target.ApplyStatus(application.effect, application.durationOverride);
+                target.ApplyStatus(
+                    application.effect,
+                    application.durationOverride);
             }
+        }
+
+        private struct SingleTargetResolution
+        {
+            public bool hit;
+            public bool critical;
+            public int hitRoll;
+            public int damage;
+            public int healing;
+            public int barrier;
         }
     }
 }
