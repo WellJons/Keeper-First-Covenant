@@ -43,6 +43,14 @@ namespace KeeperFirstCovenant.Combat
         Ground
     }
 
+    public enum AreaTargetRule
+    {
+        PrimaryOnly,
+        EnemiesOnly,
+        AlliesOnly,
+        Everyone
+    }
+
     public enum AbilityAttribute
     {
         None,
@@ -61,7 +69,11 @@ namespace KeeperFirstCovenant.Combat
         Ice,
         Poison,
         Electrified,
-        Arcane
+        Arcane,
+        Steam,
+
+        // Internal reaction result. It should not be authored directly on abilities.
+        Detonation
     }
 
     [Serializable]
@@ -112,7 +124,11 @@ namespace KeeperFirstCovenant.Combat
         public readonly GameObject Source;
         public readonly bool Critical;
 
-        public DamagePacket(int amount, DamageType type, GameObject source, bool critical = false)
+        public DamagePacket(
+            int amount,
+            DamageType type,
+            GameObject source,
+            bool critical = false)
         {
             Amount = Mathf.Max(0, amount);
             Type = type;
