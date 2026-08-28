@@ -134,7 +134,7 @@ namespace KeeperFirstCovenant.EditorTools
             {
                 visual.transform.localScale = Vector3.one * scale;
                 visual.transform.localPosition = new Vector3(0f, scale * 0.96f, 0f);
-                root.AddComponent<BillboardCharacter2D>();
+                visual.AddComponent<BillboardCharacter2D>();
             }
 
             if (solid)
