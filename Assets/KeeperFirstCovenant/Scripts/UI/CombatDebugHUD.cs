@@ -154,8 +154,11 @@ namespace KeeperFirstCovenant.UI
         private void DrawAbilities(
             CombatantRuntime actor)
         {
-            if (actor.Definition
-                    .startingActions == null)
+            CombatActionDefinition[] actions =
+                actor.GetAvailableActions();
+
+            if (actions == null ||
+                actions.Length == 0)
             {
                 return;
             }
@@ -164,15 +167,12 @@ namespace KeeperFirstCovenant.UI
             GUILayout.Label("ABILITIES", _title);
 
             for (int i = 0;
-                 i <
-                 actor.Definition
-                     .startingActions.Length &&
+                 i < actions.Length &&
                  i < 8;
                  i++)
             {
                 CombatActionDefinition action =
-                    actor.Definition
-                        .startingActions[i];
+                    actions[i];
 
                 if (action == null)
                     continue;
