@@ -386,7 +386,8 @@ namespace KeeperFirstCovenant.EditorTools
                 root.transform,
                 false);
 
-            visual.AddComponent<BillboardCharacter2D>();
+            if (!entry.horizontal)
+                visual.AddComponent<BillboardCharacter2D>();
 
             SpriteRenderer renderer =
                 visual.AddComponent<SpriteRenderer>();
@@ -425,10 +426,18 @@ namespace KeeperFirstCovenant.EditorTools
             }
             else
             {
+                // Ground art must live on the XZ plane. Billboard rotation is
+                // intentionally disabled for horizontal props.
                 visual.transform.localPosition =
                     new Vector3(
                         0f,
                         0.015f,
+                        0f);
+
+                visual.transform.localRotation =
+                    Quaternion.Euler(
+                        90f,
+                        0f,
                         0f);
             }
 
