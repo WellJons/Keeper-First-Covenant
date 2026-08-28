@@ -308,6 +308,15 @@ namespace KeeperFirstCovenant.Developer
                     GiveItem(item, 10);
                 }
 
+                if ((item is WeaponDefinition ||
+                     item is ArmorDefinition) &&
+                    GUILayout.Button(
+                        "Equip",
+                        GUILayout.Height(22f)))
+                {
+                    EquipItem(item);
+                }
+
                 GUILayout.EndHorizontal();
             }
         }
@@ -370,6 +379,10 @@ namespace KeeperFirstCovenant.Developer
             else if (entry is WeaponDefinition weapon)
             {
                 DrawWeapon(weapon);
+            }
+            else if (entry is ArmorDefinition armor)
+            {
+                DrawArmor(armor);
             }
             else if (entry is ItemDefinition item)
             {
@@ -490,6 +503,45 @@ namespace KeeperFirstCovenant.Developer
             LabelPair(
                 "Magic focus",
                 w.magicalFocus ? "Yes" : "No");
+        }
+
+        private static void DrawArmor(
+            ArmorDefinition armor)
+        {
+            DrawItem(armor);
+
+            GUILayout.Space(5f);
+
+            LabelPair(
+                "Equipment slot",
+                armor.equipmentSlot.ToString());
+
+            LabelPair(
+                "Armor bonus",
+                Signed(armor.armorBonus));
+
+            LabelPair(
+                "Magic Guard bonus",
+                Signed(armor.magicGuardBonus));
+
+            LabelPair(
+                "Movement bonus",
+                $"{armor.movementBonus:+0.0;-0.0;0.0} m");
+
+            if (armor.grantedActions != null &&
+                armor.grantedActions.Length > 0)
+            {
+                GUILayout.Space(4f);
+                GUILayout.Label("Granted actions:");
+
+                foreach (CombatActionDefinition action
+                         in armor.grantedActions)
+                {
+                    if (action != null)
+                        GUILayout.Label(
+                            $"• {action.displayName}");
+                }
+            }
         }
 
         private static void DrawItem(
@@ -802,6 +854,7 @@ namespace KeeperFirstCovenant.Developer
             runtime.SetDefinition(definition);
 
             go.AddComponent<TacticalUnitMover>();
+            go.AddComponent<EquipmentComponent>();
 
             if (definition.faction ==
                 CombatFaction.Player ||
@@ -853,6 +906,49 @@ namespace KeeperFirstCovenant.Developer
             }
 
             inventory.Add(item, amount);
+        }
+
+        private void EquipItem(
+            ItemDefinition item)
+        {
+            if (item == null)
+                return;
+
+            CombatantRuntime recipient =
+                PreferredPartyMember();
+
+            if (recipient == null)
+                return;
+
+            InventoryComponent inventory =
+                recipient.GetComponent<
+                    InventoryComponent>();
+
+            if (inventory == null)
+            {
+                inventory =
+                    recipient.gameObject
+                        .AddComponent<
+                            InventoryComponent>();
+            }
+
+            if (inventory.Count(item) <= 0)
+                inventory.Add(item, 1);
+
+            EquipmentComponent equipment =
+                recipient.GetComponent<
+                    EquipmentComponent>();
+
+            if (equipment == null)
+            {
+                equipment =
+                    recipient.gameObject
+                        .AddComponent<
+                            EquipmentComponent>();
+            }
+
+            if (equipment.Equip(item))
+                recipient.DebugRestoreTurnResources();
         }
 
         private void CreateSurface(
