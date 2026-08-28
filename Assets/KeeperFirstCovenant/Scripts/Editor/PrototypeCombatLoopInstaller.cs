@@ -50,6 +50,7 @@ namespace KeeperFirstCovenant.EditorTools
             }
 
             PrototypeTacticalContentV2.Apply();
+            PrototypeDeveloperTestContent.Build();
 
             GameObject systems =
                 director.gameObject;
