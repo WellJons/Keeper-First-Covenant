@@ -371,7 +371,7 @@ namespace KeeperFirstCovenant.Combat
                     FindObjectsSortMode.None)
                 .Where(candidate =>
                     candidate != null &&
-                    candidate.IsAlive &&
+                    candidate.CanBeTargeted &&
                     Vector3.Distance(
                         candidate.transform.position,
                         effectPoint)
@@ -434,7 +434,7 @@ namespace KeeperFirstCovenant.Combat
                             critical));
                 }
 
-                if (target.IsAlive)
+                if (target.CanBeTargeted)
                 {
                     healing = RollScaled(
                         action.healing,
@@ -445,18 +445,21 @@ namespace KeeperFirstCovenant.Combat
                     if (healing > 0)
                         target.Heal(healing);
 
-                    barrier = RollScaled(
-                        action.barrier,
-                        attributeModifier,
-                        action.scalingMultiplier,
-                        false);
+                    if (target.IsAlive)
+                    {
+                        barrier = RollScaled(
+                            action.barrier,
+                            attributeModifier,
+                            action.scalingMultiplier,
+                            false);
 
-                    if (barrier > 0)
-                        target.AddBarrier(barrier);
+                        if (barrier > 0)
+                            target.AddBarrier(barrier);
 
-                    ApplyStatuses(
-                        action,
-                        target);
+                        ApplyStatuses(
+                            action,
+                            target);
+                    }
                 }
             }
 
