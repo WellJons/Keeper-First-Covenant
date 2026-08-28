@@ -27,6 +27,9 @@ namespace KeeperFirstCovenant.Combat
         private float _remainingMovement;
         private int _barrier;
         private int _reactionsRemaining;
+        private int _downedRoundsRemaining;
+        private bool _isDowned;
+        private bool _isDead;
         private bool _deathRaised;
 
         public CharacterDefinition Definition => definition;
@@ -35,7 +38,21 @@ namespace KeeperFirstCovenant.Combat
                 ? definition.faction
                 : CombatFaction.Neutral;
 
-        public bool IsAlive => _currentHealth > 0;
+        public bool IsAlive =>
+            !_isDead &&
+            !_isDowned &&
+            _currentHealth > 0;
+
+        public bool IsDowned =>
+            _isDowned && !_isDead;
+
+        public bool IsDead => _isDead;
+
+        public bool CanBeTargeted => !_isDead;
+
+        public int DownedRoundsRemaining =>
+            _downedRoundsRemaining;
+
         public int CurrentHealth => _currentHealth;
         public int CurrentMana => _currentMana;
         public int CurrentActionPoints => _currentActionPoints;
@@ -46,6 +63,7 @@ namespace KeeperFirstCovenant.Combat
         public event Action<CombatantRuntime> Changed;
         public event Action<CombatantRuntime, DamagePacket> Damaged;
         public event Action<CombatantRuntime> Died;
+        public event Action<CombatantRuntime> Downed;
         public event Action<CombatantRuntime> TurnStarted;
         public event Action<CombatantRuntime> TurnEnded;
 
@@ -68,6 +86,9 @@ namespace KeeperFirstCovenant.Combat
             _statuses.Clear();
             _barrier = 0;
             _reactionsRemaining = 0;
+            _downedRoundsRemaining = 0;
+            _isDowned = false;
+            _isDead = false;
             _deathRaised = false;
 
             if (definition == null)
@@ -248,6 +269,9 @@ namespace KeeperFirstCovenant.Combat
                 return;
 
             _deathRaised = false;
+            _isDead = false;
+            _isDowned = false;
+            _downedRoundsRemaining = 0;
             _currentHealth = definition.maxHealth;
             _currentMana = definition.maxMana;
             _barrier = 0;
@@ -305,6 +329,15 @@ namespace KeeperFirstCovenant.Combat
 
         public void ApplyDamage(DamagePacket packet)
         {
+            if (_isDead)
+                return;
+
+            if (_isDowned)
+            {
+                RaiseDeath();
+                return;
+            }
+
             if (!IsAlive)
                 return;
 
@@ -351,17 +384,40 @@ namespace KeeperFirstCovenant.Combat
             Changed?.Invoke(this);
 
             if (_currentHealth <= 0)
-                RaiseDeath();
+            {
+                if (CanEnterDownedState())
+                    EnterDownedState();
+                else
+                    RaiseDeath();
+            }
         }
 
         public void Heal(int amount)
         {
-            if (!IsAlive ||
+            if (_isDead ||
                 definition == null ||
                 amount <= 0)
             {
                 return;
             }
+
+            if (_isDowned)
+            {
+                _isDowned = false;
+                _downedRoundsRemaining = 0;
+
+                _currentHealth =
+                    Mathf.Clamp(
+                        amount,
+                        1,
+                        definition.maxHealth);
+
+                Changed?.Invoke(this);
+                return;
+            }
+
+            if (!IsAlive)
+                return;
 
             _currentHealth = Mathf.Min(
                 definition.maxHealth,
@@ -452,6 +508,51 @@ namespace KeeperFirstCovenant.Combat
             Changed?.Invoke(this);
         }
 
+        public void AdvanceDownedRound()
+        {
+            if (!IsDowned)
+                return;
+
+            _downedRoundsRemaining =
+                Mathf.Max(
+                    0,
+                    _downedRoundsRemaining - 1);
+
+            Changed?.Invoke(this);
+
+            if (_downedRoundsRemaining <= 0)
+                RaiseDeath();
+        }
+
+        private bool CanEnterDownedState()
+        {
+            return definition != null &&
+                   (Faction == CombatFaction.Player ||
+                    Faction == CombatFaction.Ally);
+        }
+
+        private void EnterDownedState()
+        {
+            if (_isDead || _isDowned)
+                return;
+
+            _currentHealth = 0;
+            _isDowned = true;
+            _downedRoundsRemaining =
+                Mathf.Max(
+                    1,
+                    definition != null
+                        ? definition.downedRounds
+                        : 3);
+
+            _currentActionPoints = 0;
+            _remainingMovement = 0f;
+            _reactionsRemaining = 0;
+
+            Downed?.Invoke(this);
+            Changed?.Invoke(this);
+        }
+
         private void TickStatuses()
         {
             for (int i = _statuses.Count - 1; i >= 0; i--)
@@ -487,6 +588,9 @@ namespace KeeperFirstCovenant.Combat
                 return;
 
             _deathRaised = true;
+            _isDead = true;
+            _isDowned = false;
+            _downedRoundsRemaining = 0;
             _currentActionPoints = 0;
             _remainingMovement = 0f;
             _reactionsRemaining = 0;
