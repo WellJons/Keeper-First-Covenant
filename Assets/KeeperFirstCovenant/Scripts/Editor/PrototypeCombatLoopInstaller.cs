@@ -62,6 +62,9 @@ namespace KeeperFirstCovenant.EditorTools
                 DeveloperMenu>(systems);
 
             AddIfMissing<
+                CombatLogService>(systems);
+
+            AddIfMissing<
                 CombatStartOnPlay>(systems);
 
             AddIfMissing<
