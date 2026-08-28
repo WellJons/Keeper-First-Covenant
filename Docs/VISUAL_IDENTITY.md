@@ -48,8 +48,12 @@ The current production kit treats these as independent assets/prefabs:
 - brazier;
 - stone stairs;
 - puddle;
+- luminous Covenant rune circle;
 - Covenant banner;
-- rock cluster.
+- rock cluster;
+- wooden crate;
+- road sign;
+- campfire.
 
 This same rule applies as the world expands: houses, doors, roofs, barrels, furniture, bridges, cliffs, vegetation and quest objects are separate reusable pieces.
 
