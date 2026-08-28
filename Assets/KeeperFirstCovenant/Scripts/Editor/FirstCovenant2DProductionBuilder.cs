@@ -18,6 +18,7 @@ namespace KeeperFirstCovenant.EditorTools
             Edward2DProductionBuilder.BuildEdward();
             FirstCovenant2DWorldBuilder.BuildWorldKit();
             BuildTestScene();
+            FirstCovenant2DProductionValidator.ValidateGeneratedAssets(true);
         }
 
         [MenuItem("Keeper First Covenant/2D Production/Build Test Scene")]
