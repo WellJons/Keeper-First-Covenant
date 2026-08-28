@@ -96,6 +96,8 @@ namespace KeeperFirstCovenant.Combat
                     continue;
 
                 Register(combatant);
+                combatant.PrepareForCombat();
+
                 _turnOrder.Add(new InitiativeEntry
                 {
                     combatant = combatant,
