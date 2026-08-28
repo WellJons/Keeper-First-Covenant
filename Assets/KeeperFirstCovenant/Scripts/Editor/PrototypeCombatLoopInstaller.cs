@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using KeeperFirstCovenant.AI;
 using KeeperFirstCovenant.Combat;
+using KeeperFirstCovenant.Developer;
 using KeeperFirstCovenant.Inventory;
 using KeeperFirstCovenant.Player;
 using KeeperFirstCovenant.UI;
@@ -52,6 +53,12 @@ namespace KeeperFirstCovenant.EditorTools
 
             GameObject systems =
                 director.gameObject;
+
+            DeveloperContentCatalogBuilder.BuildOn(
+                systems);
+
+            AddIfMissing<
+                DeveloperMenu>(systems);
 
             AddIfMissing<
                 CombatStartOnPlay>(systems);
@@ -137,7 +144,8 @@ namespace KeeperFirstCovenant.EditorTools
                 "Keeper tactical combat installed. " +
                 "Includes party control, LOS, " +
                 "cover, height, AoE preview, " +
-                "surfaces and reactions.");
+                "surfaces and reactions. " +
+                "F1 opens the developer sandbox.");
         }
 
         private static T AddIfMissing<T>(
