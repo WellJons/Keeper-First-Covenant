@@ -9,11 +9,17 @@ Source sheets committed to the project:
 - `Assets/KeeperFirstCovenant/Art/ProductionSheets/Aelis_ProductionSheet.jpg`
 - `Assets/KeeperFirstCovenant/Art/ProductionSheets/WorldKit_ProductionSheet.jpg`
 
-## One command
+## Automatic build + one command
 
-In Unity run:
+On the first Unity domain reload after checking out this branch, the editor now checks whether the generated production characters, world prefabs and playable scene exist. If they do not, it builds them automatically from the committed sheets.
+
+Manual rebuild remains available at:
 
 `Keeper First Covenant -> Production Art -> BUILD EVERYTHING INTO GAME`
+
+Validation is available at:
+
+`Keeper First Covenant -> Production Art -> Validate In-Game Assets`
 
 The command performs all of the following:
 
@@ -25,6 +31,8 @@ The command performs all of the following:
 6. Keeps the diagnostic cutout shader only as a fallback/debug path.
 7. Creates a playable exploration scene.
 8. Adds the scene to Build Settings.
+9. Adds a smooth top-down camera that follows Edward through exploration.
+10. Validates character prefabs, all Edward animation states/directions, world prefabs and the scene.
 
 Playable scene:
 
@@ -42,6 +50,8 @@ Generated world prefabs:
 `Assets/KeeperFirstCovenant/Prefabs/ProductionWorld/`
 
 The world builder currently produces independent floor tiles, roads, walls, wall corners, arches, pillars, stairs, altar, rune stones, rune circles, puddles, rocks, grass, flowers, trees, braziers, lanterns, banners, campfire, crates, barrels, bench, wagon, tent, fences, statue, crystal and shrine props.
+
+Horizontal floor/road/rune sprites are placed physically on the XZ ground plane and are not billboarded. Upright props remain camera-facing 2D art with independent colliders.
 
 ## Current frame coverage
 
