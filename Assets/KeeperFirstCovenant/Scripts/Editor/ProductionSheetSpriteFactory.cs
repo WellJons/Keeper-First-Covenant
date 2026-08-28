@@ -568,6 +568,148 @@ namespace KeeperFirstCovenant.EditorTools
             }
         }
 
+        public static Sprite CreateExtractedWorldSprite(
+            Texture2D source,
+            SheetRect sheetRect,
+            string name,
+            UnityEngine.Object owner,
+            float pixelsPerUnit,
+            Vector2 pivot)
+        {
+            if (source == null)
+                return null;
+
+            Rect sourceRect = sheetRect.ToSpriteRect(source);
+            int x = Mathf.RoundToInt(sourceRect.x);
+            int y = Mathf.RoundToInt(sourceRect.y);
+            int width = Mathf.Max(1, Mathf.RoundToInt(sourceRect.width));
+            int height = Mathf.Max(1, Mathf.RoundToInt(sourceRect.height));
+
+            Color32[] pixels = source.GetPixels32();
+            Color32[] output = new Color32[width * height];
+
+            for (int py = 0; py < height; py++)
+            {
+                int sourceY = y + py;
+
+                for (int px = 0; px < width; px++)
+                {
+                    int sourceX = x + px;
+                    Color32 color =
+                        pixels[sourceY * source.width + sourceX];
+
+                    int luminance =
+                        (color.r + color.g + color.b) / 3;
+
+                    int blueBias =
+                        color.b -
+                        Mathf.Max(color.r, color.g);
+
+                    bool darkBlueBackground =
+                        luminance < 105 &&
+                        blueBias > 5;
+
+                    bool nearBlackPanel =
+                        luminance < 12;
+
+                    color.a =
+                        (darkBlueBackground || nearBlackPanel)
+                            ? (byte)0
+                            : (byte)255;
+
+                    output[py * width + px] = color;
+                }
+            }
+
+            FeatherExistingAlpha(
+                output,
+                width,
+                height);
+
+            Texture2D extracted =
+                new Texture2D(
+                    width,
+                    height,
+                    TextureFormat.RGBA32,
+                    false);
+
+            extracted.name = name + "_Texture";
+            extracted.wrapMode = TextureWrapMode.Clamp;
+            extracted.filterMode = FilterMode.Bilinear;
+            extracted.SetPixels32(output);
+            extracted.Apply(false, false);
+
+            AssetDatabase.AddObjectToAsset(
+                extracted,
+                owner);
+
+            Sprite sprite =
+                Sprite.Create(
+                    extracted,
+                    new Rect(0f, 0f, width, height),
+                    pivot,
+                    Mathf.Max(1f, pixelsPerUnit),
+                    0,
+                    SpriteMeshType.FullRect);
+
+            sprite.name = name;
+            AssetDatabase.AddObjectToAsset(
+                sprite,
+                owner);
+
+            return sprite;
+        }
+
+        private static void FeatherExistingAlpha(
+            Color32[] pixels,
+            int width,
+            int height)
+        {
+            Color32[] source =
+                (Color32[])pixels.Clone();
+
+            for (int y = 1; y < height - 1; y++)
+            {
+                for (int x = 1; x < width - 1; x++)
+                {
+                    int index = y * width + x;
+
+                    if (source[index].a > 0)
+                        continue;
+
+                    int visibleNeighbors = 0;
+
+                    for (int oy = -1; oy <= 1; oy++)
+                    {
+                        for (int ox = -1; ox <= 1; ox++)
+                        {
+                            if (ox == 0 && oy == 0)
+                                continue;
+
+                            if (source[
+                                (y + oy) * width +
+                                (x + ox)].a > 0)
+                            {
+                                visibleNeighbors++;
+                            }
+                        }
+                    }
+
+                    if (visibleNeighbors <= 0)
+                        continue;
+
+                    Color32 color = source[index];
+                    color.a =
+                        (byte)Mathf.Clamp(
+                            visibleNeighbors * 18,
+                            0,
+                            90);
+
+                    pixels[index] = color;
+                }
+            }
+        }
+
         public static Sprite[] CreateRow(
             Texture2D texture,
             string prefix,
