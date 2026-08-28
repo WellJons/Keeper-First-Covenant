@@ -115,6 +115,10 @@ namespace KeeperFirstCovenant.EditorTools
                     TacticalUnitMover>(
                         combatant.gameObject);
 
+                AddIfMissing<
+                    EquipmentComponent>(
+                        combatant.gameObject);
+
                 if (combatant.Faction ==
                     CombatFaction.Enemy)
                 {
