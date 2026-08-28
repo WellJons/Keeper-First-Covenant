@@ -1,8 +1,19 @@
+using System;
 using KeeperFirstCovenant.Combat;
 using UnityEngine;
 
 namespace KeeperFirstCovenant.Characters
 {
+    [Serializable]
+    public struct DamageAffinity
+    {
+        public DamageType damageType;
+
+        [Tooltip("0 = immune, 0.5 = resistant, 1 = normal, 1.5+ = vulnerable")]
+        [Range(0f, 2.5f)]
+        public float multiplier;
+    }
+
     [CreateAssetMenu(menuName = "Keeper First Covenant/Character Definition", fileName = "CharacterDefinition")]
     public sealed class CharacterDefinition : ScriptableObject
     {
@@ -29,8 +40,36 @@ namespace KeeperFirstCovenant.Characters
         [Min(0.5f)] public float movementMeters = 9f;
         public int initiativeBonus = 0;
 
+        [Header("Damage affinities")]
+        public DamageAffinity[] damageAffinities;
+
         [Header("Starting abilities")]
         public CombatActionDefinition[] startingActions;
+
+        public float GetDamageMultiplier(
+            DamageType damageType)
+        {
+            if (damageAffinities == null)
+                return 1f;
+
+            for (int i = 0;
+                 i < damageAffinities.Length;
+                 i++)
+            {
+                DamageAffinity affinity =
+                    damageAffinities[i];
+
+                if (affinity.damageType ==
+                    damageType)
+                {
+                    return Mathf.Max(
+                        0f,
+                        affinity.multiplier);
+                }
+            }
+
+            return 1f;
+        }
 
         public int GetAttribute(AbilityAttribute attribute)
         {
