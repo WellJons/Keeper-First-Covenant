@@ -329,7 +329,13 @@ namespace KeeperFirstCovenant.EditorTools
             weapon.transform.SetParent(rightHand, false);
             weapon.transform.localPosition = new Vector3(0.02f, -0.03f, 0f);
             r.weaponSocket = weapon.transform;
-            r.weaponRenderer = weapon.AddComponent<SpriteRenderer>();
+
+            GameObject weaponVisual = new GameObject("WeaponVisual");
+            weaponVisual.transform.SetParent(weapon.transform, false);
+            // The generated weapon art is centered in its source texture, while the
+            // actual rotation pivot must sit on the grip in Edward's hand.
+            weaponVisual.transform.localPosition = new Vector3(0f, 0.34f, 0f);
+            r.weaponRenderer = weaponVisual.AddComponent<SpriteRenderer>();
             r.weaponRenderer.sortingOrder = 35;
 
             r.head = Bone(r.torso, "Head", new Vector3(0f, 0.42f, 0f),
