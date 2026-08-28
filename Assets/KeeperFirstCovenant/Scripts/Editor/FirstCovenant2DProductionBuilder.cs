@@ -143,6 +143,10 @@ namespace KeeperFirstCovenant.EditorTools
 
             Place(paths, world.transform, "StoneStairs", new Vector3(0f, 0.015f, 6.7f), 0f);
             Place(paths, world.transform, "Puddle", new Vector3(1.1f, 0.02f, -2.7f), 22f);
+            Place(paths, world.transform, "CovenantRuneCircle", new Vector3(4.1f, 0.025f, 1.2f), 0f);
+            Place(paths, world.transform, "Campfire", new Vector3(-3.1f, 0f, -4.1f), 0f);
+            Place(paths, world.transform, "WoodenCrate", new Vector3(-5.0f, 0f, 1.2f), 0f);
+            Place(paths, world.transform, "RoadSign", new Vector3(3.7f, 0f, -5.4f), 0f);
 
             for (int i = 0; i < 13; i++)
             {
