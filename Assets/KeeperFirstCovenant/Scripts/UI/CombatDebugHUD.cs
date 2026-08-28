@@ -4,9 +4,12 @@ using UnityEngine;
 
 namespace KeeperFirstCovenant.UI
 {
-    public sealed class CombatDebugHUD : MonoBehaviour
+    public sealed class CombatDebugHUD :
+        MonoBehaviour
     {
-        [SerializeField] private TacticalPlayerController playerController;
+        [SerializeField]
+        private TacticalPlayerController
+            playerController;
 
         private GUIStyle _box;
         private GUIStyle _title;
@@ -15,7 +18,11 @@ namespace KeeperFirstCovenant.UI
         private void Start()
         {
             if (playerController == null)
-                playerController = FindFirstObjectByType<TacticalPlayerController>();
+            {
+                playerController =
+                    FindFirstObjectByType<
+                        TacticalPlayerController>();
+            }
         }
 
         private void EnsureStyles()
@@ -25,87 +32,238 @@ namespace KeeperFirstCovenant.UI
 
             _box = new GUIStyle(GUI.skin.box)
             {
-                alignment = TextAnchor.UpperLeft,
-                padding = new RectOffset(14, 14, 12, 12)
+                alignment =
+                    TextAnchor.UpperLeft,
+                padding =
+                    new RectOffset(
+                        14,
+                        14,
+                        12,
+                        12)
             };
 
-            _title = new GUIStyle(GUI.skin.label)
-            {
-                fontSize = 17,
-                fontStyle = FontStyle.Bold
-            };
+            _title =
+                new GUIStyle(GUI.skin.label)
+                {
+                    fontSize = 17,
+                    fontStyle =
+                        FontStyle.Bold
+                };
 
-            _text = new GUIStyle(GUI.skin.label)
-            {
-                fontSize = 14
-            };
+            _text =
+                new GUIStyle(GUI.skin.label)
+                {
+                    fontSize = 14
+                };
         }
 
         private void OnGUI()
         {
             EnsureStyles();
 
-            TurnCombatDirector director = TurnCombatDirector.Instance;
+            TurnCombatDirector director =
+                TurnCombatDirector.Instance;
+
             if (director == null)
                 return;
 
-            GUILayout.BeginArea(new Rect(18f, 18f, 390f, 260f), _box);
-            GUILayout.Label("KEEPER — COMBAT PROTOTYPE", _title);
-            GUILayout.Space(4f);
-            GUILayout.Label($"State: {director.State}    Round: {director.Round}", _text);
+            GUILayout.BeginArea(
+                new Rect(
+                    18f,
+                    18f,
+                    450f,
+                    410f),
+                _box);
 
-            CombatantRuntime actor = director.CurrentActor;
-            if (actor != null && actor.Definition != null)
+            GUILayout.Label(
+                "KEEPER — TACTICAL COMBAT",
+                _title);
+
+            GUILayout.Space(4f);
+
+            GUILayout.Label(
+                $"State: {director.State}    " +
+                $"Round: {director.Round}",
+                _text);
+
+            CombatantRuntime actor =
+                director.CurrentActor;
+
+            if (actor != null &&
+                actor.Definition != null)
             {
-                GUILayout.Label($"Turn: {actor.Definition.displayName}", _text);
                 GUILayout.Label(
-                    $"HP {actor.CurrentHealth}/{actor.Definition.maxHealth}   " +
-                    $"MP {actor.CurrentMana}/{actor.Definition.maxMana}",
+                    $"Turn: " +
+                    $"{actor.Definition.displayName}",
+                    _text);
+
+                GUILayout.Label(
+                    $"HP {actor.CurrentHealth}/" +
+                    $"{actor.Definition.maxHealth}   " +
+                    $"MP {actor.CurrentMana}/" +
+                    $"{actor.Definition.maxMana}",
                     _text);
 
                 GUILayout.Label(
                     $"AP {actor.CurrentActionPoints}   " +
-                    $"Move {actor.RemainingMovement:0.0} m",
+                    $"Move " +
+                    $"{actor.RemainingMovement:0.0} m   " +
+                    $"Reaction " +
+                    $"{actor.ReactionsRemaining}",
                     _text);
 
-                if (actor.Faction == CombatFaction.Player)
+                bool partyControlled =
+                    actor.Faction ==
+                        CombatFaction.Player ||
+                    actor.Faction ==
+                        CombatFaction.Ally;
+
+                if (partyControlled)
                 {
                     GUILayout.Space(5f);
-                    GUILayout.Label("LMB ground — move", _text);
-                    GUILayout.Label("1–8 — select ability | RMB/Esc — cancel", _text);
-                    GUILayout.Label("LMB target — use ability | Space — end turn", _text);
 
-                    if (actor.Definition.startingActions != null)
-                    {
-                        GUILayout.Space(4f);
-                        for (int i = 0; i < actor.Definition.startingActions.Length && i < 8; i++)
-                        {
-                            CombatActionDefinition action = actor.Definition.startingActions[i];
-                            if (action == null)
-                                continue;
+                    GUILayout.Label(
+                        "LMB ground — move | " +
+                        "1–8 — ability | " +
+                        "Space — end turn",
+                        _text);
 
-                            string marker =
-                                playerController != null &&
-                                playerController.SelectedAction == action
-                                    ? "  <SELECTED>"
-                                    : string.Empty;
+                    GUILayout.Label(
+                        "LMB target — use | " +
+                        "RMB/Esc — cancel",
+                        _text);
 
-                            GUILayout.Label(
-                                $"{i + 1}. {action.displayName}  " +
-                                $"AP:{action.actionPointCost} MP:{action.manaCost} " +
-                                $"Range:{action.rangeMeters:0.0}{marker}",
-                                _text);
-                        }
-                    }
+                    DrawAbilities(actor);
+                    DrawPreview();
                 }
             }
-            else if (director.State == CombatState.Victory)
+            else if (director.State ==
+                     CombatState.Victory)
             {
                 GUILayout.Space(8f);
-                GUILayout.Label("Victory. Click a corpse/cache to search it.", _text);
+
+                GUILayout.Label(
+                    "Victory. Click a corpse/cache " +
+                    "to search it.",
+                    _text);
             }
 
             GUILayout.EndArea();
+        }
+
+        private void DrawAbilities(
+            CombatantRuntime actor)
+        {
+            if (actor.Definition
+                    .startingActions == null)
+            {
+                return;
+            }
+
+            GUILayout.Space(6f);
+            GUILayout.Label("ABILITIES", _title);
+
+            for (int i = 0;
+                 i <
+                 actor.Definition
+                     .startingActions.Length &&
+                 i < 8;
+                 i++)
+            {
+                CombatActionDefinition action =
+                    actor.Definition
+                        .startingActions[i];
+
+                if (action == null)
+                    continue;
+
+                string marker =
+                    playerController != null &&
+                    playerController
+                        .SelectedAction == action
+                        ? "  <SELECTED>"
+                        : string.Empty;
+
+                string area =
+                    action.areaRadius > 0.05f
+                        ? $" AoE:{action.areaRadius:0.0}"
+                        : string.Empty;
+
+                GUILayout.Label(
+                    $"{i + 1}. " +
+                    $"{action.displayName}  " +
+                    $"AP:{action.actionPointCost} " +
+                    $"MP:{action.manaCost} " +
+                    $"R:{action.rangeMeters:0.0}" +
+                    $"{area}{marker}",
+                    _text);
+            }
+        }
+
+        private void DrawPreview()
+        {
+            if (playerController == null ||
+                playerController.SelectedAction ==
+                    null ||
+                !playerController.HasHoverPreview)
+            {
+                return;
+            }
+
+            TacticalTargetPreview preview =
+                playerController.CurrentPreview;
+
+            GUILayout.Space(8f);
+            GUILayout.Label(
+                "TARGET PREVIEW",
+                _title);
+
+            if (!preview.Valid)
+            {
+                GUILayout.Label(
+                    $"INVALID: {preview.Failure}",
+                    _text);
+                return;
+            }
+
+            GUILayout.Label(
+                $"Hit: {preview.HitChance}%   " +
+                $"Damage: " +
+                $"{preview.DamageMin}-" +
+                $"{preview.DamageMax}",
+                _text);
+
+            GUILayout.Label(
+                $"Distance: " +
+                $"{preview.Distance:0.0} m   " +
+                $"Cover: {preview.Cover}",
+                _text);
+
+            string heightText =
+                preview.HeightHitModifier == 0
+                    ? "0"
+                    : preview.HeightHitModifier > 0
+                        ? $"+{preview.HeightHitModifier}%"
+                        : $"{preview.HeightHitModifier}%";
+
+            string coverText =
+                preview.CoverHitModifier == 0
+                    ? "0"
+                    : $"{preview.CoverHitModifier}%";
+
+            GUILayout.Label(
+                $"Height modifier: " +
+                $"{heightText}   " +
+                $"Cover modifier: " +
+                $"{coverText}",
+                _text);
+
+            GUILayout.Label(
+                $"Line of sight: " +
+                $"{(preview.HasLineOfSight ? "YES" : "NO")}   " +
+                $"Affected: " +
+                $"{preview.AffectedTargets}",
+                _text);
         }
     }
 }
