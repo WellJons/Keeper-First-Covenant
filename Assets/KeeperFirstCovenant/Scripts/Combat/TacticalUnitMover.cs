@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -15,6 +16,16 @@ namespace KeeperFirstCovenant.Combat
 
         public bool IsMoving => _moveRoutine != null;
 
+        public static event Action<
+            CombatantRuntime,
+            Vector3,
+            Vector3> BeforeStep;
+
+        public static event Action<
+            CombatantRuntime,
+            Vector3,
+            Vector3> StepCompleted;
+
         private void Awake()
         {
             _combatant = GetComponent<CombatantRuntime>();
@@ -23,23 +34,43 @@ namespace KeeperFirstCovenant.Combat
         public bool TryMoveTo(
             TacticalGrid3D grid,
             Vector3 destination,
-            System.Action onComplete = null)
+            Action onComplete = null)
         {
-            if (grid == null || _combatant == null || !_combatant.IsAlive || IsMoving)
+            if (grid == null ||
+                _combatant == null ||
+                !_combatant.IsAlive ||
+                IsMoving)
+            {
                 return false;
+            }
 
-            List<Vector3> path = grid.FindPath(transform.position, destination);
+            List<Vector3> path =
+                grid.FindPath(
+                    transform.position,
+                    destination);
+
             if (path.Count == 0)
                 return false;
 
-            float pathLength = grid.CalculatePathLength(path, transform.position);
-            if (pathLength <= 0f || pathLength > _combatant.RemainingMovement + 0.01f)
+            float pathLength =
+                grid.CalculatePathLength(
+                    path,
+                    transform.position);
+
+            if (pathLength <= 0f ||
+                pathLength >
+                _combatant.RemainingMovement + 0.01f)
+            {
                 return false;
+            }
 
             if (!_combatant.TrySpendMovement(pathLength))
                 return false;
 
-            _moveRoutine = StartCoroutine(MoveRoutine(path, onComplete));
+            _moveRoutine =
+                StartCoroutine(
+                    MoveRoutine(path, onComplete));
+
             return true;
         }
 
@@ -47,7 +78,7 @@ namespace KeeperFirstCovenant.Combat
             TacticalGrid3D grid,
             IReadOnlyList<Vector3> fullPath,
             float maxDistance,
-            System.Action onComplete = null)
+            Action onComplete = null)
         {
             if (grid == null ||
                 fullPath == null ||
@@ -59,7 +90,10 @@ namespace KeeperFirstCovenant.Combat
                 return false;
             }
 
-            float budget = Mathf.Min(Mathf.Max(0f, maxDistance), _combatant.RemainingMovement);
+            float budget = Mathf.Min(
+                Mathf.Max(0f, maxDistance),
+                _combatant.RemainingMovement);
+
             if (budget <= 0.01f)
                 return false;
 
@@ -70,7 +104,8 @@ namespace KeeperFirstCovenant.Combat
             for (int i = 0; i < fullPath.Count; i++)
             {
                 Vector3 point = fullPath[i];
-                float step = Vector3.Distance(previous, point);
+                float step =
+                    Vector3.Distance(previous, point);
 
                 if (used + step > budget + 0.01f)
                     break;
@@ -86,7 +121,10 @@ namespace KeeperFirstCovenant.Combat
             if (!_combatant.TrySpendMovement(used))
                 return false;
 
-            _moveRoutine = StartCoroutine(MoveRoutine(trimmed, onComplete));
+            _moveRoutine =
+                StartCoroutine(
+                    MoveRoutine(trimmed, onComplete));
+
             return true;
         }
 
@@ -99,27 +137,57 @@ namespace KeeperFirstCovenant.Combat
             _moveRoutine = null;
         }
 
-        private IEnumerator MoveRoutine(IReadOnlyList<Vector3> path, System.Action onComplete)
+        private IEnumerator MoveRoutine(
+            IReadOnlyList<Vector3> path,
+            Action onComplete)
         {
             for (int i = 0; i < path.Count; i++)
             {
+                if (!_combatant.IsAlive)
+                    break;
+
+                Vector3 from = transform.position;
                 Vector3 target = path[i];
 
-                while (Vector3.Distance(transform.position, target) > stopDistance)
+                BeforeStep?.Invoke(
+                    _combatant,
+                    from,
+                    target);
+
+                if (!_combatant.IsAlive)
+                    break;
+
+                while (Vector3.Distance(
+                           transform.position,
+                           target) > stopDistance)
                 {
-                    transform.position = Vector3.MoveTowards(
-                        transform.position,
-                        target,
-                        moveSpeed * Time.deltaTime);
+                    if (!_combatant.IsAlive)
+                        break;
+
+                    transform.position =
+                        Vector3.MoveTowards(
+                            transform.position,
+                            target,
+                            moveSpeed * Time.deltaTime);
 
                     yield return null;
                 }
 
+                if (!_combatant.IsAlive)
+                    break;
+
                 transform.position = target;
+
+                StepCompleted?.Invoke(
+                    _combatant,
+                    from,
+                    target);
             }
 
             _moveRoutine = null;
-            onComplete?.Invoke();
+
+            if (_combatant.IsAlive)
+                onComplete?.Invoke();
         }
     }
 }
