@@ -134,11 +134,8 @@ namespace KeeperFirstCovenant.Combat
                     return;
                 }
 
-                if (!walkable &&
-                    verticalDelta >= -safeDrop)
-                {
+                if (!walkable)
                     return;
-                }
 
                 target.transform.position =
                     cellWorld;
