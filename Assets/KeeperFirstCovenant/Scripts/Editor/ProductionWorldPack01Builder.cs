@@ -267,13 +267,20 @@ namespace KeeperFirstCovenant.EditorTools
         {
             GameObject root = new GameObject(name);
 
+            GameObject visual =
+                new GameObject("Visual");
+
+            visual.transform.SetParent(root.transform, false);
+
             SpriteRenderer renderer =
-                root.AddComponent<SpriteRenderer>();
+                visual.AddComponent<SpriteRenderer>();
 
             renderer.sprite = sprite;
             renderer.sortingOrder = sortingOrder;
 
-            root.AddComponent<BillboardCharacter2D>();
+            // Only the painted visual billboards toward the camera.
+            // Gameplay collision remains stable in world space.
+            visual.AddComponent<BillboardCharacter2D>();
 
             return root;
         }
