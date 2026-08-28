@@ -21,6 +21,7 @@ namespace KeeperFirstCovenant.EditorTools
             ProductionSheetCharacterBuilder.BuildAllCharacters();
             ProductionSheetWorldBuilder.BuildWorld();
             BuildPlayableScene();
+            ProductionArtValidator.Validate(true);
 
             Debug.Log(
                 "Approved production art has been built into game assets and the playable scene.");
