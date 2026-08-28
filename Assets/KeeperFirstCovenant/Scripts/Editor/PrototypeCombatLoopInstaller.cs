@@ -11,72 +11,149 @@ using UnityEngine;
 
 namespace KeeperFirstCovenant.EditorTools
 {
-    public static class PrototypeCombatLoopInstaller
+    public static class
+        PrototypeCombatLoopInstaller
     {
         private const string LootPath =
-            "Assets/KeeperFirstCovenant/Generated/Data/RoadsideLoot.asset";
+            "Assets/KeeperFirstCovenant/" +
+            "Generated/Data/" +
+            "RoadsideLoot.asset";
 
-        [MenuItem("Keeper First Covenant/Install Combat Loop In Open Scene")]
+        [MenuItem(
+            "Keeper First Covenant/" +
+            "Install Combat Loop In Open Scene")]
         public static void Install()
         {
-            TurnCombatDirector director = Object.FindFirstObjectByType<TurnCombatDirector>();
+            TurnCombatDirector director =
+                Object.FindFirstObjectByType<
+                    TurnCombatDirector>();
+
             if (director == null)
             {
-                Debug.LogError("No TurnCombatDirector found. Build the prototype road scene first.");
+                Debug.LogError(
+                    "No TurnCombatDirector found. " +
+                    "Build the prototype road " +
+                    "scene first.");
                 return;
             }
 
-            TacticalGrid3D grid = Object.FindFirstObjectByType<TacticalGrid3D>();
+            TacticalGrid3D grid =
+                Object.FindFirstObjectByType<
+                    TacticalGrid3D>();
+
             if (grid == null)
             {
-                Debug.LogError("No TacticalGrid3D found.");
+                Debug.LogError(
+                    "No TacticalGrid3D found.");
                 return;
             }
 
-            GameObject systems = director.gameObject;
+            GameObject systems =
+                director.gameObject;
 
-            AddIfMissing<CombatStartOnPlay>(systems);
-            AddIfMissing<TacticalPlayerController>(systems);
-            AddIfMissing<EnemyTurnBrain>(systems);
-            AddIfMissing<WorldInteractionController>(systems);
-            AddIfMissing<CombatDebugHUD>(systems);
+            AddIfMissing<
+                CombatStartOnPlay>(systems);
+
+            AddIfMissing<
+                TacticalPlayerController>(
+                    systems);
+
+            AddIfMissing<
+                EnemyTurnBrain>(systems);
+
+            AddIfMissing<
+                WorldInteractionController>(
+                    systems);
+
+            AddIfMissing<
+                CombatDebugHUD>(systems);
+
+            AddIfMissing<
+                TacticalLineOfSight>(systems);
+
+            AddIfMissing<
+                ElementalSurfaceSystem>(
+                    systems);
+
+            AddIfMissing<
+                OpportunityAttackSystem>(
+                    systems);
+
+            AddIfMissing<
+                TacticalTargetingIndicator>(
+                    systems);
 
             LootTableDefinition loot =
-                AssetDatabase.LoadAssetAtPath<LootTableDefinition>(LootPath);
+                AssetDatabase
+                    .LoadAssetAtPath<
+                        LootTableDefinition>(
+                        LootPath);
 
             CombatantRuntime[] combatants =
-                Object.FindObjectsByType<CombatantRuntime>(FindObjectsSortMode.None);
+                Object.FindObjectsByType<
+                    CombatantRuntime>(
+                    FindObjectsSortMode.None);
 
-            foreach (CombatantRuntime combatant in combatants)
+            foreach (CombatantRuntime combatant
+                     in combatants)
             {
-                AddIfMissing<CombatAutoRegister>(combatant.gameObject);
-                AddIfMissing<TacticalUnitMover>(combatant.gameObject);
+                AddIfMissing<
+                    CombatAutoRegister>(
+                        combatant.gameObject);
 
-                if (combatant.Faction == CombatFaction.Enemy)
+                AddIfMissing<
+                    TacticalUnitMover>(
+                        combatant.gameObject);
+
+                if (combatant.Faction ==
+                    CombatFaction.Enemy)
                 {
                     CorpseLootOnDeath corpse =
-                        AddIfMissing<CorpseLootOnDeath>(combatant.gameObject);
+                        AddIfMissing<
+                            CorpseLootOnDeath>(
+                                combatant
+                                    .gameObject);
 
                     if (loot != null)
-                        corpse.Configure(loot, "Search body");
+                    {
+                        corpse.Configure(
+                            loot,
+                            "Search body");
+                    }
                 }
             }
 
-            EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
-            EditorSceneManager.SaveOpenScenes();
+            EditorSceneManager
+                .MarkSceneDirty(
+                    EditorSceneManager
+                        .GetActiveScene());
+
+            EditorSceneManager
+                .SaveOpenScenes();
 
             Debug.Log(
-                "Keeper combat loop installed. Play controls: " +
-                "LMB move, 1-8 ability, LMB target, Space end turn.");
+                "Keeper tactical combat installed. " +
+                "Includes party control, LOS, " +
+                "cover, height, AoE preview, " +
+                "surfaces and reactions.");
         }
 
-        private static T AddIfMissing<T>(GameObject go) where T : Component
+        private static T AddIfMissing<T>(
+            GameObject go)
+            where T : Component
         {
-            T component = go.GetComponent<T>();
-            if (component == null)
-                component = Undo.AddComponent<T>(go);
+            T component =
+                go.GetComponent<T>();
 
-            EditorUtility.SetDirty(component);
+            if (component == null)
+            {
+                component =
+                    Undo.AddComponent<T>(go);
+            }
+
+            EditorUtility.SetDirty(
+                component);
+
             return component;
         }
     }
