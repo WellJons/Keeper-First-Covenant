@@ -165,7 +165,7 @@ namespace KeeperFirstCovenant.AI
                 .Any(x =>
                     x != null &&
                     x != actor &&
-                    x.IsAlive &&
+                    x.CanBeTargeted &&
                     Vector3.Distance(
                         x.transform.position,
                         point) <= radius);
