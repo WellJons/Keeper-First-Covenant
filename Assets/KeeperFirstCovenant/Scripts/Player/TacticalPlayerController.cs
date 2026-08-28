@@ -203,8 +203,7 @@ namespace KeeperFirstCovenant.Player
                 return;
 
             CombatActionDefinition[] actions =
-                _currentActor.Definition
-                    ?.startingActions;
+                _currentActor.GetAvailableActions();
 
             if (actions == null ||
                 index >= actions.Length)
