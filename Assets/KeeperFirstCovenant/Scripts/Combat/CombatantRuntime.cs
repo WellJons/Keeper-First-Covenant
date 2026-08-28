@@ -197,6 +197,51 @@ namespace KeeperFirstCovenant.Combat
             return true;
         }
 
+        public void DebugRestoreFull()
+        {
+            if (definition == null)
+                return;
+
+            _deathRaised = false;
+            _currentHealth = definition.maxHealth;
+            _currentMana = definition.maxMana;
+            _barrier = 0;
+            DebugRestoreTurnResources();
+            Changed?.Invoke(this);
+        }
+
+        public void DebugRestoreTurnResources()
+        {
+            if (definition == null || !IsAlive)
+                return;
+
+            _currentActionPoints = Mathf.Max(
+                0,
+                definition.actionPoints +
+                GetStatusActionPointModifier());
+
+            _remainingMovement = Mathf.Max(
+                0f,
+                definition.movementMeters *
+                GetStatusMovementMultiplier());
+
+            _reactionsRemaining = 1;
+            Changed?.Invoke(this);
+        }
+
+        public void DebugKill()
+        {
+            if (!IsAlive)
+                return;
+
+            _currentHealth = 0;
+            _currentActionPoints = 0;
+            _remainingMovement = 0f;
+            _reactionsRemaining = 0;
+            Changed?.Invoke(this);
+            RaiseDeath();
+        }
+
         public void ApplyDamage(DamagePacket packet)
         {
             if (!IsAlive)
