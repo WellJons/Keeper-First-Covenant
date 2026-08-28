@@ -20,6 +20,10 @@ namespace KeeperFirstCovenant.EditorTools
         {
             ProductionSheetCharacterBuilder.BuildAllCharacters();
             ProductionSheetWorldBuilder.BuildWorld();
+
+            if (ProductionWorldPack01Builder.SourcesPresent())
+                ProductionWorldPack01Builder.BuildPrefabs();
+
             BuildPlayableScene();
             ProductionArtValidator.Validate(true);
 
@@ -59,6 +63,9 @@ namespace KeeperFirstCovenant.EditorTools
 
             BuildGround(root.transform);
             BuildRuins(root.transform);
+
+            if (ProductionWorldPack01Builder.SourcesPresent())
+                ProductionWorldPack01Builder.AddShowcaseToScene(root.transform);
 
             GameObject edward =
                 InstantiateCharacter(
