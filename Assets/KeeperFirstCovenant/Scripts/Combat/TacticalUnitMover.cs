@@ -64,9 +64,6 @@ namespace KeeperFirstCovenant.Combat
                 return false;
             }
 
-            if (!_combatant.TrySpendMovement(pathLength))
-                return false;
-
             _moveRoutine =
                 StartCoroutine(
                     MoveRoutine(path, onComplete));
@@ -118,9 +115,6 @@ namespace KeeperFirstCovenant.Combat
             if (trimmed.Count == 0 || used <= 0f)
                 return false;
 
-            if (!_combatant.TrySpendMovement(used))
-                return false;
-
             _moveRoutine =
                 StartCoroutine(
                     MoveRoutine(trimmed, onComplete));
@@ -148,6 +142,14 @@ namespace KeeperFirstCovenant.Combat
 
                 Vector3 from = transform.position;
                 Vector3 target = path[i];
+                float stepCost =
+                    Vector3.Distance(from, target);
+
+                if (!_combatant.TrySpendMovement(
+                        stepCost))
+                {
+                    break;
+                }
 
                 BeforeStep?.Invoke(
                     _combatant,
