@@ -478,7 +478,7 @@ namespace KeeperFirstCovenant.EditorTools
             string name,
             SheetRect rect)
         {
-            return ProductionSheetSpriteFactory.CreatePersistentSprite(
+            return ProductionSheetSpriteFactory.CreateExtractedCharacterSprite(
                 sheet,
                 rect,
                 name,
@@ -493,7 +493,7 @@ namespace KeeperFirstCovenant.EditorTools
             string prefix,
             SheetRect[] rects)
         {
-            return ProductionSheetSpriteFactory.CreateRow(
+            return ProductionSheetSpriteFactory.CreateExtractedCharacterRow(
                 sheet,
                 prefix,
                 rects,
