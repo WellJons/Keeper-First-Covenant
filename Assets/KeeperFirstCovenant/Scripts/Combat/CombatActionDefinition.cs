@@ -11,7 +11,9 @@ namespace KeeperFirstCovenant.Combat
         [Min(0)] public int durationOverride;
     }
 
-    [CreateAssetMenu(menuName = "Keeper First Covenant/Combat Action", fileName = "CombatAction")]
+    [CreateAssetMenu(
+        menuName = "Keeper First Covenant/Combat Action",
+        fileName = "CombatAction")]
     public sealed class CombatActionDefinition : ScriptableObject
     {
         [Header("Identity")]
@@ -27,7 +29,13 @@ namespace KeeperFirstCovenant.Combat
         [Min(0)] public int manaCost;
         [Min(0f)] public float rangeMeters = 1.8f;
         [Min(0f)] public float areaRadius;
+        public AreaTargetRule areaTargetRule = AreaTargetRule.PrimaryOnly;
         [Min(0)] public int cooldownTurns;
+
+        [Header("Tactical rules")]
+        public bool requiresLineOfSight = true;
+        public bool ignoresCover;
+        public bool usesHeightAdvantage = true;
 
         [Header("Attack")]
         public bool requiresAttackRoll = true;
