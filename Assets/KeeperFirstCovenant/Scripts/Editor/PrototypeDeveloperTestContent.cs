@@ -197,6 +197,36 @@ namespace KeeperFirstCovenant.EditorTools
                 3.8f,
                 44);
 
+            CreateArmor(
+                "dev_leather_coat",
+                "DEV Leather Coat",
+                EquipmentSlot.Chest,
+                1,
+                0,
+                0f,
+                4.0f,
+                38);
+
+            CreateArmor(
+                "dev_reinforced_coat",
+                "DEV Reinforced Coat",
+                EquipmentSlot.Chest,
+                3,
+                1,
+                -0.6f,
+                7.5f,
+                82);
+
+            CreateArmor(
+                "dev_arcane_mantle",
+                "DEV Arcane Mantle",
+                EquipmentSlot.Cloak,
+                0,
+                3,
+                0.3f,
+                2.2f,
+                110);
+
             CreateBasicItem(
                 "dev_healing_draught",
                 "DEV Healing Draught",
@@ -351,7 +381,91 @@ namespace KeeperFirstCovenant.EditorTools
             weapon.stackable = false;
             weapon.maxStack = 1;
 
+            CombatActionDefinition attack =
+                GetOrCreate<CombatActionDefinition>(
+                    DataRoot +
+                    "/Action_" +
+                    id +
+                    "_Attack.asset");
+
+            attack.actionId =
+                id + "_attack";
+            attack.displayName =
+                displayName + " Attack";
+
+            bool ranged =
+                weaponClass ==
+                    WeaponClass.Bow ||
+                weaponClass ==
+                    WeaponClass.Crossbow;
+
+            attack.category =
+                ranged
+                    ? CombatActionCategory.Ranged
+                    : CombatActionCategory.Melee;
+
+            attack.targetKind =
+                TargetKind.Enemy;
+            attack.actionPointCost = 1;
+            attack.manaCost = 0;
+            attack.rangeMeters = range;
+            attack.areaRadius = 0f;
+            attack.areaTargetRule =
+                AreaTargetRule.PrimaryOnly;
+            attack.requiresLineOfSight = true;
+            attack.ignoresCover = !ranged;
+            attack.usesHeightAdvantage = ranged;
+            attack.requiresAttackRoll = true;
+            attack.baseHitChance = 78;
+            attack.damage = damage;
+            attack.damageType = damageType;
+            attack.scalingAttribute = scaling;
+            attack.scalingMultiplier = 1f;
+            attack.createsSurface =
+                SurfaceType.None;
+
+            weapon.grantedActions =
+                new[] { attack };
+
+            EditorUtility.SetDirty(attack);
             EditorUtility.SetDirty(weapon);
+        }
+
+        private static void CreateArmor(
+            string id,
+            string displayName,
+            EquipmentSlot slot,
+            int armorBonus,
+            int magicGuardBonus,
+            float movementBonus,
+            float weight,
+            int value)
+        {
+            ArmorDefinition armor =
+                GetOrCreate<ArmorDefinition>(
+                    DataRoot +
+                    "/Armor_" +
+                    id +
+                    ".asset");
+
+            armor.itemId = id;
+            armor.displayName = displayName;
+            armor.category =
+                ItemCategory.Armor;
+            armor.rarity =
+                ItemRarity.Common;
+            armor.equipmentSlot = slot;
+            armor.armorBonus = armorBonus;
+            armor.magicGuardBonus =
+                magicGuardBonus;
+            armor.movementBonus =
+                movementBonus;
+            armor.weight = weight;
+            armor.valueSilver = value;
+            armor.stackable = false;
+            armor.maxStack = 1;
+
+            EditorUtility.SetDirty(armor);
         }
 
         private static void CreateBasicItem(
