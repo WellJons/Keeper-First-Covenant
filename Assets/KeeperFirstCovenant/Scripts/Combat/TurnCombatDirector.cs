@@ -127,6 +127,93 @@ namespace KeeperFirstCovenant.Combat
             AdvanceTurn();
         }
 
+        public void AddParticipant(
+            CombatantRuntime combatant)
+        {
+            if (combatant == null ||
+                !combatant.IsAlive ||
+                combatant.Faction == CombatFaction.Neutral)
+            {
+                return;
+            }
+
+            Register(combatant);
+
+            if (State != CombatState.Active)
+                return;
+
+            if (_turnOrder.Any(x =>
+                    x.combatant == combatant))
+            {
+                return;
+            }
+
+            CombatantRuntime current = CurrentActor;
+
+            combatant.PrepareForCombat();
+
+            _turnOrder.Add(
+                new InitiativeEntry
+                {
+                    combatant = combatant,
+                    initiative = combatant.RollInitiative()
+                });
+
+            _turnOrder.Sort((a, b) =>
+            {
+                int compare =
+                    b.initiative.CompareTo(
+                        a.initiative);
+
+                if (compare != 0)
+                    return compare;
+
+                int aPerception =
+                    a.combatant.Definition != null
+                        ? a.combatant.Definition.perception
+                        : 0;
+
+                int bPerception =
+                    b.combatant.Definition != null
+                        ? b.combatant.Definition.perception
+                        : 0;
+
+                return bPerception.CompareTo(
+                    aPerception);
+            });
+
+            _turnIndex =
+                current != null
+                    ? _turnOrder.FindIndex(
+                        x => x.combatant == current)
+                    : -1;
+        }
+
+        public void DebugRestartCombat()
+        {
+            foreach (CombatantRuntime combatant
+                     in _registered.ToArray())
+            {
+                if (combatant == null)
+                    _registered.Remove(combatant);
+            }
+
+            State = CombatState.Exploration;
+            Round = 0;
+            CurrentActor = null;
+            _turnIndex = -1;
+            _turnOrder.Clear();
+
+            IEnumerable<CombatantRuntime> alive =
+                _registered.Where(x =>
+                    x != null &&
+                    x.IsAlive &&
+                    x.Faction !=
+                        CombatFaction.Neutral);
+
+            BeginCombat(alive);
+        }
+
         public void EndCurrentTurn()
         {
             if (State != CombatState.Active || CurrentActor == null)
