@@ -628,8 +628,10 @@ namespace KeeperFirstCovenant.EditorTools
             float controllerHeight,
             float controllerRadius)
         {
-            Material cutout =
-                ProductionSheetSpriteFactory.GetOrCreateSheetMaterial();
+            // Character frames are raster-extracted to real alpha subtextures.
+            // They intentionally use Unity's default sprite material so dark
+            // clothing and colored magic are never removed by chroma keying.
+            Material cutout = null;
 
             GameObject root = new GameObject(objectName);
 
@@ -739,7 +741,10 @@ namespace KeeperFirstCovenant.EditorTools
                 layer.AddComponent<SpriteRenderer>();
 
             renderer.sortingOrder = sortingOrder;
-            renderer.sharedMaterial = material;
+
+            if (material != null)
+                renderer.sharedMaterial = material;
+
             return renderer;
         }
 
