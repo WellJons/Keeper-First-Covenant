@@ -70,3 +70,16 @@ Running **Install Combat Loop In Open Scene** now upgrades generated character d
 - equipment-driven actions;
 - resistances and vulnerabilities;
 - stealth and detection.
+
+## Additional v2 systems
+
+- Damage resistances, immunities and vulnerabilities per character.
+- Damage preview accounts for target affinity and mitigation.
+- Enemy positioning scores reachable cells by:
+  - attack range;
+  - line of sight;
+  - distance;
+  - high ground;
+  - elemental surface danger.
+- AI avoids damaging surfaces when a safer useful position is available.
+- F1 developer sandbox for side-by-side content comparison and combat testing.
