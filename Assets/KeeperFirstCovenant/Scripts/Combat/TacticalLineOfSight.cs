@@ -97,6 +97,28 @@ namespace KeeperFirstCovenant.Combat
             return new LineOfSightResult(true, cover, visible);
         }
 
+        public bool HasLineOfSightFromPoint(
+            Vector3 actorPosition,
+            CombatantRuntime target)
+        {
+            if (target == null)
+                return false;
+
+            Vector3 origin =
+                actorPosition +
+                Vector3.up * eyeHeight;
+
+            Vector3 destination =
+                target.transform.position +
+                Vector3.up * targetCenterHeight;
+
+            return IsVisible(
+                origin,
+                destination,
+                null,
+                target.transform);
+        }
+
         public bool HasLineOfSightToPoint(
             CombatantRuntime actor,
             Vector3 point)
