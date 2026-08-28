@@ -34,8 +34,12 @@ namespace KeeperFirstCovenant.EditorTools
             "Brazier",
             "StoneStairs",
             "Puddle",
+            "CovenantRuneCircle",
             "CovenantBanner",
-            "RockCluster"
+            "RockCluster",
+            "WoodenCrate",
+            "RoadSign",
+            "Campfire"
         };
 
         [MenuItem("Keeper First Covenant/2D Production/Validate Generated Assets")]
