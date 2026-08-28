@@ -21,9 +21,10 @@ The command performs all of the following:
 2. Builds frame-animation libraries for Edward, Eleanor, Aelis and White.
 3. Builds actual character prefabs with the high-resolution frame animator.
 4. Builds independent world sprites and prefabs from the approved world sheet.
-5. Creates a cutout material that removes the dark sheet background in gameplay.
-6. Creates a playable exploration scene.
-7. Adds the scene to Build Settings.
+5. Raster-extracts transparent RGBA subtextures from the dark production-sheet panels, so characters/world props do not render as rectangular cards.
+6. Keeps the diagnostic cutout shader only as a fallback/debug path.
+7. Creates a playable exploration scene.
+8. Adds the scene to Build Settings.
 
 Playable scene:
 
