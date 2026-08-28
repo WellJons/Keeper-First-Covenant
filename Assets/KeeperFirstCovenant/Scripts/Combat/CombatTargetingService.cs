@@ -173,6 +173,54 @@ namespace KeeperFirstCovenant.Combat
                 damageMin,
                 action.damage.Maximum + scaledBonus);
 
+            if (target != null &&
+                damageMax > 0)
+            {
+                float multiplier =
+                    target.GetDamageMultiplier(
+                        action.damageType);
+
+                if (multiplier <= 0f)
+                {
+                    damageMin = 0;
+                    damageMax = 0;
+                }
+                else
+                {
+                    damageMin =
+                        Mathf.RoundToInt(
+                            damageMin * multiplier);
+
+                    damageMax =
+                        Mathf.RoundToInt(
+                            damageMax * multiplier);
+
+                    int mitigation =
+                        target.GetDamageMitigation(
+                            action.damageType);
+
+                    if (damageMin > 0)
+                    {
+                        damageMin =
+                            Mathf.Max(
+                                1,
+                                damageMin -
+                                mitigation);
+                    }
+
+                    if (damageMax > 0)
+                    {
+                        damageMax =
+                            Mathf.Max(
+                                damageMin,
+                                Mathf.Max(
+                                    1,
+                                    damageMax -
+                                    mitigation));
+                    }
+                }
+            }
+
             int affectedTargets = CountAffectedTargets(
                 actor,
                 action,
