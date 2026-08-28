@@ -19,6 +19,7 @@ namespace KeeperFirstCovenant.Developer
             Items,
             Weapons,
             Abilities,
+            Log,
             Cheats
         }
 
@@ -37,6 +38,7 @@ namespace KeeperFirstCovenant.Developer
         private Vector2 _listScroll;
         private Vector2 _leftScroll;
         private Vector2 _rightScroll;
+        private Vector2 _logScroll;
         private string _search = string.Empty;
 
         private UObject _left;
@@ -143,6 +145,7 @@ namespace KeeperFirstCovenant.Developer
                     "Items",
                     "Weapons",
                     "Abilities",
+                    "Log",
                     "Cheats"
                 });
 
@@ -151,6 +154,10 @@ namespace KeeperFirstCovenant.Developer
             if (_tab == Tab.Cheats)
             {
                 DrawCheats();
+            }
+            else if (_tab == Tab.Log)
+            {
+                DrawLog();
             }
             else
             {
@@ -625,6 +632,56 @@ namespace KeeperFirstCovenant.Developer
                 GUILayout.Space(5f);
                 GUILayout.Label(a.description);
             }
+        }
+
+        private void DrawLog()
+        {
+            CombatLogService log =
+                CombatLogService.Instance;
+
+            GUILayout.BeginHorizontal();
+
+            GUILayout.Label(
+                "COMBAT LOG",
+                _sectionStyle);
+
+            GUILayout.FlexibleSpace();
+
+            if (GUILayout.Button(
+                    "Clear",
+                    GUILayout.Width(80f)))
+            {
+                log?.Clear();
+            }
+
+            GUILayout.EndHorizontal();
+
+            _logScroll =
+                GUILayout.BeginScrollView(
+                    _logScroll,
+                    GUI.skin.box);
+
+            if (log == null)
+            {
+                GUILayout.Label(
+                    "CombatLogService is not installed.");
+            }
+            else
+            {
+                IReadOnlyList<string> entries =
+                    log.Entries;
+
+                for (int i = entries.Count - 1;
+                     i >= 0;
+                     i--)
+                {
+                    GUILayout.Label(
+                        entries[i],
+                        _smallStyle);
+                }
+            }
+
+            GUILayout.EndScrollView();
         }
 
         private void DrawCheats()
