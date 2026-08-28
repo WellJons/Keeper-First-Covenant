@@ -58,8 +58,12 @@ namespace KeeperFirstCovenant.EditorTools
                 BuildProp("Brazier", false, 1.0f, false, DrawBrazier),
                 BuildProp("StoneStairs", true, 1.9f, false, DrawStairs),
                 BuildProp("Puddle", true, 1.25f, false, DrawPuddle),
+                BuildProp("CovenantRuneCircle", true, 1.55f, false, DrawRuneCircle),
                 BuildProp("CovenantBanner", false, 1.55f, false, DrawBanner),
-                BuildProp("RockCluster", false, 0.95f, true, DrawRocks)
+                BuildProp("RockCluster", false, 0.95f, true, DrawRocks),
+                BuildProp("WoodenCrate", false, 0.75f, true, DrawCrate),
+                BuildProp("RoadSign", false, 1.0f, false, DrawRoadSign),
+                BuildProp("Campfire", false, 0.72f, false, DrawCampfire)
             };
 
             AssetDatabase.SaveAssets();
@@ -75,7 +79,8 @@ namespace KeeperFirstCovenant.EditorTools
             {
                 "AncientStoneTile", "BrokenWall", "BrokenPillar", "AncientShrine",
                 "RuneStone", "OldTree", "GrassClump", "Brazier", "StoneStairs",
-                "Puddle", "CovenantBanner", "RockCluster"
+                "Puddle", "CovenantRuneCircle", "CovenantBanner", "RockCluster",
+                "WoodenCrate", "RoadSign", "Campfire"
             };
 
             foreach (string id in ids)
@@ -95,7 +100,9 @@ namespace KeeperFirstCovenant.EditorTools
                 Info("RuneStone", false), Info("OldTree", false),
                 Info("GrassClump", false), Info("Brazier", false),
                 Info("StoneStairs", true), Info("Puddle", true),
-                Info("CovenantBanner", false), Info("RockCluster", false)
+                Info("CovenantRuneCircle", true), Info("CovenantBanner", false),
+                Info("RockCluster", false), Info("WoodenCrate", false),
+                Info("RoadSign", false), Info("Campfire", false)
             };
         }
 
@@ -342,6 +349,73 @@ namespace KeeperFirstCovenant.EditorTools
             c.Ellipse(new Vector2(128, 128), new Vector2(84, 45), water);
             c.Line(new Vector2(67, 137), new Vector2(119, 151), 2f, shine);
             c.Line(new Vector2(137, 111), new Vector2(188, 125), 2f, shine);
+        }
+
+        private static void DrawRuneCircle(CelSpritePainter c)
+        {
+            Color soft = new Color(0.42f, 0.68f, 0.74f, 0.34f);
+            c.Ring(new Vector2(128, 128), new Vector2(94, 94), 5f, soft);
+            c.Ring(new Vector2(128, 128), new Vector2(71, 71), 3f, Ancient);
+            c.Ring(new Vector2(128, 128), new Vector2(32, 32), 3f, AncientCore);
+            c.GlowLine(new Vector2(128, 34), new Vector2(128, 222), AncientCore, Ancient);
+            c.GlowLine(new Vector2(34, 128), new Vector2(222, 128), AncientCore, Ancient);
+            c.GlowLine(new Vector2(61, 61), new Vector2(195, 195), AncientCore, Ancient);
+            c.GlowLine(new Vector2(195, 61), new Vector2(61, 195), AncientCore, Ancient);
+            c.Polygon(Ancient,
+                new Vector2(128, 48), new Vector2(143, 80), new Vector2(176, 83),
+                new Vector2(153, 107), new Vector2(161, 139), new Vector2(128, 121),
+                new Vector2(95, 139), new Vector2(103, 107), new Vector2(80, 83),
+                new Vector2(113, 80));
+        }
+
+        private static void DrawCrate(CelSpritePainter c)
+        {
+            Color wood = new Color(0.22f, 0.14f, 0.085f, 1f);
+            Color woodLight = new Color(0.38f, 0.24f, 0.13f, 1f);
+            c.Polygon(Outline,
+                new Vector2(52, 48), new Vector2(204, 48), new Vector2(218, 190),
+                new Vector2(128, 222), new Vector2(38, 190));
+            c.Polygon(wood,
+                new Vector2(59, 55), new Vector2(197, 55), new Vector2(210, 184),
+                new Vector2(128, 213), new Vector2(46, 184));
+            c.Line(new Vector2(64, 70), new Vector2(193, 190), 10f, Outline);
+            c.Line(new Vector2(192, 70), new Vector2(63, 190), 10f, Outline);
+            c.Line(new Vector2(65, 72), new Vector2(190, 187), 4f, woodLight);
+            c.Line(new Vector2(190, 72), new Vector2(66, 187), 4f, woodLight);
+            c.Rect(51, 113, 155, 11, Outline);
+            c.Rect(55, 116, 147, 5, Metal);
+        }
+
+        private static void DrawRoadSign(CelSpritePainter c)
+        {
+            Color wood = new Color(0.20f, 0.13f, 0.08f, 1f);
+            c.Rect(116, 28, 25, 195, Outline);
+            c.Rect(122, 33, 13, 186, wood);
+            c.Polygon(Outline,
+                new Vector2(39, 159), new Vector2(184, 159), new Vector2(218, 187),
+                new Vector2(184, 215), new Vector2(39, 215));
+            c.Polygon(wood,
+                new Vector2(47, 166), new Vector2(181, 166), new Vector2(207, 187),
+                new Vector2(181, 208), new Vector2(47, 208));
+            c.Line(new Vector2(67, 185), new Vector2(164, 185), 3f, new Color(0.46f, 0.31f, 0.17f));
+            c.Line(new Vector2(67, 194), new Vector2(145, 194), 2f, new Color(0.46f, 0.31f, 0.17f));
+            c.Speckles(77, new Rect(51, 170, 128, 31), 12, Moss, 0.8f, 2f);
+        }
+
+        private static void DrawCampfire(CelSpritePainter c)
+        {
+            c.Line(new Vector2(67, 59), new Vector2(186, 93), 16f, Outline);
+            c.Line(new Vector2(72, 62), new Vector2(181, 91), 9f, Bark);
+            c.Line(new Vector2(184, 59), new Vector2(70, 96), 16f, Outline);
+            c.Line(new Vector2(179, 63), new Vector2(75, 93), 9f, Bark);
+            c.Polygon(Fire,
+                new Vector2(89, 86), new Vector2(102, 128), new Vector2(116, 111),
+                new Vector2(126, 180), new Vector2(142, 137), new Vector2(158, 160),
+                new Vector2(166, 103), new Vector2(145, 78), new Vector2(127, 101),
+                new Vector2(108, 76));
+            c.Polygon(FireCore,
+                new Vector2(111, 95), new Vector2(121, 132), new Vector2(130, 109),
+                new Vector2(145, 128), new Vector2(148, 100), new Vector2(132, 86));
         }
 
         private static void DrawBanner(CelSpritePainter c)
