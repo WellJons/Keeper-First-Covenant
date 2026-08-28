@@ -40,6 +40,10 @@ namespace KeeperFirstCovenant.Characters
         [Min(0.5f)] public float movementMeters = 9f;
         public int initiativeBonus = 0;
 
+        [Header("Party survival")]
+        [Min(1)]
+        public int downedRounds = 3;
+
         [Header("Damage affinities")]
         public DamageAffinity[] damageAffinities;
 
