@@ -460,6 +460,16 @@ namespace KeeperFirstCovenant.Combat
                             action,
                             target);
                     }
+
+                    if (target.IsAlive &&
+                        action.pushDistanceMeters > 0.01f)
+                    {
+                        ForcedMovementSystem.Instance?.Push(
+                            actor,
+                            target,
+                            action.pushDistanceMeters,
+                            action.pushAwayFromActor);
+                    }
                 }
             }
 
