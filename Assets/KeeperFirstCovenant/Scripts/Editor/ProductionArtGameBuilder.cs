@@ -104,7 +104,12 @@ namespace KeeperFirstCovenant.EditorTools
                 }
             }
 
-            BuildCamera(root.transform);
+            BuildCamera(
+                root.transform,
+                edward != null
+                    ? edward.transform
+                    : null);
+
             BuildWorldLighting(root.transform);
 
             EditorSceneManager.MarkSceneDirty(scene);
@@ -277,7 +282,9 @@ namespace KeeperFirstCovenant.EditorTools
             return instance;
         }
 
-        private static void BuildCamera(Transform parent)
+        private static void BuildCamera(
+            Transform parent,
+            Transform followTarget)
         {
             GameObject cameraObject =
                 new GameObject("Main Camera");
@@ -302,6 +309,23 @@ namespace KeeperFirstCovenant.EditorTools
                 new Vector3(0f, 0.65f, 0.4f));
 
             cameraObject.AddComponent<AudioListener>();
+
+            TopDownCameraFollow follow =
+                cameraObject.AddComponent<TopDownCameraFollow>();
+
+            if (followTarget != null)
+            {
+                follow.Configure(
+                    followTarget,
+                    new Vector3(
+                        9.2f,
+                        10.7f,
+                        -11.5f),
+                    new Vector3(
+                        0f,
+                        0.65f,
+                        0.4f));
+            }
         }
 
         private static void BuildWorldLighting(Transform parent)
