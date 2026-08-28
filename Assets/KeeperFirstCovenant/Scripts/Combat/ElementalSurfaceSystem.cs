@@ -97,6 +97,80 @@ namespace KeeperFirstCovenant.Combat
                 request.Source);
         }
 
+        public float GetHazardCostAt(
+            Vector3 position,
+            CombatantRuntime actor = null)
+        {
+            float total = 0f;
+
+            foreach (SurfacePatch patch in patches)
+            {
+                if (patch == null ||
+                    Vector3.Distance(
+                        position,
+                        patch.center) >
+                    patch.radius + 0.05f)
+                {
+                    continue;
+                }
+
+                float baseCost;
+                DamageType damageType;
+                bool hasDamageType = true;
+
+                switch (patch.type)
+                {
+                    case SurfaceType.Fire:
+                        baseCost = 4f;
+                        damageType = DamageType.Fire;
+                        break;
+
+                    case SurfaceType.Poison:
+                        baseCost = 3f;
+                        damageType = DamageType.Poison;
+                        break;
+
+                    case SurfaceType.Electrified:
+                        baseCost = 4f;
+                        damageType = DamageType.Lightning;
+                        break;
+
+                    case SurfaceType.Arcane:
+                        baseCost = 3f;
+                        damageType = DamageType.Arcane;
+                        break;
+
+                    case SurfaceType.Ice:
+                        baseCost = 1.5f;
+                        damageType = DamageType.Frost;
+                        break;
+
+                    case SurfaceType.Steam:
+                        baseCost = 0.75f;
+                        damageType = DamageType.Fire;
+                        break;
+
+                    default:
+                        baseCost = 0f;
+                        damageType = DamageType.Physical;
+                        hasDamageType = false;
+                        break;
+                }
+
+                if (actor != null &&
+                    hasDamageType)
+                {
+                    baseCost *=
+                        actor.GetDamageMultiplier(
+                            damageType);
+                }
+
+                total += baseCost;
+            }
+
+            return total;
+        }
+
         public void CreateOrReact(
             SurfaceType incoming,
             Vector3 center,
