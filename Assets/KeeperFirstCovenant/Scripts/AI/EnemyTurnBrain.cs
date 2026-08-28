@@ -234,7 +234,7 @@ namespace KeeperFirstCovenant.AI
                 CombatantRuntime target)
         {
             CombatActionDefinition[] actions =
-                actor.Definition?.startingActions;
+                actor.GetAvailableActions();
 
             if (actions == null ||
                 actions.Length == 0)
