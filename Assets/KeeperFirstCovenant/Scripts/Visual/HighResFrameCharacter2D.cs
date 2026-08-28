@@ -198,8 +198,22 @@ namespace KeeperFirstCovenant.Visual
 
                 if (!_finishedEmitted)
                 {
+                    CharacterFrameState finishedState = state;
+                    FrameAnimationClip8 finishedClip = _activeBaseClip;
+
                     _finishedEmitted = true;
-                    AnimationFinished?.Invoke(state);
+                    AnimationFinished?.Invoke(finishedState);
+
+                    // Combat or other listeners can choose their own next state.
+                    // If nobody changed the animation, ordinary one-shots return
+                    // to exploration idle automatically. Death intentionally holds
+                    // its final painted frame.
+                    if (_activeBaseClip == finishedClip &&
+                        state == finishedState &&
+                        finishedState != CharacterFrameState.Death)
+                    {
+                        RestartState(CharacterFrameState.Idle, true);
+                    }
                 }
 
                 return;
