@@ -58,17 +58,22 @@ namespace KeeperFirstCovenant.Characters
                 acceleration * Time.deltaTime);
 
             bool hasInput = worldDirection.sqrMagnitude > 0.0001f;
-            if (hasInput)
+            bool actionLocked = animator2D != null && animator2D.IsOneShotPlaying;
+
+            if (!actionLocked)
             {
-                animator2D?.FaceWorldDirection(worldDirection);
-                animator2D?.PlayLoop(
-                    running
-                        ? CharacterFrameState.Run
-                        : CharacterFrameState.Walk);
-            }
-            else
-            {
-                animator2D?.PlayLoop(CharacterFrameState.Idle);
+                if (hasInput)
+                {
+                    animator2D?.FaceWorldDirection(worldDirection);
+                    animator2D?.PlayLoop(
+                        running
+                            ? CharacterFrameState.Run
+                            : CharacterFrameState.Walk);
+                }
+                else
+                {
+                    animator2D?.PlayLoop(CharacterFrameState.Idle);
+                }
             }
 
             MoveCharacter(_planarVelocity);
