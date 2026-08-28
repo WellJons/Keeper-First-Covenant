@@ -63,6 +63,43 @@ namespace KeeperFirstCovenant.EditorTools
 
             ConfigureMelee(swordSlash);
 
+            CombatActionDefinition shove =
+                GetOrCreateAction(
+                    "Shove",
+                    "Shove");
+
+            shove.category =
+                CombatActionCategory.Control;
+            shove.targetKind =
+                TargetKind.Enemy;
+            shove.actionPointCost = 1;
+            shove.manaCost = 0;
+            shove.rangeMeters = 1.8f;
+            shove.areaRadius = 0f;
+            shove.areaTargetRule =
+                AreaTargetRule.PrimaryOnly;
+            shove.requiresLineOfSight = true;
+            shove.ignoresCover = true;
+            shove.usesHeightAdvantage = false;
+            shove.requiresAttackRoll = true;
+            shove.baseHitChance = 75;
+            shove.damage =
+                new DiceFormula(0, 2, 0);
+            shove.healing =
+                new DiceFormula(0, 2, 0);
+            shove.barrier =
+                new DiceFormula(0, 2, 0);
+            shove.damageType =
+                DamageType.Physical;
+            shove.scalingAttribute =
+                AbilityAttribute.Strength;
+            shove.scalingMultiplier = 0f;
+            shove.pushDistanceMeters = 3f;
+            shove.pushAwayFromActor = true;
+            shove.createsSurface =
+                SurfaceType.None;
+            EditorUtility.SetDirty(shove);
+
             CombatActionDefinition fireBurst =
                 GetOrCreateAction(
                     "FireBurst",
@@ -339,6 +376,7 @@ namespace KeeperFirstCovenant.EditorTools
                 new[]
                 {
                     swordSlash,
+                    shove,
                     fireBurst
                 };
 
