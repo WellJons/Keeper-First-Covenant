@@ -222,9 +222,11 @@ namespace KeeperFirstCovenant.EditorTools
             {
                 Vector2 pi = polygon[i];
                 Vector2 pj = polygon[j];
+                float denominator = pj.y - pi.y;
                 bool intersects = ((pi.y > point.y) != (pj.y > point.y)) &&
+                                  Mathf.Abs(denominator) > 0.00001f &&
                                   (point.x < (pj.x - pi.x) * (point.y - pi.y) /
-                                   Mathf.Max(0.00001f, pj.y - pi.y) + pi.x);
+                                   denominator + pi.x);
                 if (intersects)
                     inside = !inside;
             }
