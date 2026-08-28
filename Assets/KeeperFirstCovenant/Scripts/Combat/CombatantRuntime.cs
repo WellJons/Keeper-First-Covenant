@@ -17,22 +17,30 @@ namespace KeeperFirstCovenant.Combat
 
         [SerializeField] private CharacterDefinition definition;
 
-        private readonly List<ActiveStatus> _statuses = new List<ActiveStatus>();
+        private readonly List<ActiveStatus> _statuses =
+            new List<ActiveStatus>();
+
         private int _currentHealth;
         private int _currentMana;
         private int _currentActionPoints;
         private float _remainingMovement;
         private int _barrier;
+        private int _reactionsRemaining;
         private bool _deathRaised;
 
         public CharacterDefinition Definition => definition;
-        public CombatFaction Faction => definition != null ? definition.faction : CombatFaction.Neutral;
+        public CombatFaction Faction =>
+            definition != null
+                ? definition.faction
+                : CombatFaction.Neutral;
+
         public bool IsAlive => _currentHealth > 0;
         public int CurrentHealth => _currentHealth;
         public int CurrentMana => _currentMana;
         public int CurrentActionPoints => _currentActionPoints;
         public float RemainingMovement => _remainingMovement;
         public int Barrier => _barrier;
+        public int ReactionsRemaining => _reactionsRemaining;
 
         public event Action<CombatantRuntime> Changed;
         public event Action<CombatantRuntime, DamagePacket> Damaged;
@@ -45,7 +53,9 @@ namespace KeeperFirstCovenant.Combat
             ResetRuntime();
         }
 
-        public void SetDefinition(CharacterDefinition value, bool reset = true)
+        public void SetDefinition(
+            CharacterDefinition value,
+            bool reset = true)
         {
             definition = value;
             if (reset)
@@ -56,6 +66,7 @@ namespace KeeperFirstCovenant.Combat
         {
             _statuses.Clear();
             _barrier = 0;
+            _reactionsRemaining = 0;
             _deathRaised = false;
 
             if (definition == null)
@@ -80,8 +91,15 @@ namespace KeeperFirstCovenant.Combat
                 ? definition.GetModifier(AbilityAttribute.Perception)
                 : 0;
 
-            int bonus = definition != null ? definition.initiativeBonus : 0;
-            return UnityEngine.Random.Range(1, 21) + perception + bonus + GetStatusInitiativeModifier();
+            int bonus =
+                definition != null
+                    ? definition.initiativeBonus
+                    : 0;
+
+            return UnityEngine.Random.Range(1, 21) +
+                   perception +
+                   bonus +
+                   GetStatusInitiativeModifier();
         }
 
         public void BeginTurn()
@@ -94,8 +112,18 @@ namespace KeeperFirstCovenant.Combat
             if (!IsAlive)
                 return;
 
-            _currentActionPoints = Mathf.Max(0, definition.actionPoints + GetStatusActionPointModifier());
-            _remainingMovement = Mathf.Max(0f, definition.movementMeters * GetStatusMovementMultiplier());
+            _currentActionPoints = Mathf.Max(
+                0,
+                definition.actionPoints +
+                GetStatusActionPointModifier());
+
+            _remainingMovement = Mathf.Max(
+                0f,
+                definition.movementMeters *
+                GetStatusMovementMultiplier());
+
+            _reactionsRemaining = 1;
+
             TurnStarted?.Invoke(this);
             Changed?.Invoke(this);
         }
@@ -110,8 +138,12 @@ namespace KeeperFirstCovenant.Combat
 
         public bool TrySpendActionPoints(int amount)
         {
-            if (!IsAlive || amount < 0 || _currentActionPoints < amount)
+            if (!IsAlive ||
+                amount < 0 ||
+                _currentActionPoints < amount)
+            {
                 return false;
+            }
 
             _currentActionPoints -= amount;
             Changed?.Invoke(this);
@@ -120,8 +152,12 @@ namespace KeeperFirstCovenant.Combat
 
         public bool TrySpendMana(int amount)
         {
-            if (!IsAlive || amount < 0 || _currentMana < amount)
+            if (!IsAlive ||
+                amount < 0 ||
+                _currentMana < amount)
+            {
                 return false;
+            }
 
             _currentMana -= amount;
             Changed?.Invoke(this);
@@ -130,10 +166,24 @@ namespace KeeperFirstCovenant.Combat
 
         public bool TrySpendMovement(float meters)
         {
-            if (!IsAlive || meters < 0f || _remainingMovement + 0.001f < meters)
+            if (!IsAlive ||
+                meters < 0f ||
+                _remainingMovement + 0.001f < meters)
+            {
                 return false;
+            }
 
             _remainingMovement -= meters;
+            Changed?.Invoke(this);
+            return true;
+        }
+
+        public bool TrySpendReaction()
+        {
+            if (!IsAlive || _reactionsRemaining <= 0)
+                return false;
+
+            _reactionsRemaining--;
             Changed?.Invoke(this);
             return true;
         }
@@ -154,12 +204,18 @@ namespace KeeperFirstCovenant.Combat
 
             if (remaining > 0)
             {
-                int mitigation = packet.Type == DamageType.Physical
-                    ? GetArmor()
-                    : GetMagicGuard();
+                int mitigation =
+                    packet.Type == DamageType.Physical
+                        ? GetArmor()
+                        : GetMagicGuard();
 
-                int applied = Mathf.Max(1, remaining - mitigation);
-                _currentHealth = Mathf.Max(0, _currentHealth - applied);
+                int applied = Mathf.Max(
+                    1,
+                    remaining - mitigation);
+
+                _currentHealth = Mathf.Max(
+                    0,
+                    _currentHealth - applied);
             }
 
             Damaged?.Invoke(this, packet);
@@ -171,19 +227,33 @@ namespace KeeperFirstCovenant.Combat
 
         public void Heal(int amount)
         {
-            if (!IsAlive || definition == null || amount <= 0)
+            if (!IsAlive ||
+                definition == null ||
+                amount <= 0)
+            {
                 return;
+            }
 
-            _currentHealth = Mathf.Min(definition.maxHealth, _currentHealth + amount);
+            _currentHealth = Mathf.Min(
+                definition.maxHealth,
+                _currentHealth + amount);
+
             Changed?.Invoke(this);
         }
 
         public void RestoreMana(int amount)
         {
-            if (!IsAlive || definition == null || amount <= 0)
+            if (!IsAlive ||
+                definition == null ||
+                amount <= 0)
+            {
                 return;
+            }
 
-            _currentMana = Mathf.Min(definition.maxMana, _currentMana + amount);
+            _currentMana = Mathf.Min(
+                definition.maxMana,
+                _currentMana + amount);
+
             Changed?.Invoke(this);
         }
 
@@ -196,16 +266,22 @@ namespace KeeperFirstCovenant.Combat
             Changed?.Invoke(this);
         }
 
-        public void ApplyStatus(StatusEffectDefinition effect, int durationOverride = 0)
+        public void ApplyStatus(
+            StatusEffectDefinition effect,
+            int durationOverride = 0)
         {
             if (effect == null || !IsAlive)
                 return;
 
-            int duration = durationOverride > 0
-                ? durationOverride
-                : effect.defaultDurationTurns;
+            int duration =
+                durationOverride > 0
+                    ? durationOverride
+                    : effect.defaultDurationTurns;
 
-            ActiveStatus existing = _statuses.Find(x => x.definition == effect);
+            ActiveStatus existing =
+                _statuses.Find(x =>
+                    x.definition == effect);
+
             if (existing == null)
             {
                 _statuses.Add(new ActiveStatus
@@ -222,15 +298,24 @@ namespace KeeperFirstCovenant.Combat
             switch (effect.stacking)
             {
                 case StatusStacking.RefreshDuration:
-                    existing.turnsRemaining = Mathf.Max(existing.turnsRemaining, duration);
+                    existing.turnsRemaining =
+                        Mathf.Max(
+                            existing.turnsRemaining,
+                            duration);
                     break;
+
                 case StatusStacking.StackDuration:
                     existing.turnsRemaining += duration;
                     break;
+
                 case StatusStacking.StackIntensity:
                     existing.intensity++;
-                    existing.turnsRemaining = Mathf.Max(existing.turnsRemaining, duration);
+                    existing.turnsRemaining =
+                        Mathf.Max(
+                            existing.turnsRemaining,
+                            duration);
                     break;
+
                 case StatusStacking.IgnoreNew:
                     break;
             }
@@ -244,16 +329,24 @@ namespace KeeperFirstCovenant.Combat
             {
                 ActiveStatus active = _statuses[i];
 
-                if (active.definition != null && active.definition.dealsDamageEachTurn)
+                if (active.definition != null &&
+                    active.definition.dealsDamageEachTurn)
                 {
-                    int amount = active.definition.turnDamage.Roll() * Mathf.Max(1, active.intensity);
-                    ApplyDamage(new DamagePacket(amount, active.definition.turnDamageType, gameObject));
+                    int amount =
+                        active.definition.turnDamage.Roll() *
+                        Mathf.Max(1, active.intensity);
+
+                    ApplyDamage(new DamagePacket(
+                        amount,
+                        active.definition.turnDamageType,
+                        gameObject));
 
                     if (!IsAlive)
                         return;
                 }
 
                 active.turnsRemaining--;
+
                 if (active.turnsRemaining <= 0)
                     _statuses.RemoveAt(i);
             }
@@ -267,55 +360,98 @@ namespace KeeperFirstCovenant.Combat
             _deathRaised = true;
             _currentActionPoints = 0;
             _remainingMovement = 0f;
+            _reactionsRemaining = 0;
             Died?.Invoke(this);
         }
 
         private int GetArmor()
         {
-            int value = definition != null ? definition.armor : 0;
+            int value =
+                definition != null
+                    ? definition.armor
+                    : 0;
+
             foreach (ActiveStatus status in _statuses)
+            {
                 if (status.definition != null)
-                    value += status.definition.armorModifier * status.intensity;
+                {
+                    value +=
+                        status.definition.armorModifier *
+                        status.intensity;
+                }
+            }
+
             return Mathf.Max(0, value);
         }
 
         private int GetMagicGuard()
         {
-            int value = definition != null ? definition.magicGuard : 0;
+            int value =
+                definition != null
+                    ? definition.magicGuard
+                    : 0;
+
             foreach (ActiveStatus status in _statuses)
+            {
                 if (status.definition != null)
-                    value += status.definition.magicGuardModifier * status.intensity;
+                {
+                    value +=
+                        status.definition.magicGuardModifier *
+                        status.intensity;
+                }
+            }
+
             return Mathf.Max(0, value);
         }
 
         private int GetStatusInitiativeModifier()
         {
             int value = 0;
+
             foreach (ActiveStatus status in _statuses)
+            {
                 if (status.definition != null)
-                    value += status.definition.initiativeModifier * status.intensity;
+                {
+                    value +=
+                        status.definition.initiativeModifier *
+                        status.intensity;
+                }
+            }
+
             return value;
         }
 
         private int GetStatusActionPointModifier()
         {
             int value = 0;
+
             foreach (ActiveStatus status in _statuses)
+            {
                 if (status.definition != null)
-                    value += status.definition.actionPointModifier * status.intensity;
+                {
+                    value +=
+                        status.definition.actionPointModifier *
+                        status.intensity;
+                }
+            }
+
             return value;
         }
 
         private float GetStatusMovementMultiplier()
         {
             float value = 1f;
+
             foreach (ActiveStatus status in _statuses)
             {
                 if (status.definition == null)
                     continue;
 
-                value *= Mathf.Max(0f, status.definition.movementMultiplier);
+                value *= Mathf.Max(
+                    0f,
+                    status.definition.movementMultiplier);
             }
+
             return value;
         }
     }
