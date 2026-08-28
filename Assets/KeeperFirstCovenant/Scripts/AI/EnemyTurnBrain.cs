@@ -103,48 +103,43 @@ namespace KeeperFirstCovenant.AI
                      actor.RemainingMovement >
                      0.01f)
             {
-                List<Vector3> path =
-                    grid.FindPath(
-                        actor.transform.position,
-                        target.transform.position);
-
-                if (path.Count > 0)
+                if (TacticalPositionEvaluator
+                        .TryFindBestDestination(
+                            actor,
+                            target,
+                            action,
+                            grid,
+                            out Vector3 destination))
                 {
-                    float desiredRange =
-                        action != null
-                            ? Mathf.Max(
-                                grid.CellSize * 0.75f,
-                                action.rangeMeters *
-                                0.85f)
-                            : grid.CellSize;
+                    List<Vector3> path =
+                        grid.FindPath(
+                            actor.transform.position,
+                            destination);
 
-                    path =
-                        TrimBeforeTarget(
+                    if (path.Count > 0)
+                    {
+                        TacticalUnitMover mover =
+                            actor.GetComponent<
+                                TacticalUnitMover>();
+
+                        if (mover == null)
+                        {
+                            mover =
+                                actor.gameObject
+                                    .AddComponent<
+                                        TacticalUnitMover>();
+                        }
+
+                        mover.TryMoveAlongPath(
+                            grid,
                             path,
-                            target.transform.position,
-                            desiredRange);
+                            actor.RemainingMovement);
 
-                    TacticalUnitMover mover =
-                        actor.GetComponent<
-                            TacticalUnitMover>();
-
-                    if (mover == null)
-                    {
-                        mover =
-                            actor.gameObject
-                                .AddComponent<
-                                    TacticalUnitMover>();
-                    }
-
-                    mover.TryMoveAlongPath(
-                        grid,
-                        path,
-                        actor.RemainingMovement);
-
-                    while (mover.IsMoving &&
-                           actor.IsAlive)
-                    {
-                        yield return null;
+                        while (mover.IsMoving &&
+                               actor.IsAlive)
+                        {
+                            yield return null;
+                        }
                     }
 
                     if (actor.IsAlive)
@@ -294,69 +289,6 @@ namespace KeeperFirstCovenant.AI
             }
 
             return best;
-        }
-
-        private static List<Vector3>
-            TrimBeforeTarget(
-                List<Vector3> path,
-                Vector3 targetPosition,
-                float desiredRange)
-        {
-            if (path == null ||
-                path.Count == 0)
-            {
-                return path;
-            }
-
-            int stopIndex = -1;
-
-            for (int i = 0;
-                 i < path.Count;
-                 i++)
-            {
-                if (Vector3.Distance(
-                        path[i],
-                        targetPosition) <=
-                    desiredRange)
-                {
-                    stopIndex = i;
-                    break;
-                }
-            }
-
-            if (stopIndex < 0)
-            {
-                if (path.Count > 1)
-                {
-                    path.RemoveAt(
-                        path.Count - 1);
-                }
-
-                return path;
-            }
-
-            int keepCount =
-                Mathf.Max(
-                    0,
-                    stopIndex + 1);
-
-            while (path.Count >
-                   keepCount)
-            {
-                path.RemoveAt(
-                    path.Count - 1);
-            }
-
-            if (path.Count > 0 &&
-                Vector3.Distance(
-                    path[path.Count - 1],
-                    targetPosition) < 0.2f)
-            {
-                path.RemoveAt(
-                    path.Count - 1);
-            }
-
-            return path;
         }
 
         private void EndTurn()
