@@ -1,46 +1,98 @@
 # Visual identity — Keeper: First Covenant
 
+## Locked direction
+
+The game is a **hand-drawn dark-fantasy anime RPG viewed from a top-down three-quarter camera**.
+
+It is not a collection of character illustrations placed over backgrounds. The player walks through the actual world before combat. When combat starts, the same characters and the same location become tactical gameplay space.
+
+Everything visible should therefore be buildable from reusable 2D game assets.
+
 ## Core read
 
-The game should be recognizable from a screenshot before a logo is visible.
+The visual language is **lived-in human fantasy interrupted by ancient impossible systems**.
 
-The visual language is **lived-in fantasy interrupted by ancient impossible systems**. Villages, roads, taverns, armor and camps should feel practical and warm. Ancient magic should feel cleaner, colder and more geometrically precise than the human world.
+Human spaces should feel practical, warm and imperfect: roads, inns, villages, woods, camps, worn armor, weathered stone, cloth, iron and fire.
 
-## Signature motifs
+Ancient systems should look unnaturally precise: silver geometry, incomplete circles, clean luminous lines surviving inside ruined stone, black restraint rings and collars, impossible symmetry and cold cyan/silver reflection.
 
-- **Warm fire vs cold silver** — Edward's living flame against ancient silver structures.
-- **Silver circles, threads and incomplete rings** — voluntary bonds, ancient memory and the First Covenant.
-- **Black bands, collars and broken rings** — restraint, ownership and forced systems.
-- **White** — Eleanor/White as a recurring visual anchor long before the player understands why.
-- **Weathered stone with precise ancient inlays** — ruins should not read as generic rubble; impossible clean geometry survives inside age and decay.
-- **Roads and thresholds** — the story is about leaving home, crossing borders and choosing whether to continue.
-
-## Character silhouette rules
+## Signature contrast
 
 ### Edward
-Young travelling swordsman first, legendary figure much later. Practical boots, layered travel clothing, a visibly used sword and no early heroic royal silhouette. Fire should become part of the silhouette gradually.
+
+Dark readable silhouette, messy black hair, practical layered travel clothing, worn cloak, separate sword and leather gear.
+
+His signature color is **living orange-red fire**. Fire should cast warm light onto nearby sprites and environment instead of existing as a permanently painted orange outline.
 
 ### Eleanor / White
-At the beginning she must read immediately as a real white goat, not a mascot costume. Her only unmistakably strange feature is the old black/silver collar and unusually deliberate body language.
 
-### Lucian
-Cleaner silhouette than Edward: expensive travel coat, precise accessories, staff/focus or seal tools. He should look like someone who notices details before everyone else.
+White is a visual anchor. At the beginning Eleanor is a believable white goat with an old black/silver collar, not a mascot. Human Eleanor later uses luminous silver-white ancient geometry.
 
 ### Aelis
-Healer/support silhouette: accessible medical gear, satchels, bandages, charms and protective layers rather than a priest stereotype. Her role should be readable without making her visually fragile.
 
-### Roland
-Veteran pressure fighter. Minimal ornament, efficient armor, scarred equipment, strong stance. He should look dangerous before drawing a weapon.
+Support/healer silhouette with pale clothing and restrained cyan/mint effects. Medical/support function should remain readable from the gameplay camera.
 
-## Environment layers
+## Environment construction
 
-1. **Human present** — wood, iron, cloth, muddy roads, markets, inns, farms.
-2. **Old world scars** — sealed foundations, forgotten stones, strange frost, broken emblems.
-3. **Ancient order** — silver geometry, impossible symmetry, black restraint architecture.
-4. **Northern escalation** — scale, cold, distance, unfamiliar languages and structures that stop resembling southern civilization.
+The environment must never be baked into one giant scene illustration.
 
-## UI direction
+The current production kit treats these as independent assets/prefabs:
 
-Avoid generic parchment everywhere. The HUD should be clean and readable during tactics. Character/quest screens may use subtle book/ledger framing, but combat information should use restrained dark panels, silver linework and warm highlights for living/player-controlled actions.
+- ancient stone ground tile;
+- broken wall;
+- broken pillar;
+- shrine;
+- rune stone;
+- old tree;
+- grass clump;
+- brazier;
+- stone stairs;
+- puddle;
+- Covenant banner;
+- rock cluster.
 
-The recurring ring motif can appear in initiative portraits, spell targeting, save/load markers and major story transitions.
+This same rule applies as the world expands: houses, doors, roofs, barrels, furniture, bridges, cliffs, vegetation and quest objects are separate reusable pieces.
+
+## Character construction
+
+Gameplay characters use layered 2D rigs.
+
+A character can move through the open world in eight directions, breathe and blink while idle, move head/hair/cloak layers, attack and defend, react to impacts, cast abilities, die, bleed and change equipment/weapon.
+
+Dialogue portraits can be more detailed, but portraits do not replace gameplay sprites.
+
+## Screenshot identity
+
+A screenshot should be recognizable before the logo appears.
+
+Recurring visual motifs:
+
+- warm fire versus cold silver;
+- silver circles and incomplete rings;
+- black collars/bands/restraint architecture;
+- white as an Eleanor motif;
+- ancient geometry embedded in weathered human ruins;
+- roads, thresholds and crossings;
+- pools and wet stone reflecting magic.
+
+## Restrictions
+
+Avoid:
+
+- photorealistic rendering;
+- western painterly Diablo-like characters;
+- chibi proportions;
+- RPG Maker sprites;
+- tiny pixel sprites;
+- browser/MMO visual language;
+- generic parchment covering the entire UI;
+- static splash-art posing presented as gameplay;
+- environments painted as one non-interactive background.
+
+## UI
+
+Exploration UI should stay restrained.
+
+Tactical combat adds only the information necessary for play: initiative, AP/movement, targeting, status, contextual ability bar and subtle tactical grid/area highlights.
+
+Use dark translucent panels, thin silver linework and warm accents for player-controlled actions. The HUD must not hide the drawn world.
