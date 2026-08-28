@@ -325,7 +325,7 @@ namespace KeeperFirstCovenant.Player
                 .Any(x =>
                     x != null &&
                     x != _currentActor &&
-                    x.IsAlive &&
+                    x.CanBeTargeted &&
                     Vector3.Distance(
                         x.transform.position,
                         destination) <= radius);
