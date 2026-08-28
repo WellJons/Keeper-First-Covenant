@@ -49,3 +49,16 @@ The first bootstrap establishes reusable systems before story scenes are built:
 10. an Editor prototype builder for the first recognizable visual test scene.
 
 Unity version is kept aligned with the existing Cats and Kills project for easier parallel development.
+
+
+## Approved production art playable build
+
+The approved dark-fantasy anime production sheets are committed under `Assets/KeeperFirstCovenant/Art/ProductionSheets/` and are now consumed by the Unity project.
+
+In Unity run:
+
+`Keeper First Covenant -> Production Art -> BUILD EVERYTHING INTO GAME`
+
+This builds runtime Sprite assets, Edward/Eleanor/Aelis/White prefabs, independent world prefabs and `Assets/KeeperFirstCovenant/Scenes/ProductionArt_Playground.unity`.
+
+See `Docs/PRODUCTION_ART_INTEGRATION.md` for the current frame coverage and remaining directional-art work.
