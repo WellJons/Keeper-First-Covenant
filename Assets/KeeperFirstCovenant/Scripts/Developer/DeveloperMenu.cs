@@ -30,6 +30,9 @@ namespace KeeperFirstCovenant.Developer
         private readonly List<GameObject> _spawned =
             new List<GameObject>();
 
+        private readonly List<GameObject> _disabledAllies =
+            new List<GameObject>();
+
         private Tab _tab;
         private Vector2 _listScroll;
         private Vector2 _leftScroll;
@@ -610,6 +613,21 @@ namespace KeeperFirstCovenant.Developer
                 }
             }
 
+            GUILayout.Space(6f);
+
+            if (GUILayout.Button(
+                    "Solo test: disable allies"))
+            {
+                DisableOptionalAllies();
+            }
+
+            if (_disabledAllies.Count > 0 &&
+                GUILayout.Button(
+                    "Restore disabled allies"))
+            {
+                RestoreOptionalAllies();
+            }
+
             GUILayout.EndVertical();
 
             GUILayout.Space(8f);
@@ -888,6 +906,83 @@ namespace KeeperFirstCovenant.Developer
 
             if (removedAny &&
                 director != null &&
+                director.State ==
+                    CombatState.Active)
+            {
+                director.DebugRestartCombat();
+            }
+        }
+
+        private void DisableOptionalAllies()
+        {
+            TurnCombatDirector director =
+                TurnCombatDirector.Instance;
+
+            CombatantRuntime[] allies =
+                FindObjectsByType<
+                    CombatantRuntime>(
+                    FindObjectsSortMode.None)
+                .Where(x =>
+                    x != null &&
+                    x.gameObject.activeInHierarchy &&
+                    x.Faction ==
+                        CombatFaction.Ally)
+                .ToArray();
+
+            foreach (CombatantRuntime ally in allies)
+            {
+                if (!_disabledAllies.Contains(
+                        ally.gameObject))
+                {
+                    _disabledAllies.Add(
+                        ally.gameObject);
+                }
+
+                if (director != null)
+                    director.Unregister(ally);
+
+                ally.gameObject.SetActive(false);
+            }
+
+            if (allies.Length > 0 &&
+                director != null &&
+                director.State ==
+                    CombatState.Active)
+            {
+                director.DebugRestartCombat();
+            }
+        }
+
+        private void RestoreOptionalAllies()
+        {
+            TurnCombatDirector director =
+                TurnCombatDirector.Instance;
+
+            foreach (GameObject go
+                     in _disabledAllies.ToArray())
+            {
+                if (go == null)
+                {
+                    _disabledAllies.Remove(go);
+                    continue;
+                }
+
+                go.SetActive(true);
+
+                CombatantRuntime runtime =
+                    go.GetComponent<
+                        CombatantRuntime>();
+
+                if (runtime != null &&
+                    director != null)
+                {
+                    director.AddParticipant(runtime);
+                }
+            }
+
+            _disabledAllies.Clear();
+
+            if (director != null &&
                 director.State ==
                     CombatState.Active)
             {
