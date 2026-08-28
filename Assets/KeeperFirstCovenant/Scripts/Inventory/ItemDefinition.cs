@@ -25,20 +25,46 @@ namespace KeeperFirstCovenant.Inventory
         Unique
     }
 
-    [CreateAssetMenu(menuName = "Keeper First Covenant/Items/Item", fileName = "Item")]
+    public enum EquipmentSlot
+    {
+        MainHand,
+        OffHand,
+        Head,
+        Chest,
+        Hands,
+        Legs,
+        Feet,
+        Cloak,
+        Amulet,
+        RingLeft,
+        RingRight
+    }
+
+    [CreateAssetMenu(
+        menuName = "Keeper First Covenant/Items/Item",
+        fileName = "Item")]
     public class ItemDefinition : ScriptableObject
     {
         public string itemId;
         public string displayName = "Item";
-        [TextArea] public string description;
+
+        [TextArea]
+        public string description;
+
         public Sprite icon;
         public ItemCategory category;
         public ItemRarity rarity;
 
-        [Min(0f)] public float weight = 0.1f;
-        [Min(0)] public int valueSilver;
+        [Min(0f)]
+        public float weight = 0.1f;
+
+        [Min(0)]
+        public int valueSilver;
+
         public bool stackable;
-        [Min(1)] public int maxStack = 1;
+
+        [Min(1)]
+        public int maxStack = 1;
 
         [Header("Discovery")]
         public bool questCritical;
@@ -59,16 +85,50 @@ namespace KeeperFirstCovenant.Inventory
         Unarmed
     }
 
-    [CreateAssetMenu(menuName = "Keeper First Covenant/Items/Weapon", fileName = "Weapon")]
+    [CreateAssetMenu(
+        menuName = "Keeper First Covenant/Items/Weapon",
+        fileName = "Weapon")]
     public sealed class WeaponDefinition : ItemDefinition
     {
         public WeaponClass weaponClass;
-        public DiceFormula damage = new DiceFormula(1, 8);
-        public DamageType damageType = DamageType.Physical;
-        public AbilityAttribute scalingAttribute = AbilityAttribute.Strength;
-        [Min(0.5f)] public float rangeMeters = 1.8f;
+
+        public DiceFormula damage =
+            new DiceFormula(1, 8);
+
+        public DamageType damageType =
+            DamageType.Physical;
+
+        public AbilityAttribute scalingAttribute =
+            AbilityAttribute.Strength;
+
+        [Min(0.5f)]
+        public float rangeMeters = 1.8f;
+
         public bool twoHanded;
         public bool finesse;
         public bool magicalFocus;
+
+        [Header("Actions granted while equipped")]
+        public CombatActionDefinition[] grantedActions;
+    }
+
+    [CreateAssetMenu(
+        menuName = "Keeper First Covenant/Items/Armor",
+        fileName = "Armor")]
+    public sealed class ArmorDefinition : ItemDefinition
+    {
+        public EquipmentSlot equipmentSlot =
+            EquipmentSlot.Chest;
+
+        public int armorBonus;
+        public int magicGuardBonus;
+
+        [Tooltip(
+            "Meters added to base movement while equipped. " +
+            "Heavy armor can use a negative value.")]
+        public float movementBonus;
+
+        [Header("Actions granted while equipped")]
+        public CombatActionDefinition[] grantedActions;
     }
 }
