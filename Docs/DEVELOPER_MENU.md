@@ -108,3 +108,32 @@ These are mechanical test assets, not final lore or balance.
 No combat system requires Lucian, Aelis or any other companion to be present.
 
 Player and Ally combatants are controlled by the player when they exist, but the combat loop works with Edward as the only party member.
+
+### Log
+
+Shows the live combat log in reverse chronological order.
+
+It records:
+
+- combat start/end;
+- round changes;
+- active actor;
+- ability used;
+- hit/miss/critical;
+- damage;
+- healing;
+- barriers;
+- hit roll and target chance.
+
+## Equipment testing
+
+Weapons and armor have an **Equip** action in the F1 browser.
+
+Equipping can immediately change:
+
+- available combat actions;
+- Armor;
+- Magic Guard;
+- movement capacity.
+
+DEV weapons automatically generate their own attack action so they can be tested immediately after equipping.
