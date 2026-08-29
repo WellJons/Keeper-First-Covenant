@@ -6,6 +6,7 @@ using KeeperFirstCovenant.Inventory;
 using KeeperFirstCovenant.Quests;
 using KeeperFirstCovenant.World;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace KeeperFirstCovenant.Core
 {
@@ -44,7 +45,8 @@ namespace KeeperFirstCovenant.Core
     [Serializable]
     internal sealed class PartySavePayload
     {
-        public int version = 1;
+        public int version = 2;
+        public string sceneName;
         public List<PartyMemberSavePayload> members =
             new List<PartyMemberSavePayload>();
     }
@@ -86,7 +88,11 @@ namespace KeeperFirstCovenant.Core
 
         private static void CaptureWorld(SaveGameData save)
         {
-            var payload = new WorldSavePayload();
+            WorldSavePayload payload =
+                TryDecodeWorldPayload(save.worldStateJson) ??
+                new WorldSavePayload();
+
+            payload.version = 3;
 
             if (WorldState.Instance != null)
                 payload.worldState = WorldState.Instance.CaptureSnapshot();
@@ -95,6 +101,27 @@ namespace KeeperFirstCovenant.Core
             {
                 payload.day = Mathf.Max(1, WorldTimeSystem.Instance.Day);
                 payload.hour = Mathf.Repeat(WorldTimeSystem.Instance.Hour, 24f);
+            }
+
+            var merged =
+                new Dictionary<string, PersistentWorldObjectPayload>(
+                    StringComparer.Ordinal);
+
+            if (payload.objects != null)
+            {
+                foreach (PersistentWorldObjectPayload existing
+                         in payload.objects)
+                {
+                    if (existing == null ||
+                        string.IsNullOrWhiteSpace(
+                            existing.persistenceId))
+                    {
+                        continue;
+                    }
+
+                    merged[existing.persistenceId] =
+                        existing;
+                }
             }
 
             MonoBehaviour[] behaviours =
@@ -110,7 +137,7 @@ namespace KeeperFirstCovenant.Core
                 if (string.IsNullOrWhiteSpace(id))
                     continue;
 
-                payload.objects.Add(
+                merged[id] =
                     new PersistentWorldObjectPayload
                     {
                         persistenceId = id,
@@ -118,14 +145,17 @@ namespace KeeperFirstCovenant.Core
                         position = behaviour.transform.position,
                         eulerAngles = behaviour.transform.eulerAngles,
                         stateJson = persistent.CapturePersistentState()
-                    });
+                    };
             }
 
-            payload.objects = payload.objects
-                .OrderBy(value => value.persistenceId, StringComparer.Ordinal)
+            payload.objects = merged.Values
+                .OrderBy(
+                    value => value.persistenceId,
+                    StringComparer.Ordinal)
                 .ToList();
 
-            save.worldStateJson = JsonUtility.ToJson(payload);
+            save.worldStateJson =
+                JsonUtility.ToJson(payload);
         }
 
         private static void RestoreWorld(SaveGameData save)
@@ -136,7 +166,8 @@ namespace KeeperFirstCovenant.Core
             try
             {
                 WorldSavePayload payload =
-                    JsonUtility.FromJson<WorldSavePayload>(save.worldStateJson);
+                    TryDecodeWorldPayload(
+                        save.worldStateJson);
 
                 if (payload == null)
                     return;
@@ -153,6 +184,23 @@ namespace KeeperFirstCovenant.Core
             {
                 Debug.LogWarning(
                     "Keeper world state could not be restored. " + exception.Message);
+            }
+        }
+
+        private static WorldSavePayload TryDecodeWorldPayload(
+            string json)
+        {
+            if (string.IsNullOrWhiteSpace(json))
+                return null;
+
+            try
+            {
+                return JsonUtility.FromJson<WorldSavePayload>(
+                    json);
+            }
+            catch
+            {
+                return null;
             }
         }
 
@@ -209,7 +257,11 @@ namespace KeeperFirstCovenant.Core
 
         private static void CaptureParty(SaveGameData save)
         {
-            var payload = new PartySavePayload();
+            var payload = new PartySavePayload
+            {
+                sceneName =
+                    SceneManager.GetActiveScene().name
+            };
 
             CombatantRuntime[] combatants =
                 UnityEngine.Object.FindObjectsByType<CombatantRuntime>(
@@ -273,6 +325,19 @@ namespace KeeperFirstCovenant.Core
 
             if (payload?.members == null)
                 return;
+
+            string activeScene =
+                SceneManager.GetActiveScene().name;
+
+            if (!string.IsNullOrWhiteSpace(
+                    payload.sceneName) &&
+                !string.Equals(
+                    payload.sceneName,
+                    activeScene,
+                    StringComparison.Ordinal))
+            {
+                return;
+            }
 
             CombatantRuntime[] loaded =
                 UnityEngine.Object.FindObjectsByType<CombatantRuntime>(
