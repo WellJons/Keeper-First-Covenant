@@ -179,6 +179,10 @@ namespace KeeperFirstCovenant.EditorTools
                         combatant.gameObject);
 
                 AddIfMissing<
+                    WorldFacing>(
+                        combatant.gameObject);
+
+                AddIfMissing<
                     EquipmentComponent>(
                         combatant.gameObject);
 
