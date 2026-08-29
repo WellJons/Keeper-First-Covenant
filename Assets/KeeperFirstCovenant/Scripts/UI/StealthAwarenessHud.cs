@@ -381,6 +381,13 @@ namespace KeeperFirstCovenant.UI
                       100f
                     : 100f;
 
+            float exposure =
+                signature != null &&
+                signature.LightProbe != null
+                    ? signature.LightProbe
+                        .Exposure01 * 100f
+                    : 100f;
+
             string posture =
                 signature != null &&
                 signature.IsCrouched
@@ -389,7 +396,8 @@ namespace KeeperFirstCovenant.UI
 
             detail.text =
                 posture +
-                $"   •   заметность {visibility:0}%   •   шум {noise:0.0} м";
+                $"   •   свет {exposure:0}%   •   " +
+                $"заметность {visibility:0}%   •   шум {noise:0.0} м";
         }
 
         private void RefreshMarkers(
