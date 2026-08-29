@@ -112,7 +112,7 @@ namespace KeeperFirstCovenant.AI
                             out Vector3 destination))
                 {
                     List<Vector3> path =
-                        grid.FindPath(
+                        grid.FindContinuousPath(
                             actor.transform.position,
                             destination);
 
