@@ -57,6 +57,28 @@ namespace KeeperFirstCovenant.Inventory
             return CurrentWeight + item.weight * amount <= maxCarryWeight + 0.001f;
         }
 
+        public int GetMaxCarryableAmount(
+            ItemDefinition item)
+        {
+            if (item == null)
+                return 0;
+
+            if (item.weight <= 0.0001f)
+                return int.MaxValue;
+
+            float available =
+                Mathf.Max(
+                    0f,
+                    maxCarryWeight -
+                    CurrentWeight);
+
+            return Mathf.Max(
+                0,
+                Mathf.FloorToInt(
+                    (available + 0.001f) /
+                    item.weight));
+        }
+
         public bool Add(ItemDefinition item, int amount = 1)
         {
             if (item == null || amount <= 0 || !CanCarry(item, amount))
