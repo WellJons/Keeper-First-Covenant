@@ -1153,6 +1153,7 @@ namespace KeeperFirstCovenant.Developer
             runtime.SetDefinition(definition);
 
             go.AddComponent<TacticalUnitMover>();
+            go.AddComponent<WorldFacing>();
             go.AddComponent<EquipmentComponent>();
 
             if (definition.characterId == "edward")
