@@ -323,9 +323,15 @@ namespace KeeperFirstCovenant.Combat
                 perfectMaterial,
                 0.025f);
 
+            float idealRadius =
+                Mathf.Lerp(
+                    1.55f,
+                    0.22f,
+                    idealTiming);
+
             DrawRing(
                 perfectRing,
-                0.48f);
+                idealRadius);
 
             DrawRing(
                 outer,
