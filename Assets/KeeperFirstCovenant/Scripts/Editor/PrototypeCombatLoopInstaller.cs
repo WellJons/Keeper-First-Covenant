@@ -200,6 +200,10 @@ namespace KeeperFirstCovenant.EditorTools
                         CombatFaction.Ally)
                 {
                     AddIfMissing<
+                        StealthLightProbe>(
+                            combatant.gameObject);
+
+                    AddIfMissing<
                         StealthSignature>(
                             combatant.gameObject);
                 }
