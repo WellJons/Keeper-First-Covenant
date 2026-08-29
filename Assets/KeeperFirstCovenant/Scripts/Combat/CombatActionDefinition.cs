@@ -82,6 +82,18 @@ namespace KeeperFirstCovenant.Combat
 
         public bool freeMovementSuppressesOpportunityAttacks;
 
+        [Header("Telegraphed charge")]
+        [Tooltip("If greater than zero, AI can spend a turn preparing this action before it resolves.")]
+        [Min(0)]
+        public int windUpTurns;
+
+        [Tooltip("Breaking the actor while this action is charging cancels it.")]
+        public bool interruptWindUpOnBreak = true;
+
+        [Tooltip("Optional extra radius for the telegraph. Zero uses the action area radius or a target-sized marker.")]
+        [Min(0f)]
+        public float telegraphRadiusOverride;
+
         [Header("Combo chain")]
         [Tooltip("If set, this action is empowered when the actor currently holds this combo tag.")]
         public string comboRequiresTag;
