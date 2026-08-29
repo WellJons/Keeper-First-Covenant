@@ -59,7 +59,7 @@ namespace KeeperFirstCovenant.Combat
 
             if (pathLength <= 0f ||
                 pathLength >
-                _combatant.RemainingMovement + 0.01f)
+                _combatant.TotalMovementAvailable + 0.01f)
             {
                 return false;
             }
@@ -92,7 +92,7 @@ namespace KeeperFirstCovenant.Combat
 
             float budget = Mathf.Min(
                 Mathf.Max(0f, maxDistance),
-                _combatant.RemainingMovement);
+                _combatant.TotalMovementAvailable);
 
             if (budget <= 0.01f)
                 return false;
