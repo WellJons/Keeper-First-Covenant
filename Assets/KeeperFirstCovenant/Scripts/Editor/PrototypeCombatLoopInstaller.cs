@@ -194,6 +194,10 @@ namespace KeeperFirstCovenant.EditorTools
                     AddIfMissing<
                         PerceptionSensor>(
                             combatant.gameObject);
+
+                    AddIfMissing<
+                        EnemyInvestigationBrain>(
+                            combatant.gameObject);
                 }
 
                 if (combatant.Definition != null &&
