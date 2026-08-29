@@ -318,6 +318,18 @@ namespace KeeperFirstCovenant.AI
                     continue;
                 }
 
+                CombatActionStateComponent state =
+                    CombatActionStateComponent
+                        .Ensure(actor);
+
+                if (state != null &&
+                    !state.CanUse(
+                        action,
+                        out _))
+                {
+                    continue;
+                }
+
                 float expectedDamage =
                     action.damage
                         .DeterministicValue;
