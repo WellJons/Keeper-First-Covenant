@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using KeeperFirstCovenant.Combat;
+using KeeperFirstCovenant.Dialogue;
 using KeeperFirstCovenant.UI;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -209,6 +210,12 @@ namespace KeeperFirstCovenant.Core
 
         public bool SaveCurrentGame(bool manualSave = true, string locationOverride = null)
         {
+            if (DialogueRunner.IsDialogueActive)
+            {
+                ReportError("Сохранение во время диалога недоступно.");
+                return false;
+            }
+
             if (TurnCombatDirector.Instance != null &&
                 TurnCombatDirector.Instance.State == CombatState.Active)
             {
