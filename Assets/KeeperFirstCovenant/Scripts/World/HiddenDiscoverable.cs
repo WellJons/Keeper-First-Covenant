@@ -126,6 +126,13 @@ namespace KeeperFirstCovenant.World
                 }
             }
 
+            foreach (TrapMechanism trap in
+                     GetComponentsInChildren<
+                         TrapMechanism>(true))
+            {
+                trap.Reveal();
+            }
+
             onDiscovered?.Invoke();
         }
 
