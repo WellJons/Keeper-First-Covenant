@@ -19,6 +19,7 @@ namespace KeeperFirstCovenant.World
         private IInteractable currentInteractable;
         private WorldInspectable currentInspectable;
         private GameObject currentActor;
+        private TacticalGrid3D navigation;
         private Vector3 currentHitPoint;
         private Collider currentCollider;
         private bool currentInRange;
@@ -53,6 +54,26 @@ namespace KeeperFirstCovenant.World
 
                 if (!currentInRange)
                 {
+                    if (currentInteractable != null &&
+                        currentInspectable != null)
+                    {
+                        return
+                            $"ЛКМ — подойти и взаимодействовать   •   " +
+                            $"ПКМ — подойти и осмотреть   •   {currentDistance:0.0} м";
+                    }
+
+                    if (currentInteractable != null)
+                    {
+                        return
+                            $"ЛКМ — подойти   •   {currentDistance:0.0} м";
+                    }
+
+                    if (currentInspectable != null)
+                    {
+                        return
+                            $"ПКМ — подойти и осмотреть   •   {currentDistance:0.0} м";
+                    }
+
                     return
                         $"Слишком далеко   •   {currentDistance:0.0} м";
                 }
@@ -105,6 +126,13 @@ namespace KeeperFirstCovenant.World
         {
             if (worldCamera == null)
                 worldCamera = Camera.main;
+
+            if (navigation == null)
+            {
+                navigation =
+                    FindFirstObjectByType<
+                        TacticalGrid3D>();
+            }
         }
 
         private void Update()
@@ -141,12 +169,30 @@ namespace KeeperFirstCovenant.World
             if (mouse.rightButton.wasPressedThisFrame &&
                 currentInspectable != null &&
                 currentActor != null &&
-                currentInRange &&
                 currentInspectable.CanInspect(
                     currentActor))
             {
-                currentInspectable.Inspect(
-                    currentActor);
+                if (currentInRange)
+                {
+                    currentInspectable.Inspect(
+                        currentActor);
+                }
+                else
+                {
+                    TryApproachTarget(
+                        currentActor,
+                        currentCollider,
+                        () =>
+                        {
+                            if (currentInspectable != null &&
+                                currentInspectable.CanInspect(
+                                    currentActor))
+                            {
+                                currentInspectable.Inspect(
+                                    currentActor);
+                            }
+                        });
+                }
 
                 return;
             }
@@ -154,7 +200,6 @@ namespace KeeperFirstCovenant.World
             if (!mouse.leftButton.wasPressedThisFrame ||
                 currentInteractable == null ||
                 currentActor == null ||
-                !currentInRange ||
                 !currentInteractable.CanInteract(currentActor))
             {
                 return;
@@ -167,6 +212,50 @@ namespace KeeperFirstCovenant.World
                 (keyboard.leftShiftKey.isPressed ||
                  keyboard.rightShiftKey.isPressed) &&
                 currentInteractable is LockableDoor;
+
+            IInteractable capturedInteractable =
+                currentInteractable;
+
+            GameObject capturedActor =
+                currentActor;
+
+            Collider capturedCollider =
+                currentCollider;
+
+            if (!currentInRange)
+            {
+                TryApproachTarget(
+                    capturedActor,
+                    capturedCollider,
+                    () =>
+                    {
+                        if (capturedActor == null ||
+                            capturedInteractable == null)
+                        {
+                            return;
+                        }
+
+                        if (forceDoor &&
+                            capturedInteractable is LockableDoor door)
+                        {
+                            door.TryForceOpen(
+                                capturedActor);
+
+                            return;
+                        }
+
+                        if (capturedInteractable
+                                .CanInteract(
+                                    capturedActor))
+                        {
+                            capturedInteractable
+                                .Interact(
+                                    capturedActor);
+                        }
+                    });
+
+                return;
+            }
 
             if (forceDoor)
             {
@@ -184,6 +273,117 @@ namespace KeeperFirstCovenant.World
 
             UpdateHover(
                 mouse.position.ReadValue());
+        }
+
+        private bool TryApproachTarget(
+            GameObject actor,
+            Collider targetCollider,
+            Action onArrived)
+        {
+            if (actor == null ||
+                targetCollider == null)
+            {
+                return false;
+            }
+
+            if (navigation == null)
+            {
+                navigation =
+                    FindFirstObjectByType<
+                        TacticalGrid3D>();
+            }
+
+            if (navigation == null)
+                return false;
+
+            TacticalUnitMover mover =
+                actor.GetComponent<
+                    TacticalUnitMover>();
+
+            if (mover == null)
+            {
+                mover =
+                    actor.AddComponent<
+                        TacticalUnitMover>();
+            }
+
+            Vector3 actorPosition =
+                actor.transform.position;
+
+            Vector3 closest =
+                targetCollider.ClosestPoint(
+                    actorPosition);
+
+            Vector3 away =
+                actorPosition -
+                closest;
+
+            away.y = 0f;
+
+            if (away.sqrMagnitude <= 0.001f)
+            {
+                away =
+                    actorPosition -
+                    targetCollider.bounds.center;
+
+                away.y = 0f;
+            }
+
+            if (away.sqrMagnitude <= 0.001f)
+                away = -actor.transform.forward;
+
+            float standOff =
+                Mathf.Max(
+                    0.75f,
+                    maxInteractionDistance * 0.72f);
+
+            Vector3 desired =
+                closest +
+                away.normalized *
+                standOff;
+
+            if (!navigation.TryProjectWalkablePoint(
+                    desired,
+                    out Vector3 projected))
+            {
+                if (!navigation.TryProjectWalkablePoint(
+                        closest,
+                        out projected))
+                {
+                    return false;
+                }
+            }
+
+            if (mover.IsMoving)
+                mover.CancelMovement();
+
+            return mover.TryMoveExploration(
+                navigation,
+                projected,
+                () =>
+                {
+                    if (actor == null ||
+                        targetCollider == null)
+                    {
+                        return;
+                    }
+
+                    Vector3 targetPoint =
+                        targetCollider.ClosestPoint(
+                            actor.transform.position);
+
+                    float distance =
+                        Vector3.Distance(
+                            actor.transform.position,
+                            targetPoint);
+
+                    if (distance <=
+                        maxInteractionDistance +
+                        0.35f)
+                    {
+                        onArrived?.Invoke();
+                    }
+                });
         }
 
         private void UpdateHover(
