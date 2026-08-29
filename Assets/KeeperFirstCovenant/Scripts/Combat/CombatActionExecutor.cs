@@ -340,8 +340,20 @@ namespace KeeperFirstCovenant.Combat
                     targetResult);
             }
 
+            if (anyHit &&
+                action.damageType !=
+                    DamageType.Physical &&
+                action.damageType !=
+                    DamageType.Bleeding)
+            {
+                ElementalSurfaceSystem.Instance
+                    ?.ReactToImpact(
+                        action.damageType,
+                        effectPoint,
+                        actor.gameObject);
+            }
+
             bool surfaceCanAppear =
-                !action.requiresAttackRoll ||
                 anyHit ||
                 action.targetKind == TargetKind.Ground;
 
