@@ -70,7 +70,10 @@ namespace KeeperFirstCovenant.UI
         private void Update()
         {
             if (Flow.IsTransitioning ||
-                DialogueRunner.IsDialogueActive)
+                DialogueRunner.IsDialogueActive ||
+                (TurnCombatDirector.Instance != null &&
+                 TurnCombatDirector.Instance.State ==
+                    CombatState.Defeat))
             {
                 return;
             }
