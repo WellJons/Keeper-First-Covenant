@@ -109,6 +109,14 @@ namespace KeeperFirstCovenant.Combat
                 gameObject.AddComponent<
                     BossPhasePresentationController>();
             }
+
+            if (FindFirstObjectByType<
+                    CombatMechanicVfxController>() ==
+                null)
+            {
+                gameObject.AddComponent<
+                    CombatMechanicVfxController>();
+            }
         }
 
         private static void EnsureMechanics()
