@@ -161,27 +161,43 @@ namespace KeeperFirstCovenant.Combat
                     ? strain.GetHitChancePenalty()
                     : 0;
 
-            int hitChance = action.requiresAttackRoll
-                ? Mathf.Clamp(
-                    action.baseHitChance +
-                    attributeModifier * 5 +
-                    heightModifier +
-                    coverModifier -
-                    strainHitPenalty,
-                    5,
-                    95)
-                : 100;
+            int hitChance = 100;
 
             int scaledBonus = Mathf.RoundToInt(
                 attributeModifier * action.scalingMultiplier);
 
-            int damageMin = Mathf.Max(
-                0,
-                action.damage.Minimum + scaledBonus);
+            int baseDamage =
+                Mathf.Max(
+                    0,
+                    action.damage.DeterministicValue +
+                    scaledBonus);
 
-            int damageMax = Mathf.Max(
-                damageMin,
-                action.damage.Maximum + scaledBonus);
+            float tacticalMultiplier = 1f;
+
+            if (action.usesTacticalImpactModifiers)
+            {
+                int tacticalModifier =
+                    heightModifier +
+                    coverModifier -
+                    strainHitPenalty;
+
+                tacticalMultiplier =
+                    Mathf.Clamp(
+                        1f +
+                        tacticalModifier / 100f,
+                        0.55f,
+                        1.35f);
+            }
+
+            int deterministicDamage =
+                Mathf.Max(
+                    0,
+                    Mathf.RoundToInt(
+                        baseDamage *
+                        tacticalMultiplier));
+
+            int damageMin = deterministicDamage;
+            int damageMax = deterministicDamage;
 
             if (target != null &&
                 damageMax > 0)
