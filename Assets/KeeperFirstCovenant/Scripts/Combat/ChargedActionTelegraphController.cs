@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using KeeperFirstCovenant.UI;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -388,7 +389,7 @@ namespace KeeperFirstCovenant.Combat
                     RectTransform>();
 
             Image panel =
-                UI.MenuUiFactory.CreateImage(
+                MenuUiFactory.CreateImage(
                     "ChargeWarning",
                     canvasRect,
                     new Color(
@@ -400,7 +401,7 @@ namespace KeeperFirstCovenant.Combat
             RectTransform rect =
                 panel.rectTransform;
 
-            UI.MenuUiFactory.SetAnchoredRect(
+            MenuUiFactory.SetAnchoredRect(
                 rect,
                 new Vector2(0.5f, 1f),
                 new Vector2(0.5f, 1f),
@@ -408,7 +409,7 @@ namespace KeeperFirstCovenant.Combat
                 new Vector2(0f, -92f),
                 new Vector2(620f, 92f));
 
-            UI.KeeperUiSkin.DecorateMajorPanel(
+            KeeperUiSkin.DecorateMajorPanel(
                 panel,
                 false);
 
@@ -417,12 +418,12 @@ namespace KeeperFirstCovenant.Combat
                     .AddComponent<CanvasGroup>();
 
             notificationTitle =
-                UI.MenuUiFactory.CreateText(
+                MenuUiFactory.CreateText(
                     "Title",
                     panel.transform,
                     string.Empty,
                     21,
-                    UI.MainMenuTheme.Text,
+                    MainMenuTheme.Text,
                     TextAnchor.MiddleCenter);
 
             notificationTitle.rectTransform.anchorMin =
@@ -438,12 +439,12 @@ namespace KeeperFirstCovenant.Combat
                 new Vector2(-20f, -7f);
 
             notificationBody =
-                UI.MenuUiFactory.CreateText(
+                MenuUiFactory.CreateText(
                     "Body",
                     panel.transform,
                     string.Empty,
                     12,
-                    UI.MainMenuTheme.Warm,
+                    MainMenuTheme.Warm,
                     TextAnchor.UpperCenter);
 
             notificationBody.rectTransform.anchorMin =
