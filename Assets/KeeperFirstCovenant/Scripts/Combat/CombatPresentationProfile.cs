@@ -48,6 +48,13 @@ namespace KeeperFirstCovenant.Combat
         [Min(0f)]
         public float impactLightDuration = 0.18f;
 
+        [Header("World awareness")]
+        [Min(0f)]
+        public float worldNoiseRadius = 6f;
+
+        [Min(0f)]
+        public float worldNoiseIntensity = 1f;
+
         [Header("World impulse")]
         [Min(0f)]
         public float environmentImpulseRadius = 3f;
