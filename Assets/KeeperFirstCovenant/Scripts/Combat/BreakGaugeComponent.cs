@@ -173,6 +173,12 @@ namespace KeeperFirstCovenant.Combat
             CombatantRuntime target,
             CombatActionResult result)
         {
+            bool fullyDefended =
+                result.DefenseOutcome ==
+                    ActiveDefenseOutcome.PerfectDodge ||
+                result.DefenseOutcome ==
+                    ActiveDefenseOutcome.PerfectParry;
+
             bool hasBreakImpact =
                 action != null &&
                 (result.Damage > 0 ||
@@ -184,6 +190,7 @@ namespace KeeperFirstCovenant.Combat
                 action == null ||
                 !result.Executed ||
                 !result.Hit ||
+                fullyDefended ||
                 !hasBreakImpact)
             {
                 return;
@@ -212,6 +219,21 @@ namespace KeeperFirstCovenant.Combat
                     (int)action
                         .presentationProfile
                         .impactTier * 4;
+            }
+
+            switch (result.DefenseOutcome)
+            {
+                case ActiveDefenseOutcome.Dodge:
+                    amount =
+                        Mathf.RoundToInt(
+                            amount * 0.50f);
+                    break;
+
+                case ActiveDefenseOutcome.Parry:
+                    amount =
+                        Mathf.RoundToInt(
+                            amount * 0.35f);
+                    break;
             }
 
             AddBreak(amount);
