@@ -129,6 +129,16 @@ namespace KeeperFirstCovenant.Combat
             AdvanceTurn();
         }
 
+        public bool IsParticipant(
+            CombatantRuntime combatant)
+        {
+            if (combatant == null)
+                return false;
+
+            return _turnOrder.Any(x =>
+                x.combatant == combatant);
+        }
+
         public void AddParticipant(
             CombatantRuntime combatant)
         {
