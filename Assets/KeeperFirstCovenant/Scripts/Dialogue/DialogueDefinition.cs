@@ -12,7 +12,9 @@ namespace KeeperFirstCovenant.Dialogue
         WorldValueAtMost,
         QuestActive,
         QuestCompleted,
-        QuestFailed
+        QuestFailed,
+        RelationshipAtLeast,
+        RelationshipAtMost
     }
 
     public enum DialogueEffectKind
@@ -25,7 +27,9 @@ namespace KeeperFirstCovenant.Dialogue
         AddQuestProgress,
         CompleteQuestObjective,
         CompleteQuest,
-        FailQuest
+        FailQuest,
+        AddRelationship,
+        SetRelationship
     }
 
     [Serializable]
