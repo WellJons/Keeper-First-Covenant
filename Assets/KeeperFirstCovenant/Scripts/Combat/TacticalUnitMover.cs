@@ -45,7 +45,7 @@ namespace KeeperFirstCovenant.Combat
             }
 
             List<Vector3> path =
-                grid.FindPath(
+                grid.FindContinuousPath(
                     transform.position,
                     destination);
 
