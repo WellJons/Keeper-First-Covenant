@@ -80,6 +80,26 @@ namespace KeeperFirstCovenant.World
                 hinge.localRotation;
         }
 
+        public void ConfigurePrototype(
+            bool startLocked,
+            string keyItemId,
+            string pickItemId,
+            int pickDifficulty,
+            int bashDifficulty)
+        {
+            locked = startLocked;
+            requiredKeyItemId = keyItemId;
+            lockpickItemId = pickItemId;
+            lockDifficulty =
+                Mathf.Max(
+                    1,
+                    pickDifficulty);
+            forceDifficulty =
+                Mathf.Max(
+                    1,
+                    bashDifficulty);
+        }
+
         public bool CanInteract(
             GameObject actor)
         {
