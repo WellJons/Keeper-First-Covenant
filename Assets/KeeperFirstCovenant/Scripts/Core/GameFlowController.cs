@@ -141,6 +141,8 @@ namespace KeeperFirstCovenant.Core
                 return false;
             }
 
+            GameplaySaveBridge.ResetRuntimeState();
+
             SaveGameData data = SaveGameService.CreateNewGame(
                 FirstPlayableSceneName,
                 "Дорога к Рейнхольму");
@@ -235,6 +237,8 @@ namespace KeeperFirstCovenant.Core
 
             data.playTimeSeconds = CurrentPlayTimeSeconds;
             data.manualSave = manualSave;
+
+            GameplaySaveBridge.CaptureInto(data);
 
             if (!SaveGameService.WriteSave(data))
             {
@@ -355,6 +359,8 @@ namespace KeeperFirstCovenant.Core
                         scene.name,
                         location,
                         sessionBasePlayTime);
+
+                    GameplaySaveBridge.RestoreFrom(current);
                 }
             }
 

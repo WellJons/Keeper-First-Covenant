@@ -85,7 +85,9 @@ namespace KeeperFirstCovenant.UI
             if (progressFill == null)
                 return;
 
-            progressFill.fillAmount = Mathf.Clamp01(progress);
+            float value = Mathf.Clamp01(progress);
+            RectTransform rect = progressFill.rectTransform;
+            rect.anchorMax = new Vector2(value, 1f);
         }
 
         public void Hide()
@@ -109,7 +111,10 @@ namespace KeeperFirstCovenant.UI
             }
 
             if (progressFill != null)
-                progressFill.fillAmount = 0f;
+            {
+                RectTransform rect = progressFill.rectTransform;
+                rect.anchorMax = new Vector2(0f, 1f);
+            }
         }
 
         private void Build()
@@ -208,11 +213,11 @@ namespace KeeperFirstCovenant.UI
                 track.transform,
                 MainMenuTheme.Warm);
 
-            MenuUiFactory.Stretch(progressFill.rectTransform);
-            progressFill.type = Image.Type.Filled;
-            progressFill.fillMethod = Image.FillMethod.Horizontal;
-            progressFill.fillOrigin = 0;
-            progressFill.fillAmount = 0f;
+            RectTransform fillRect = progressFill.rectTransform;
+            fillRect.anchorMin = Vector2.zero;
+            fillRect.anchorMax = new Vector2(0f, 1f);
+            fillRect.offsetMin = Vector2.zero;
+            fillRect.offsetMax = Vector2.zero;
 
             spinner = BuildSpinner(canvasRect);
         }
