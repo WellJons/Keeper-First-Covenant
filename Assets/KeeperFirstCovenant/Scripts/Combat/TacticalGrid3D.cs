@@ -526,6 +526,9 @@ namespace KeeperFirstCovenant.Combat
                     collider
                         .GetComponentInParent<
                             EnvironmentalDestructible>() != null ||
+                    collider
+                        .GetComponentInParent<
+                            SearchableLoot>() != null ||
                     collider.attachedRigidbody != null)
                 {
                     continue;
