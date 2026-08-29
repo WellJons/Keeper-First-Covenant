@@ -18,6 +18,9 @@ namespace KeeperFirstCovenant.World
         [SerializeField, Min(0f)]
         private float crouchedMoveNoiseRadius = 1.4f;
 
+        [SerializeField, Range(0.2f, 1f)]
+        private float crouchedMoveSpeedMultiplier = 0.68f;
+
         [SerializeField]
         private bool crouched;
 
@@ -34,6 +37,11 @@ namespace KeeperFirstCovenant.World
             crouched
                 ? crouchedMoveNoiseRadius
                 : standingMoveNoiseRadius;
+
+        public float MovementSpeedMultiplier =>
+            crouched
+                ? crouchedMoveSpeedMultiplier
+                : 1f;
 
         public bool IsMoving =>
             _mover != null &&
