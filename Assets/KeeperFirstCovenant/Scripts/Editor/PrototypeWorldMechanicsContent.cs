@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using System.Linq;
 using KeeperFirstCovenant.Combat;
+using KeeperFirstCovenant.Inventory;
 using KeeperFirstCovenant.World;
 using UnityEditor;
 using UnityEngine;
@@ -72,6 +73,22 @@ namespace KeeperFirstCovenant.EditorTools
                     -1.1f,
                     0.35f,
                     5.2f));
+
+            CreateHiddenCache(
+                root.transform,
+                anchor +
+                new Vector3(
+                    3.8f,
+                    0.3f,
+                    3.6f));
+
+            CreateHiddenTrap(
+                root.transform,
+                anchor +
+                new Vector3(
+                    2.2f,
+                    0.08f,
+                    5.0f));
         }
 
         private static void CreateLockedDoor(
@@ -170,6 +187,81 @@ namespace KeeperFirstCovenant.EditorTools
                 16f,
                 ImpactTier.Heavy,
                 5f);
+        }
+
+        private static void CreateHiddenCache(
+            Transform parent,
+            Vector3 position)
+        {
+            GameObject cache =
+                GameObject.CreatePrimitive(
+                    PrimitiveType.Cube);
+
+            cache.name =
+                "DEV_HiddenCache";
+
+            cache.transform.SetParent(
+                parent,
+                false);
+
+            cache.transform.position =
+                position;
+
+            cache.transform.localScale =
+                new Vector3(
+                    0.9f,
+                    0.45f,
+                    0.65f);
+
+            SearchableLoot searchable =
+                cache.AddComponent<
+                    SearchableLoot>();
+
+            LootTableDefinition loot =
+                AssetDatabase.LoadAssetAtPath<
+                    LootTableDefinition>(
+                    "Assets/KeeperFirstCovenant/" +
+                    "Generated/Data/" +
+                    "RoadsideLoot.asset");
+
+            searchable.Configure(
+                loot,
+                "Search hidden cache",
+                true);
+
+            cache.AddComponent<
+                HiddenDiscoverable>();
+        }
+
+        private static void CreateHiddenTrap(
+            Transform parent,
+            Vector3 position)
+        {
+            GameObject trap =
+                GameObject.CreatePrimitive(
+                    PrimitiveType.Cube);
+
+            trap.name =
+                "DEV_HiddenTrap";
+
+            trap.transform.SetParent(
+                parent,
+                false);
+
+            trap.transform.position =
+                position;
+
+            trap.transform.localScale =
+                new Vector3(
+                    1.2f,
+                    0.12f,
+                    1.2f);
+
+            trap.AddComponent<
+                TrapMechanism>();
+
+            trap.AddComponent<
+                HiddenDiscoverable>();
         }
 
         private static void CreateLooseProp(
