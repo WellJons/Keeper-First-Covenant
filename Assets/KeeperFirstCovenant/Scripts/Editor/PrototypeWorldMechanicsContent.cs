@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using System.Linq;
 using KeeperFirstCovenant.Combat;
+using KeeperFirstCovenant.Discoveries;
 using KeeperFirstCovenant.Inventory;
 using KeeperFirstCovenant.World;
 using UnityEditor;
@@ -105,6 +106,14 @@ namespace KeeperFirstCovenant.EditorTools
                     -0.4f,
                     0.22f,
                     3.8f));
+
+            CreateDiscoveryPoint(
+                root.transform,
+                anchor +
+                new Vector3(
+                    5.4f,
+                    0.5f,
+                    5.4f));
         }
 
         private static void CreateLockedDoor(
@@ -368,6 +377,45 @@ namespace KeeperFirstCovenant.EditorTools
                 InspectionCategory.Object,
                 "Несколько монет лежат прямо в дорожной пыли. " +
                 "Их можно подобрать или просто осмотреть.");
+        }
+
+        private static void CreateDiscoveryPoint(
+            Transform parent,
+            Vector3 position)
+        {
+            GameObject trigger =
+                new GameObject(
+                    "DEV_DiscoveryPoint");
+
+            trigger.transform.SetParent(
+                parent,
+                false);
+
+            trigger.transform.position =
+                position;
+
+            BoxCollider collider =
+                trigger.AddComponent<
+                    BoxCollider>();
+
+            collider.isTrigger = true;
+            collider.size =
+                new Vector3(
+                    5.5f,
+                    2.5f,
+                    5.5f);
+
+            WorldDiscoveryPoint discovery =
+                trigger.AddComponent<
+                    WorldDiscoveryPoint>();
+
+            discovery.Configure(
+                "dev_old_road_stone",
+                "Старая дорожная отметка",
+                "На обочине сохранился участок дороги, который явно старше окружающего тракта. " +
+                "Пока это тестовая запись для проверки журнала открытий.",
+                DiscoveryCategory.Location,
+                "Дорога к Рейнхольму");
         }
 
         private static void CreateLooseProp(
