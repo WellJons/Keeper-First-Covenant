@@ -69,6 +69,41 @@ namespace KeeperFirstCovenant.World
                 ? 0f
                 : _suspicion.Values.Max();
 
+        public CombatantRuntime Owner => _owner;
+        public float VisionRange => visionRange;
+        public float FieldOfView => fieldOfView;
+        public float SuspiciousThreshold => suspiciousThreshold;
+        public float DetectionThreshold => detectionThreshold;
+
+        public float HighestSuspicionNormalized =>
+            detectionThreshold > 0f
+                ? Mathf.Clamp01(
+                    HighestSuspicion /
+                    detectionThreshold)
+                : 0f;
+
+        public float GetSuspicionFor(
+            CombatantRuntime target)
+        {
+            return target != null
+                ? GetSuspicion(target)
+                : 0f;
+        }
+
+        public float GetSuspicionNormalizedFor(
+            CombatantRuntime target)
+        {
+            if (target == null ||
+                detectionThreshold <= 0f)
+            {
+                return 0f;
+            }
+
+            return Mathf.Clamp01(
+                GetSuspicion(target) /
+                detectionThreshold);
+        }
+
         public AwarenessLevel Awareness
         {
             get;
