@@ -15,7 +15,9 @@ namespace KeeperFirstCovenant.Combat
         OutOfRange,
         NoLineOfSight,
         NotEnoughActionPoints,
-        NotEnoughMana
+        NotEnoughMana,
+        MissingStrainResource,
+        NotEnoughStrainCapacity
     }
 
     public readonly struct CombatActionResult
@@ -105,6 +107,10 @@ namespace KeeperFirstCovenant.Combat
 
         public static event Action<SurfaceRequest>
             SurfaceRequested;
+
+        public static event Action<
+            CombatPresentationRequest>
+            ActionPresentationRequested;
 
         public static CombatActionResult Execute(
             CombatantRuntime actor,
@@ -197,9 +203,45 @@ namespace KeeperFirstCovenant.Combat
                             .NotEnoughMana);
                 }
 
+                ArcaneStrainComponent strain =
+                    null;
+
+                if (action.strainCost > 0)
+                {
+                    strain =
+                        actor.GetComponent<
+                            ArcaneStrainComponent>();
+
+                    if (strain == null)
+                    {
+                        return CombatActionResult.Failed(
+                            ActionFailureReason
+                                .MissingStrainResource);
+                    }
+
+                    if (!strain.CanAccept(
+                            action.strainCost))
+                    {
+                        return CombatActionResult.Failed(
+                            ActionFailureReason
+                                .NotEnoughStrainCapacity);
+                    }
+
+                    if (!strain.TryAdd(
+                            action.strainCost))
+                    {
+                        return CombatActionResult.Failed(
+                            ActionFailureReason
+                                .NotEnoughStrainCapacity);
+                    }
+                }
+
                 if (!actor.TrySpendActionPoints(
                         action.actionPointCost))
                 {
+                    strain?.Recover(
+                        action.strainCost);
+
                     return CombatActionResult.Failed(
                         ActionFailureReason
                             .NotEnoughActionPoints);
@@ -207,6 +249,9 @@ namespace KeeperFirstCovenant.Combat
 
                 if (!actor.TrySpendMana(action.manaCost))
                 {
+                    strain?.Recover(
+                        action.strainCost);
+
                     return CombatActionResult.Failed(
                         ActionFailureReason
                             .NotEnoughMana);
@@ -334,6 +379,23 @@ namespace KeeperFirstCovenant.Combat
                     null,
                     result);
             }
+
+            if (action.freeMovementMetersGranted > 0f &&
+                actor.IsAlive)
+            {
+                actor.GrantFreeMovement(
+                    action.freeMovementMetersGranted,
+                    action.freeMovementSuppressesOpportunityAttacks);
+            }
+
+            ActionPresentationRequested?.Invoke(
+                new CombatPresentationRequest(
+                    action,
+                    actor,
+                    target,
+                    actor.transform.position,
+                    effectPoint,
+                    result));
 
             return result;
         }
