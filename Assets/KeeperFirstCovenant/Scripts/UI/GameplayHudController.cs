@@ -950,10 +950,34 @@ namespace KeeperFirstCovenant.UI
                       preview.Cover
                     : string.Empty;
 
+            string flank;
+
+            switch (preview.Flank)
+            {
+                case FlankQuality.Back:
+                    flank =
+                        "   •   СПИНА +" +
+                        preview.FlankImpactModifier +
+                        "%";
+                    break;
+
+                case FlankQuality.Side:
+                    flank =
+                        "   •   ФЛАНГ +" +
+                        preview.FlankImpactModifier +
+                        "%";
+                    break;
+
+                default:
+                    flank = string.Empty;
+                    break;
+            }
+
             previewText.text =
                 $"Урон {damage}   •   " +
                 $"{preview.Distance:0.0} м" +
-                tactical;
+                tactical +
+                flank;
         }
 
         private static string FormatActionFailure(
