@@ -1,4 +1,5 @@
 using System.Collections;
+using KeeperFirstCovenant.World;
 using UnityEngine;
 
 namespace KeeperFirstCovenant.Combat
@@ -81,6 +82,17 @@ namespace KeeperFirstCovenant.Combat
             ApplyEnvironmentImpulse(
                 profile,
                 request.ImpactPoint);
+
+            if (profile.worldNoiseRadius > 0f)
+            {
+                WorldNoiseSystem.Emit(
+                    request.ImpactPoint,
+                    profile.worldNoiseRadius,
+                    request.Actor != null
+                        ? request.Actor.gameObject
+                        : gameObject,
+                    profile.worldNoiseIntensity);
+            }
 
             SpawnAssetHooks(
                 profile,
