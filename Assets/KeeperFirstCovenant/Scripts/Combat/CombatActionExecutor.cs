@@ -35,6 +35,9 @@ namespace KeeperFirstCovenant.Combat
         public readonly int AffectedTargets;
         public readonly ActionFailureReason Failure;
         public readonly ActiveDefenseOutcome DefenseOutcome;
+        public readonly bool ComboTriggered;
+        public readonly int ComboDepth;
+        public readonly int ComboBreakBonus;
 
         public CombatActionResult(
             bool executed,
@@ -48,7 +51,10 @@ namespace KeeperFirstCovenant.Combat
             int affectedTargets,
             ActionFailureReason failure,
             ActiveDefenseOutcome defenseOutcome =
-                ActiveDefenseOutcome.None)
+                ActiveDefenseOutcome.None,
+            bool comboTriggered = false,
+            int comboDepth = 0,
+            int comboBreakBonus = 0)
         {
             Executed = executed;
             Hit = hit;
@@ -61,6 +67,9 @@ namespace KeeperFirstCovenant.Combat
             AffectedTargets = affectedTargets;
             Failure = failure;
             DefenseOutcome = defenseOutcome;
+            ComboTriggered = comboTriggered;
+            ComboDepth = comboDepth;
+            ComboBreakBonus = comboBreakBonus;
         }
 
         public static CombatActionResult Failed(
@@ -184,8 +193,25 @@ namespace KeeperFirstCovenant.Combat
                     ActionFailureReason.InvalidAction);
             }
 
+            CombatActionStateComponent actionState =
+                null;
+
             if (!reaction)
             {
+                actionState =
+                    CombatActionStateComponent
+                        .Ensure(actor);
+
+                if (actionState != null &&
+                    !actionState.CanUse(
+                        action,
+                        out ActionFailureReason
+                            stateFailure))
+                {
+                    return CombatActionResult.Failed(
+                        stateFailure);
+                }
+
                 TurnCombatDirector director =
                     TurnCombatDirector.Instance;
 
@@ -284,6 +310,13 @@ namespace KeeperFirstCovenant.Combat
                 }
             }
 
+            ComboExecutionContext comboContext =
+                !reaction &&
+                actionState != null
+                    ? actionState.CommitAction(
+                        action)
+                    : ComboExecutionContext.None;
+
             Vector3 effectPoint =
                 preview.EffectPoint;
 
@@ -336,7 +369,8 @@ namespace KeeperFirstCovenant.Combat
                         action,
                         candidate,
                         hitChance,
-                        candidateDefense);
+                        candidateDefense,
+                        comboContext);
 
                 if (firstRoll == 0)
                 {
@@ -362,7 +396,10 @@ namespace KeeperFirstCovenant.Combat
                         hitChance,
                         1,
                         ActionFailureReason.None,
-                        candidateDefense);
+                        candidateDefense,
+                        comboContext.Matched,
+                        comboContext.Depth,
+                        comboContext.BreakBonus);
 
                 ActionResolved?.Invoke(
                     action,
@@ -415,7 +452,10 @@ namespace KeeperFirstCovenant.Combat
                 firstChance,
                 affected.Count,
                 ActionFailureReason.None,
-                defenseOutcome);
+                defenseOutcome,
+                comboContext.Matched,
+                comboContext.Depth,
+                comboContext.BreakBonus);
 
             if (affected.Count == 0)
             {
@@ -498,7 +538,8 @@ namespace KeeperFirstCovenant.Combat
                 CombatActionDefinition action,
                 CombatantRuntime target,
                 int hitChance,
-                ActiveDefenseOutcome defenseOutcome)
+                ActiveDefenseOutcome defenseOutcome,
+                ComboExecutionContext comboContext)
         {
             int attributeModifier =
                 actor.Definition != null
@@ -521,6 +562,17 @@ namespace KeeperFirstCovenant.Combat
                     attributeModifier,
                     action.scalingMultiplier,
                     critical);
+
+                if (comboContext.Matched)
+                {
+                    damage =
+                        Mathf.RoundToInt(
+                            damage *
+                            Mathf.Max(
+                                1f,
+                                comboContext
+                                    .DamageMultiplier));
+                }
 
                 damage =
                     ApplyActiveDefense(
