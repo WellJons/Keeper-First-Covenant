@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using KeeperFirstCovenant.World;
 using UnityEngine;
 
@@ -224,8 +225,26 @@ namespace KeeperFirstCovenant.Combat
                     ~0,
                     QueryTriggerInteraction.Ignore);
 
+            var affectedDestructibles =
+                new HashSet<
+                    EnvironmentalDestructible>();
+
             foreach (Collider collider in colliders)
             {
+                EnvironmentalDestructible destructible =
+                    collider.GetComponentInParent<
+                        EnvironmentalDestructible>();
+
+                if (destructible != null &&
+                    affectedDestructibles.Add(
+                        destructible))
+                {
+                    destructible.ApplyImpact(
+                        profile.impactTier,
+                        profile.environmentImpulseForce,
+                        point);
+                }
+
                 Rigidbody body =
                     collider.attachedRigidbody;
 
