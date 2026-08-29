@@ -35,7 +35,7 @@ namespace KeeperFirstCovenant.World
 
         public bool IsDiscovered => _discovered;
 
-        private void Start()
+        private void Awake()
         {
             ApplyHiddenState();
         }
@@ -164,8 +164,12 @@ namespace KeeperFirstCovenant.World
                          GetComponentsInChildren<
                              Collider>(true))
                 {
-                    if (!collider.isTrigger)
+                    if (!collider.isTrigger &&
+                        collider.GetComponentInParent<
+                            TrapMechanism>() == null)
+                    {
                         collider.enabled = false;
+                    }
                 }
             }
         }
