@@ -71,3 +71,66 @@ It now searches the arrival area by changing logical facing over time instead of
 Door lockpicking, forced entry, secret discovery, trap disarming and initiative do not use a D20 roll.
 
 Skill checks are deterministic and compare character attributes, secondary attributes, tool bonuses and difficulty through SkillCheckResolver.
+
+
+## Discovery journal
+
+WorldDiscoveryPoint records important places, clues, lore, creatures, factions, people and magical phenomena into DiscoveryJournal.
+
+Discoveries:
+- are de-duplicated by stable ID;
+- store the in-world day/time and optional location name;
+- persist in SaveGameData;
+- appear as a styled discovery notification;
+- are shown in the pause Journal under the "Открытия" tab.
+
+WorldInspectable can optionally create a discovery entry on first inspection, so lore objects do not require a second trigger just to feed the journal.
+
+Dialogue conditions can query whether a discovery is known or unknown.
+
+## Local light and stealth
+
+StealthLightProbe samples non-directional scene lights and world time.
+
+The final stealth visibility multiplier combines:
+- standing/crouched posture;
+- local light exposure;
+- daytime/nighttime ambient exposure.
+
+This means a character can be harder to see in darkness and easier to see while standing inside a torch/campfire light.
+
+WorldLightSource provides a persistent interactable light that can be extinguished and optionally relit. The prototype campfire uses it.
+
+## Environmental noise
+
+PerceptionSensor now distinguishes identifiable actor noise from unidentified environmental noise.
+
+Unidentified noise:
+- raises suspicion;
+- records the stimulus position;
+- makes EnemyInvestigationBrain investigate;
+- cannot directly start combat without identifying a player/ally.
+
+EnvironmentalDestructible emits impact/destruction noise.
+WorldPhysicsNoiseEmitter turns Rigidbody collision speed into a reusable noise event for loose 3D props.
+
+## Companion relationships
+
+RelationshipLedger stores hidden companion approval values.
+
+The player sees qualitative states only:
+- Враждебно;
+- Напряжённо;
+- Сдержанно;
+- Нейтрально;
+- Тепло;
+- Доверяет;
+- Предан.
+
+Dialogue supports:
+- RelationshipAtLeast / RelationshipAtMost conditions;
+- AddRelationship / SetRelationship effects;
+- deterministic player-attribute gates;
+- discovery-known / discovery-unknown gates.
+
+Relationship changes persist in saves and can surface as qualitative approval/disapproval notifications without exposing exact numbers.
