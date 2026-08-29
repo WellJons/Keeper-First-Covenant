@@ -233,9 +233,14 @@ namespace KeeperFirstCovenant.Combat
                         resultColor;
                 }
 
+                ShowResult(
+                    resolution.Outcome,
+                    normalized <
+                        idealTiming);
+
                 yield return
                     new WaitForSecondsRealtime(
-                        0.09f);
+                        0.24f);
             }
 
             HidePrompt();
@@ -539,7 +544,75 @@ namespace KeeperFirstCovenant.Combat
                     ? "SPACE — УКЛОНЕНИЕ     •     F — ПАРИРОВАНИЕ"
                     : "SPACE — УКЛОНЕНИЕ";
 
+            promptText.color =
+                MainMenuTheme.Text;
+
             promptRoot.SetActive(true);
+        }
+
+        private void ShowResult(
+            ActiveDefenseOutcome outcome,
+            bool early)
+        {
+            if (promptRoot == null ||
+                promptText == null)
+            {
+                return;
+            }
+
+            switch (outcome)
+            {
+                case ActiveDefenseOutcome
+                    .PerfectParry:
+                    promptText.text =
+                        "ИДЕАЛЬНОЕ ПАРИРОВАНИЕ";
+                    promptText.color =
+                        Color.white;
+                    break;
+
+                case ActiveDefenseOutcome
+                    .Parry:
+                    promptText.text =
+                        "ПАРИРОВАНИЕ";
+                    promptText.color =
+                        MainMenuTheme.Warm;
+                    break;
+
+                case ActiveDefenseOutcome
+                    .PerfectDodge:
+                    promptText.text =
+                        "ИДЕАЛЬНОЕ УКЛОНЕНИЕ";
+                    promptText.color =
+                        Color.white;
+                    break;
+
+                case ActiveDefenseOutcome
+                    .Dodge:
+                    promptText.text =
+                        "УКЛОНЕНИЕ";
+                    promptText.color =
+                        new Color(
+                            0.58f,
+                            0.86f,
+                            1f,
+                            1f);
+                    break;
+
+                case ActiveDefenseOutcome
+                    .Failed:
+                    promptText.text =
+                        early
+                            ? "СЛИШКОМ РАНО"
+                            : "СЛИШКОМ ПОЗДНО";
+                    promptText.color =
+                        MainMenuTheme.Danger;
+                    break;
+
+                default:
+                    promptText.text =
+                        string.Empty;
+                    break;
+            }
         }
 
         private void HidePrompt()
