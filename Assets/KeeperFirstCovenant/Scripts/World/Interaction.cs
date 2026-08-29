@@ -12,8 +12,18 @@ namespace KeeperFirstCovenant.World
         void Interact(GameObject actor);
     }
 
-    public sealed class SearchableLoot : MonoBehaviour, IInteractable
+    public sealed class SearchableLoot :
+        MonoBehaviour,
+        IInteractable,
+        IPersistentWorldObject
     {
+        [System.Serializable]
+        private sealed class PersistentState
+        {
+            public bool searched;
+        }
+
+        [SerializeField] private string persistenceId;
         [SerializeField] private string prompt = "Search";
         [SerializeField] private LootTableDefinition lootTable;
         [SerializeField] private bool searchOnce = true;
@@ -23,6 +33,12 @@ namespace KeeperFirstCovenant.World
 
         public string InteractionPrompt => prompt;
         public IReadOnlyList<InventoryStack> LastResult => _lastResult;
+        public bool IsSearched => _searched;
+
+        public string PersistenceId =>
+            WorldPersistenceUtility.GetStableId(
+                this,
+                persistenceId);
 
         public void Configure(LootTableDefinition table, string interactionPrompt = "Search", bool oneTime = true)
         {
@@ -60,6 +76,30 @@ namespace KeeperFirstCovenant.World
             }
 
             _searched = true;
+        }
+
+        public string CapturePersistentState()
+        {
+            return JsonUtility.ToJson(
+                new PersistentState
+                {
+                    searched = _searched
+                });
+        }
+
+        public void RestorePersistentState(string json)
+        {
+            if (string.IsNullOrWhiteSpace(json))
+                return;
+
+            PersistentState state =
+                JsonUtility.FromJson<PersistentState>(json);
+
+            if (state == null)
+                return;
+
+            _searched = state.searched;
+            _lastResult.Clear();
         }
     }
 }

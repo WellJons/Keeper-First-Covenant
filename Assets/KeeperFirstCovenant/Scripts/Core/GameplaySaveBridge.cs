@@ -9,12 +9,24 @@ using UnityEngine;
 namespace KeeperFirstCovenant.Core
 {
     [Serializable]
+    internal sealed class PersistentWorldObjectPayload
+    {
+        public string persistenceId;
+        public string typeName;
+        public Vector3 position;
+        public Vector3 eulerAngles;
+        public string stateJson;
+    }
+
+    [Serializable]
     internal sealed class WorldSavePayload
     {
-        public int version = 1;
+        public int version = 2;
         public WorldStateSnapshot worldState;
         public int day = 1;
         public float hour = 9f;
+        public List<PersistentWorldObjectPayload> objects =
+            new List<PersistentWorldObjectPayload>();
     }
 
     [Serializable]
@@ -78,6 +90,34 @@ namespace KeeperFirstCovenant.Core
                 payload.hour = Mathf.Repeat(WorldTimeSystem.Instance.Hour, 24f);
             }
 
+            MonoBehaviour[] behaviours =
+                UnityEngine.Object.FindObjectsByType<MonoBehaviour>(
+                    FindObjectsSortMode.None);
+
+            foreach (MonoBehaviour behaviour in behaviours)
+            {
+                if (!(behaviour is IPersistentWorldObject persistent))
+                    continue;
+
+                string id = persistent.PersistenceId;
+                if (string.IsNullOrWhiteSpace(id))
+                    continue;
+
+                payload.objects.Add(
+                    new PersistentWorldObjectPayload
+                    {
+                        persistenceId = id,
+                        typeName = behaviour.GetType().FullName,
+                        position = behaviour.transform.position,
+                        eulerAngles = behaviour.transform.eulerAngles,
+                        stateJson = persistent.CapturePersistentState()
+                    });
+            }
+
+            payload.objects = payload.objects
+                .OrderBy(value => value.persistenceId, StringComparer.Ordinal)
+                .ToList();
+
             save.worldStateJson = JsonUtility.ToJson(payload);
         }
 
@@ -99,11 +139,64 @@ namespace KeeperFirstCovenant.Core
 
                 if (WorldTimeSystem.Instance != null)
                     WorldTimeSystem.Instance.SetTime(payload.hour, payload.day);
+
+                RestorePersistentWorldObjects(payload.objects);
             }
             catch (Exception exception)
             {
                 Debug.LogWarning(
                     "Keeper world state could not be restored. " + exception.Message);
+            }
+        }
+
+        private static void RestorePersistentWorldObjects(
+            List<PersistentWorldObjectPayload> savedObjects)
+        {
+            if (savedObjects == null || savedObjects.Count == 0)
+                return;
+
+            MonoBehaviour[] behaviours =
+                UnityEngine.Object.FindObjectsByType<MonoBehaviour>(
+                    FindObjectsSortMode.None);
+
+            var loaded =
+                new Dictionary<string, IPersistentWorldObject>(
+                    StringComparer.Ordinal);
+
+            foreach (MonoBehaviour behaviour in behaviours)
+            {
+                if (!(behaviour is IPersistentWorldObject persistent))
+                    continue;
+
+                string id = persistent.PersistenceId;
+                if (string.IsNullOrWhiteSpace(id) ||
+                    loaded.ContainsKey(id))
+                {
+                    continue;
+                }
+
+                loaded[id] = persistent;
+            }
+
+            foreach (PersistentWorldObjectPayload saved in savedObjects)
+            {
+                if (saved == null ||
+                    string.IsNullOrWhiteSpace(saved.persistenceId) ||
+                    !loaded.TryGetValue(
+                        saved.persistenceId,
+                        out IPersistentWorldObject persistent))
+                {
+                    continue;
+                }
+
+                if (persistent is Component component)
+                {
+                    component.transform.position = saved.position;
+                    component.transform.rotation =
+                        Quaternion.Euler(saved.eulerAngles);
+                }
+
+                persistent.RestorePersistentState(saved.stateJson);
             }
         }
 

@@ -5,8 +5,21 @@ using UnityEngine;
 namespace KeeperFirstCovenant.World
 {
     [RequireComponent(typeof(Collider))]
-    public sealed class TrapMechanism : MonoBehaviour, IInteractable
+    public sealed class TrapMechanism :
+        MonoBehaviour,
+        IInteractable,
+        IPersistentWorldObject
     {
+        [System.Serializable]
+        private sealed class PersistentState
+        {
+            public bool revealed;
+            public bool spent;
+        }
+
+        [SerializeField]
+        private string persistenceId;
+
         [SerializeField]
         private bool revealed;
 
@@ -47,6 +60,14 @@ namespace KeeperFirstCovenant.World
         private int surfaceDuration = 2;
 
         private bool _spent;
+
+        public string PersistenceId =>
+            WorldPersistenceUtility.GetStableId(
+                this,
+                persistenceId);
+
+        public bool IsRevealed => revealed;
+        public bool IsSpent => _spent;
 
         public string InteractionPrompt =>
             revealed
@@ -201,6 +222,31 @@ namespace KeeperFirstCovenant.World
 
             if (triggerOnce)
                 _spent = true;
+        }
+
+        public string CapturePersistentState()
+        {
+            return JsonUtility.ToJson(
+                new PersistentState
+                {
+                    revealed = revealed,
+                    spent = _spent
+                });
+        }
+
+        public void RestorePersistentState(string json)
+        {
+            if (string.IsNullOrWhiteSpace(json))
+                return;
+
+            PersistentState state =
+                JsonUtility.FromJson<PersistentState>(json);
+
+            if (state == null)
+                return;
+
+            revealed = state.revealed;
+            _spent = state.spent;
         }
     }
 }

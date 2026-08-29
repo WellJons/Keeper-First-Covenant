@@ -5,8 +5,21 @@ using UnityEngine;
 
 namespace KeeperFirstCovenant.World
 {
-    public sealed class LockableDoor : MonoBehaviour, IInteractable
+    public sealed class LockableDoor :
+        MonoBehaviour,
+        IInteractable,
+        IPersistentWorldObject
     {
+        [System.Serializable]
+        private sealed class PersistentState
+        {
+            public bool locked;
+            public bool open;
+        }
+
+        [SerializeField]
+        private string persistenceId;
+
         [Header("State")]
         [SerializeField]
         private bool locked;
@@ -56,6 +69,11 @@ namespace KeeperFirstCovenant.World
 
         public bool IsLocked => locked;
         public bool IsOpen => open;
+
+        public string PersistenceId =>
+            WorldPersistenceUtility.GetStableId(
+                this,
+                persistenceId);
 
         public string InteractionPrompt
         {
@@ -272,6 +290,52 @@ namespace KeeperFirstCovenant.World
         {
             if (!open)
                 locked = true;
+        }
+
+        public string CapturePersistentState()
+        {
+            return JsonUtility.ToJson(
+                new PersistentState
+                {
+                    locked = locked,
+                    open = open
+                });
+        }
+
+        public void RestorePersistentState(string json)
+        {
+            if (string.IsNullOrWhiteSpace(json))
+                return;
+
+            PersistentState state =
+                JsonUtility.FromJson<PersistentState>(json);
+
+            if (state == null)
+                return;
+
+            locked = state.locked;
+            open = state.open;
+
+            if (_rotationRoutine != null)
+            {
+                StopCoroutine(_rotationRoutine);
+                _rotationRoutine = null;
+            }
+
+            Quaternion target =
+                open
+                    ? _closedRotation *
+                      Quaternion.Euler(
+                          0f,
+                          openAngle,
+                          0f)
+                    : _closedRotation;
+
+            if (hinge == null)
+                hinge = transform;
+
+            hinge.localRotation = target;
+            RebuildNavigation();
         }
 
         private void SetOpen(
