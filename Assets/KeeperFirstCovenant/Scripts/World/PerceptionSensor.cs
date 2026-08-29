@@ -174,13 +174,24 @@ namespace KeeperFirstCovenant.World
                             transform.position,
                             target.transform.position);
 
+                    WorldTimeSystem worldTime =
+                        WorldTimeSystem.Instance;
+
+                    float effectiveVisionRange =
+                        visionRange *
+                        (worldTime != null
+                            ? worldTime.VisibilityMultiplier
+                            : 1f);
+
                     float distanceFactor =
                         Mathf.Lerp(
                             1.25f,
                             0.55f,
                             Mathf.Clamp01(
                                 distance /
-                                visionRange));
+                                Mathf.Max(
+                                    0.01f,
+                                    effectiveVisionRange)));
 
                     gain +=
                         visibleSuspicionPerSecond *
@@ -281,8 +292,20 @@ namespace KeeperFirstCovenant.World
             float distance =
                 delta.magnitude;
 
+            WorldTimeSystem worldTime =
+                WorldTimeSystem.Instance;
+
+            float visibilityMultiplier =
+                worldTime != null
+                    ? worldTime.VisibilityMultiplier
+                    : 1f;
+
+            float effectiveVisionRange =
+                visionRange *
+                visibilityMultiplier;
+
             if (distance >
-                    visionRange ||
+                    effectiveVisionRange ||
                 distance <= 0.01f)
             {
                 return false;
