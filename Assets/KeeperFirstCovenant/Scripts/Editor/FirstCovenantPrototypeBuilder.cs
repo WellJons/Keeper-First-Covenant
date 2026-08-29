@@ -222,7 +222,7 @@ namespace KeeperFirstCovenant.EditorTools
                 environment.transform);
 
             SearchableLoot searchable = hiddenCache.AddComponent<SearchableLoot>();
-            searchable.Configure(roadsideLoot, "Search cache", true);
+            searchable.Configure(roadsideLoot, "Обыскать тайник", true);
             EditorUtility.SetDirty(searchable);
             CreateLabel(hiddenCache.transform, "Perception can reveal hidden loot", new Vector3(0f, 1.1f, 0f));
 
