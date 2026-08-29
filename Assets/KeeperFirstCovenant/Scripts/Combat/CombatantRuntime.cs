@@ -207,6 +207,12 @@ namespace KeeperFirstCovenant.Combat
 
             breakGauge?.ResetGauge();
 
+            ChargedActionComponent chargedAction =
+                GetComponent<
+                    ChargedActionComponent>();
+
+            chargedAction?.ResetCharge();
+
             _reactionsRemaining = 1;
             Changed?.Invoke(this);
         }
