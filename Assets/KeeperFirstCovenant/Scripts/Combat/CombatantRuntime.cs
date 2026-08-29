@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using KeeperFirstCovenant.Characters;
+using KeeperFirstCovenant.Developer;
 using KeeperFirstCovenant.Inventory;
 using UnityEngine;
 
@@ -141,6 +142,11 @@ namespace KeeperFirstCovenant.Combat
                 GetComponent<EquipmentComponent>();
 
             equipment?.CollectGrantedActions(actions);
+
+            DeveloperGrantedActions developerActions =
+                GetComponent<DeveloperGrantedActions>();
+
+            developerActions?.Collect(actions);
 
             return actions.ToArray();
         }
