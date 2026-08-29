@@ -62,6 +62,7 @@ namespace KeeperFirstCovenant.UI
             root.AddComponent<StealthAwarenessHud>();
             root.AddComponent<LootToastController>();
             root.AddComponent<DiscoveryToastController>();
+            root.AddComponent<RelationshipToastController>();
             root.AddComponent<QuestToastController>();
             root.AddComponent<QuestTrackerHud>();
             root.AddComponent<DialogueUiController>();
