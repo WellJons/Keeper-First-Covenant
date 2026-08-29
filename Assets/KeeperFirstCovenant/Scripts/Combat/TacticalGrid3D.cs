@@ -44,6 +44,12 @@ namespace KeeperFirstCovenant.Combat
             Build();
         }
 
+        public void RebuildForDynamicWorld()
+        {
+            Physics.SyncTransforms();
+            Build();
+        }
+
         public void Build()
         {
             _width = Mathf.Max(2, Mathf.RoundToInt(worldSize.x / cellSize));
