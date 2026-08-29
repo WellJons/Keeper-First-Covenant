@@ -1,4 +1,5 @@
 using System.Linq;
+using KeeperFirstCovenant.World;
 using UnityEngine;
 
 namespace KeeperFirstCovenant.Combat
@@ -13,6 +14,8 @@ namespace KeeperFirstCovenant.Combat
         public readonly float HeightDifference;
         public readonly int HeightHitModifier;
         public readonly int CoverHitModifier;
+        public readonly FlankQuality Flank;
+        public readonly int FlankImpactModifier;
         public readonly int HitChance;
         public readonly int DamageMin;
         public readonly int DamageMax;
@@ -28,6 +31,8 @@ namespace KeeperFirstCovenant.Combat
             float heightDifference,
             int heightHitModifier,
             int coverHitModifier,
+            FlankQuality flank,
+            int flankImpactModifier,
             int hitChance,
             int damageMin,
             int damageMax,
@@ -42,6 +47,8 @@ namespace KeeperFirstCovenant.Combat
             HeightDifference = heightDifference;
             HeightHitModifier = heightHitModifier;
             CoverHitModifier = coverHitModifier;
+            Flank = flank;
+            FlankImpactModifier = flankImpactModifier;
             HitChance = hitChance;
             DamageMin = damageMin;
             DamageMax = damageMax;
@@ -61,6 +68,8 @@ namespace KeeperFirstCovenant.Combat
                 0f,
                 0f,
                 0,
+                0,
+                FlankQuality.None,
                 0,
                 0,
                 0,
@@ -164,6 +173,37 @@ namespace KeeperFirstCovenant.Combat
                 ? 0
                 : GetCoverHitModifier(cover);
 
+            FlankQuality flank =
+                target != null &&
+                action.usesFlanking
+                    ? GetFlankQualityFromPoint(
+                        actor.transform.position,
+                        target)
+                    : FlankQuality.None;
+
+            int flankModifier;
+
+            switch (flank)
+            {
+                case FlankQuality.Back:
+                    flankModifier =
+                        Mathf.Max(
+                            0,
+                            action.backFlankImpactBonus);
+                    break;
+
+                case FlankQuality.Side:
+                    flankModifier =
+                        Mathf.Max(
+                            0,
+                            action.sideFlankImpactBonus);
+                    break;
+
+                default:
+                    flankModifier = 0;
+                    break;
+            }
+
             int attributeModifier =
                 actor.Definition.GetModifier(action.scalingAttribute);
 
@@ -193,7 +233,8 @@ namespace KeeperFirstCovenant.Combat
             {
                 int tacticalModifier =
                     heightModifier +
-                    coverModifier -
+                    coverModifier +
+                    flankModifier -
                     strainHitPenalty;
 
                 tacticalMultiplier =
@@ -294,11 +335,58 @@ namespace KeeperFirstCovenant.Combat
                 heightDifference,
                 heightModifier,
                 coverModifier,
+                flank,
+                flankModifier,
                 hitChance,
                 damageMin,
                 damageMax,
                 affectedTargets,
                 effectPoint);
+        }
+
+        public static FlankQuality
+            GetFlankQualityFromPoint(
+                Vector3 attackerPosition,
+                CombatantRuntime target)
+        {
+            if (target == null)
+                return FlankQuality.None;
+
+            Vector3 toAttacker =
+                attackerPosition -
+                target.transform.position;
+
+            toAttacker.y = 0f;
+
+            if (toAttacker.sqrMagnitude <= 0.001f)
+                return FlankQuality.None;
+
+            WorldFacing facing =
+                target.GetComponent<
+                    WorldFacing>();
+
+            Vector3 forward =
+                facing != null
+                    ? facing.Forward
+                    : target.transform.forward;
+
+            forward.y = 0f;
+
+            if (forward.sqrMagnitude <= 0.001f)
+                forward = Vector3.forward;
+
+            float dot =
+                Vector3.Dot(
+                    forward.normalized,
+                    toAttacker.normalized);
+
+            if (dot <= -0.55f)
+                return FlankQuality.Back;
+
+            if (dot < 0.35f)
+                return FlankQuality.Side;
+
+            return FlankQuality.None;
         }
 
         public static bool IsFriendly(
