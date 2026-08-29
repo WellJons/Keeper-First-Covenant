@@ -701,12 +701,22 @@ namespace KeeperFirstCovenant.UI
                 return;
             }
 
+            BreakGaugeComponent breakGauge =
+                actor.GetComponent<
+                    BreakGaugeComponent>();
+
+            string stability =
+                breakGauge != null
+                    ? $"   Стойкость {breakGauge.Stability}/{breakGauge.MaxStability}"
+                    : string.Empty;
+
             resourceText.text =
                 $"{actor.Definition.displayName}   " +
                 $"HP {actor.CurrentHealth}/{actor.Definition.maxHealth}   " +
                 $"MP {actor.CurrentMana}/{actor.Definition.maxMana}   " +
                 $"AP {actor.CurrentActionPoints}   " +
-                $"Движение {actor.TotalMovementAvailable:0.0} м";
+                $"Движение {actor.TotalMovementAvailable:0.0} м" +
+                stability;
         }
 
         private void RefreshActions(
