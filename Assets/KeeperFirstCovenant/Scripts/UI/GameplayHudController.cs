@@ -886,10 +886,25 @@ namespace KeeperFirstCovenant.UI
                 return;
             }
 
+            string damage =
+                preview.DamageMin ==
+                    preview.DamageMax
+                    ? preview.DamageMin.ToString()
+                    : preview.DamageMin +
+                      "-" +
+                      preview.DamageMax;
+
+            string tactical =
+                preview.Cover !=
+                    CoverQuality.None
+                    ? "   •   укрытие " +
+                      preview.Cover
+                    : string.Empty;
+
             previewText.text =
-                $"Попадание {preview.HitChance}%   " +
-                $"Урон {preview.DamageMin}-{preview.DamageMax}   " +
-                $"{preview.Distance:0.0} м";
+                $"Урон {damage}   •   " +
+                $"{preview.Distance:0.0} м" +
+                tactical;
         }
 
         private static void
