@@ -168,6 +168,9 @@ namespace KeeperFirstCovenant.UI
                         MainMenuTheme.Panel.b,
                         0.78f));
 
+            KeeperUiSkin.DecorateSection(
+                background);
+
             RectTransform rect =
                 background.rectTransform;
 
@@ -210,6 +213,10 @@ namespace KeeperFirstCovenant.UI
                         0.90f));
 
             combatPanel = panel.gameObject;
+
+            KeeperUiSkin.DecorateMajorPanel(
+                panel,
+                true);
 
             RectTransform panelRect =
                 panel.rectTransform;
@@ -430,6 +437,9 @@ namespace KeeperFirstCovenant.UI
                         MainMenuTheme.Panel.g,
                         MainMenuTheme.Panel.b,
                         0.78f));
+
+            KeeperUiSkin.DecorateSection(
+                panel);
 
             LayoutElement element =
                 panel.gameObject
