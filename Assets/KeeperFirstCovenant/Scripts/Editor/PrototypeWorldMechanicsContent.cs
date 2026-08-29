@@ -448,6 +448,9 @@ namespace KeeperFirstCovenant.EditorTools
                 prop.AddComponent<Rigidbody>();
 
             body.mass = 0.7f;
+
+            prop.AddComponent<
+                WorldPhysicsNoiseEmitter>();
         }
     }
 }
