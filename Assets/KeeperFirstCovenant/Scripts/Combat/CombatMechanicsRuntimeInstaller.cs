@@ -93,6 +93,14 @@ namespace KeeperFirstCovenant.Combat
                 gameObject.AddComponent<
                     ProceduralMagicVfxController>();
             }
+
+            if (FindFirstObjectByType<
+                    ChargedActionTelegraphController>() ==
+                null)
+            {
+                gameObject.AddComponent<
+                    ChargedActionTelegraphController>();
+            }
         }
 
         private static void EnsureMechanics()
