@@ -101,6 +101,14 @@ namespace KeeperFirstCovenant.Combat
                 gameObject.AddComponent<
                     ChargedActionTelegraphController>();
             }
+
+            if (FindFirstObjectByType<
+                    BossPhasePresentationController>() ==
+                null)
+            {
+                gameObject.AddComponent<
+                    BossPhasePresentationController>();
+            }
         }
 
         private static void EnsureMechanics()
