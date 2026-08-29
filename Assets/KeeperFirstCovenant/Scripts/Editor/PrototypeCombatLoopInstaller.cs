@@ -231,6 +231,8 @@ namespace KeeperFirstCovenant.EditorTools
                 }
             }
 
+            PrototypeWorldMechanicsContent.Build();
+
             EditorSceneManager
                 .MarkSceneDirty(
                     EditorSceneManager
