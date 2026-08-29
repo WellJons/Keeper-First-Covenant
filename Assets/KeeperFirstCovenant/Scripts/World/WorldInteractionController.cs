@@ -1,5 +1,6 @@
 using System.Linq;
 using KeeperFirstCovenant.Combat;
+using KeeperFirstCovenant.Dialogue;
 using KeeperFirstCovenant.Inventory;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -20,6 +21,9 @@ namespace KeeperFirstCovenant.World
 
         private void Update()
         {
+            if (DialogueRunner.IsDialogueActive)
+                return;
+
             TurnCombatDirector director = TurnCombatDirector.Instance;
             if (director != null && director.State == CombatState.Active)
                 return;
