@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using KeeperFirstCovenant.Combat;
 using KeeperFirstCovenant.Core;
+using KeeperFirstCovenant.Dialogue;
 using KeeperFirstCovenant.Quests;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -67,8 +68,11 @@ namespace KeeperFirstCovenant.UI
 
         private void Update()
         {
-            if (Flow.IsTransitioning)
+            if (Flow.IsTransitioning ||
+                DialogueRunner.IsDialogueActive)
+            {
                 return;
+            }
 
             bool pausePressed =
                 Keyboard.current != null &&
