@@ -197,6 +197,16 @@ namespace KeeperFirstCovenant.Combat
             if (!IsAlive)
                 return;
 
+            CombatActionStateComponent
+                .Ensure(this)
+                ?.ResetState();
+
+            BreakGaugeComponent breakGauge =
+                GetComponent<
+                    BreakGaugeComponent>();
+
+            breakGauge?.ResetGauge();
+
             _reactionsRemaining = 1;
             Changed?.Invoke(this);
         }
