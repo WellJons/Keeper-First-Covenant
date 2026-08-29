@@ -42,6 +42,9 @@ namespace KeeperFirstCovenant.World
         private float movingNoiseSuspicionPerSecond = 30f;
 
         [SerializeField, Min(0f)]
+        private float noiseSuspicionBase = 42f;
+
+        [SerializeField, Min(0f)]
         private float suspicionDecayPerSecond = 22f;
 
         [SerializeField, Min(0.03f)]
@@ -356,7 +359,9 @@ namespace KeeperFirstCovenant.World
 
             if (director != null &&
                 director.State ==
-                    CombatState.Active)
+                    CombatState.Active &&
+                director.IsParticipant(
+                    _owner))
             {
                 return;
             }
@@ -397,7 +402,7 @@ namespace KeeperFirstCovenant.World
                 noise.Position;
 
             float gain =
-                25f *
+                noiseSuspicionBase *
                 noise.Intensity *
                 (0.5f + closeness);
 
