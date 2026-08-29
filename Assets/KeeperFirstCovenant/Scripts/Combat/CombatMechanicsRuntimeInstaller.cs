@@ -69,6 +69,14 @@ namespace KeeperFirstCovenant.Combat
                 gameObject.AddComponent<
                     ElementalReactionVfxController>();
             }
+
+            if (FindFirstObjectByType<
+                    ActiveDefenseSystem>() ==
+                null)
+            {
+                gameObject.AddComponent<
+                    ActiveDefenseSystem>();
+            }
         }
 
         private static void EnsureMechanics()
