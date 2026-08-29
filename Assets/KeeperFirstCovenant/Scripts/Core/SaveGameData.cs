@@ -5,7 +5,7 @@ namespace KeeperFirstCovenant.Core
     [Serializable]
     public sealed class SaveGameData
     {
-        public int version = 1;
+        public int version = 2;
         public int slotId;
 
         public string saveGuid;
@@ -24,6 +24,7 @@ namespace KeeperFirstCovenant.Core
         public string worldStateJson = "";
         public string partyStateJson = "";
         public string questStateJson = "";
+        public string discoveryStateJson = "";
         public string thumbnailRelativePath = "";
 
         public DateTime GetModifiedUtc()
