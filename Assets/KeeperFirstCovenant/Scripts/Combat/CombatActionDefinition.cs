@@ -7,8 +7,20 @@ namespace KeeperFirstCovenant.Combat
     public struct StatusApplication
     {
         public StatusEffectDefinition effect;
-        [Range(0f, 1f)] public float chance;
-        [Min(0)] public int durationOverride;
+
+        [Tooltip("Legacy authoring value. Runtime status application is deterministic.")]
+        [Range(0f, 1f)]
+        public float chance;
+
+        public bool requiresResistanceCheck;
+
+        public AbilityAttribute resistanceAttribute;
+
+        [Min(0)]
+        public int statusPower;
+
+        [Min(0)]
+        public int durationOverride;
     }
 
     [CreateAssetMenu(
@@ -42,8 +54,16 @@ namespace KeeperFirstCovenant.Combat
         public bool usesHeightAdvantage = true;
 
         [Header("Attack")]
+        [Tooltip("Legacy compatibility flag. Normal combat resolution is deterministic.")]
         public bool requiresAttackRoll = true;
-        [Range(0, 100)] public int baseHitChance = 75;
+
+        [Tooltip("Legacy compatibility value. No random hit roll is performed.")]
+        [Range(0, 100)]
+        public int baseHitChance = 75;
+
+        [Tooltip("Cover and elevation change impact strength instead of causing a random miss.")]
+        public bool usesTacticalImpactModifiers = true;
+
         public DiceFormula damage = new DiceFormula(1, 6);
         public DamageType damageType = DamageType.Physical;
         public AbilityAttribute scalingAttribute = AbilityAttribute.Strength;
