@@ -207,6 +207,18 @@ namespace KeeperFirstCovenant.Player
                 return false;
             }
 
+            CombatActionStateComponent actionState =
+                CombatActionStateComponent
+                    .Ensure(_currentActor);
+
+            if (actionState != null &&
+                !actionState.CanUse(
+                    action,
+                    out _))
+            {
+                return false;
+            }
+
             _selectedAction = action;
             ClearCursorPreview();
 
