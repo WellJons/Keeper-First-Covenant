@@ -30,6 +30,7 @@ namespace KeeperFirstCovenant.Inventory
         [SerializeField] private float maxCarryWeight = 60f;
 
         public IReadOnlyList<InventoryStack> Items => items;
+        public float MaxCarryWeight => maxCarryWeight;
 
         public float CurrentWeight
         {
