@@ -34,6 +34,12 @@ namespace KeeperFirstCovenant.Combat
             _facing = GetComponent<WorldFacing>();
         }
 
+        private void Start()
+        {
+            if (_facing == null)
+                _facing = GetComponent<WorldFacing>();
+        }
+
         public bool TryMoveTo(
             TacticalGrid3D grid,
             Vector3 destination,
