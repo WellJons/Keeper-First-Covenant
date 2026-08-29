@@ -21,8 +21,8 @@ namespace KeeperFirstCovenant.UI
 
         private void OnDestroy()
         {
-            if (QuestJournal.Instance != null)
-                QuestJournal.Instance.Changed -= Refresh;
+            if (QuestJournal.Current != null)
+                QuestJournal.Current.Changed -= Refresh;
         }
 
         private void Build()

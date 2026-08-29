@@ -61,6 +61,8 @@ namespace KeeperFirstCovenant.Quests
             }
         }
 
+        public static QuestJournal Current => instance;
+
         public IReadOnlyList<QuestEntryState> Quests => quests;
 
         public event Action Changed;

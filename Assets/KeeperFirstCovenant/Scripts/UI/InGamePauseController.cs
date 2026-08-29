@@ -949,8 +949,16 @@ namespace KeeperFirstCovenant.UI
 
         private void RequestQuit()
         {
+            bool combatActive =
+                TurnCombatDirector.Instance != null &&
+                TurnCombatDirector.Instance.State == CombatState.Active;
+
+            string message = combatActive
+                ? "Выйти из игры?\nАктивный бой не сохраняется — последнее сохранение до боя останется без изменений."
+                : "Выйти из игры?\nТекущий прогресс будет автоматически сохранён.";
+
             ShowConfirm(
-                "Выйти из игры?\nТекущий прогресс будет автоматически сохранён.",
+                message,
                 "Выйти",
                 () =>
                 {
