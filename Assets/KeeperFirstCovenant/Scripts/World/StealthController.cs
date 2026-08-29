@@ -36,16 +36,27 @@ namespace KeeperFirstCovenant.World
                 return;
             }
 
-            CombatantRuntime leader =
+            CombatantRuntime[] party =
                 FindObjectsByType<
                         CombatantRuntime>(
                         FindObjectsSortMode.None)
                     .Where(x =>
                         x != null &&
                         x.IsAlive &&
-                        x.Faction ==
-                            CombatFaction.Player)
+                        (x.Faction ==
+                             CombatFaction.Player ||
+                         x.Faction ==
+                             CombatFaction.Ally))
+                    .ToArray();
+
+            CombatantRuntime leader =
+                party
                     .OrderBy(x =>
+                        x.Faction ==
+                            CombatFaction.Player
+                            ? 0
+                            : 1)
+                    .ThenBy(x =>
                         x.Definition != null &&
                         x.Definition.characterId ==
                             "edward"
@@ -56,19 +67,38 @@ namespace KeeperFirstCovenant.World
             if (leader == null)
                 return;
 
-            StealthSignature signature =
+            StealthSignature leaderSignature =
                 leader.GetComponent<
                     StealthSignature>();
 
-            if (signature == null)
+            if (leaderSignature == null)
             {
-                signature =
+                leaderSignature =
                     leader.gameObject
                         .AddComponent<
                             StealthSignature>();
             }
 
-            signature.ToggleCrouched();
+            bool crouch =
+                !leaderSignature.IsCrouched;
+
+            foreach (CombatantRuntime member
+                     in party)
+            {
+                StealthSignature signature =
+                    member.GetComponent<
+                        StealthSignature>();
+
+                if (signature == null)
+                {
+                    signature =
+                        member.gameObject
+                            .AddComponent<
+                                StealthSignature>();
+                }
+
+                signature.SetCrouched(crouch);
+            }
         }
     }
 }
