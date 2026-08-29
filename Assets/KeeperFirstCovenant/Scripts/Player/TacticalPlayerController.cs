@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using KeeperFirstCovenant.Combat;
 using KeeperFirstCovenant.Developer;
@@ -19,11 +20,23 @@ namespace KeeperFirstCovenant.Player
         [SerializeField, Min(10f)]
         private float rayDistance = 500f;
 
+        [Header("Free movement")]
+        [SerializeField, Min(0.1f)]
+        private float destinationOccupancyRadius = 0.55f;
+
         private CombatActionDefinition _selectedAction;
         private CombatantRuntime _currentActor;
         private TacticalTargetPreview _currentPreview;
         private CombatantRuntime _hoveredTarget;
         private bool _hasHoverPreview;
+
+        private readonly List<Vector3>
+            _movementPreviewPath =
+                new List<Vector3>();
+
+        private float _movementPreviewCost;
+        private bool _movementPreviewValid;
+        private Vector3 _movementPreviewDestination;
 
         public CombatActionDefinition SelectedAction =>
             _selectedAction;
@@ -39,6 +52,22 @@ namespace KeeperFirstCovenant.Player
 
         public bool HasHoverPreview =>
             _hasHoverPreview;
+
+        public IReadOnlyList<Vector3>
+            MovementPreviewPath =>
+                _movementPreviewPath;
+
+        public bool HasMovementPreview =>
+            _movementPreviewPath.Count > 0;
+
+        public float MovementPreviewCost =>
+            _movementPreviewCost;
+
+        public bool MovementPreviewValid =>
+            _movementPreviewValid;
+
+        public Vector3 MovementPreviewDestination =>
+            _movementPreviewDestination;
 
         private void Start()
         {
@@ -78,7 +107,7 @@ namespace KeeperFirstCovenant.Player
         {
             if (!CanAcceptInput())
             {
-                ClearHoverPreview();
+                ClearCursorPreview();
                 return;
             }
 
@@ -90,18 +119,18 @@ namespace KeeperFirstCovenant.Player
 
             if (!CanAcceptInput())
             {
-                ClearHoverPreview();
+                ClearCursorPreview();
                 return;
             }
 
-            UpdateHoverPreview(
+            UpdateCursorPreview(
                 mouse.position.ReadValue());
 
             if (mouse.rightButton
                 .wasPressedThisFrame)
             {
                 _selectedAction = null;
-                ClearHoverPreview();
+                ClearCursorPreview();
                 return;
             }
 
@@ -164,7 +193,7 @@ namespace KeeperFirstCovenant.Player
                 .wasPressedThisFrame)
             {
                 _selectedAction = null;
-                ClearHoverPreview();
+                ClearCursorPreview();
 
                 TurnCombatDirector.Instance
                     ?.EndCurrentTurn();
@@ -176,7 +205,7 @@ namespace KeeperFirstCovenant.Player
                 .wasPressedThisFrame)
             {
                 _selectedAction = null;
-                ClearHoverPreview();
+                ClearCursorPreview();
                 return;
             }
 
@@ -212,19 +241,83 @@ namespace KeeperFirstCovenant.Player
             }
 
             _selectedAction = actions[index];
+            ClearCursorPreview();
         }
 
-        private void UpdateHoverPreview(
+        private void UpdateCursorPreview(
             Vector2 screenPosition)
         {
-            ClearHoverPreview();
+            ClearCursorPreview();
 
-            if (_selectedAction == null ||
-                worldCamera == null)
+            if (worldCamera == null)
+                return;
+
+            if (_selectedAction == null)
+            {
+                UpdateMovementPreview(
+                    screenPosition);
+                return;
+            }
+
+            UpdateActionPreview(
+                screenPosition);
+        }
+
+        private void UpdateMovementPreview(
+            Vector2 screenPosition)
+        {
+            if (grid == null ||
+                _currentActor == null)
             {
                 return;
             }
 
+            Ray ray =
+                worldCamera.ScreenPointToRay(
+                    screenPosition);
+
+            if (!TryGetGroundHit(
+                    ray,
+                    out RaycastHit groundHit))
+            {
+                return;
+            }
+
+            if (!grid.TryProjectWalkablePoint(
+                    groundHit.point,
+                    out Vector3 destination))
+            {
+                return;
+            }
+
+            List<Vector3> path =
+                grid.FindContinuousPath(
+                    _currentActor.transform.position,
+                    destination);
+
+            if (path.Count == 0)
+                return;
+
+            _movementPreviewPath.AddRange(path);
+            _movementPreviewDestination =
+                destination;
+
+            _movementPreviewCost =
+                grid.CalculatePathLength(
+                    path,
+                    _currentActor.transform.position);
+
+            _movementPreviewValid =
+                _movementPreviewCost > 0.01f &&
+                _movementPreviewCost <=
+                    _currentActor.RemainingMovement +
+                    0.01f &&
+                !IsOccupied(destination);
+        }
+
+        private void UpdateActionPreview(
+            Vector2 screenPosition)
+        {
             Ray ray =
                 worldCamera.ScreenPointToRay(
                     screenPosition);
@@ -271,7 +364,8 @@ namespace KeeperFirstCovenant.Player
             Vector2 screenPosition)
         {
             if (grid == null ||
-                worldCamera == null)
+                worldCamera == null ||
+                _currentActor == null)
             {
                 return;
             }
@@ -287,11 +381,35 @@ namespace KeeperFirstCovenant.Player
                 return;
             }
 
-            Vector3 destination =
-                grid.SnapToCell(hit.point);
+            if (!grid.TryProjectWalkablePoint(
+                    hit.point,
+                    out Vector3 destination))
+            {
+                return;
+            }
 
             if (IsOccupied(destination))
                 return;
+
+            List<Vector3> path =
+                grid.FindContinuousPath(
+                    _currentActor.transform.position,
+                    destination);
+
+            if (path.Count == 0)
+                return;
+
+            float pathLength =
+                grid.CalculatePathLength(
+                    path,
+                    _currentActor.transform.position);
+
+            if (pathLength >
+                _currentActor.RemainingMovement +
+                0.01f)
+            {
+                return;
+            }
 
             TacticalUnitMover mover =
                 _currentActor
@@ -306,19 +424,17 @@ namespace KeeperFirstCovenant.Player
                             TacticalUnitMover>();
             }
 
-            mover.TryMoveTo(
-                grid,
-                destination);
+            if (mover.TryMoveTo(
+                    grid,
+                    destination))
+            {
+                ClearCursorPreview();
+            }
         }
 
         private bool IsOccupied(
             Vector3 destination)
         {
-            float radius =
-                grid != null
-                    ? grid.CellSize * 0.45f
-                    : 0.6f;
-
             return FindObjectsByType<
                     CombatantRuntime>(
                     FindObjectsSortMode.None)
@@ -328,7 +444,8 @@ namespace KeeperFirstCovenant.Player
                     x.CanBeTargeted &&
                     Vector3.Distance(
                         x.transform.position,
-                        destination) <= radius);
+                        destination) <=
+                    destinationOccupancyRadius);
         }
 
         private void TryUseSelectedAction(
@@ -364,7 +481,7 @@ namespace KeeperFirstCovenant.Player
                 if (result.Executed)
                 {
                     _selectedAction = null;
-                    ClearHoverPreview();
+                    ClearCursorPreview();
                 }
 
                 return;
@@ -385,7 +502,7 @@ namespace KeeperFirstCovenant.Player
             if (targetResult.Executed)
             {
                 _selectedAction = null;
-                ClearHoverPreview();
+                ClearCursorPreview();
             }
         }
 
@@ -443,11 +560,17 @@ namespace KeeperFirstCovenant.Player
             return null;
         }
 
-        private void ClearHoverPreview()
+        private void ClearCursorPreview()
         {
             _hasHoverPreview = false;
             _hoveredTarget = null;
             _currentPreview = default;
+
+            _movementPreviewPath.Clear();
+            _movementPreviewCost = 0f;
+            _movementPreviewValid = false;
+            _movementPreviewDestination =
+                Vector3.zero;
         }
 
         private void OnCurrentActorChanged(
@@ -455,7 +578,7 @@ namespace KeeperFirstCovenant.Player
         {
             _currentActor = actor;
             _selectedAction = null;
-            ClearHoverPreview();
+            ClearCursorPreview();
         }
     }
 }
