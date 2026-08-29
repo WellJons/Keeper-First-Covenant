@@ -96,6 +96,13 @@ namespace KeeperFirstCovenant.Combat
         PerfectParry
     }
 
+    public enum FlankQuality
+    {
+        None,
+        Side,
+        Back
+    }
+
     [Serializable]
     public struct DiceFormula
     {
