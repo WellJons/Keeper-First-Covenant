@@ -22,6 +22,7 @@ namespace KeeperFirstCovenant.Combat
         {
             if (moving == null ||
                 !moving.IsAlive ||
+                moving.SuppressOpportunityAttacks ||
                 TurnCombatDirector.Instance == null ||
                 TurnCombatDirector.Instance.State != CombatState.Active)
             {
