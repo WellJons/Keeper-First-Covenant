@@ -201,21 +201,29 @@ namespace KeeperFirstCovenant.Combat
             Changed?.Invoke(this);
         }
 
+        public int GetInitiativeScore()
+        {
+            if (definition == null)
+                return GetStatusInitiativeModifier();
+
+            int perception =
+                definition.GetAttribute(
+                    AbilityAttribute.Perception);
+
+            int finesse =
+                definition.GetAttribute(
+                    AbilityAttribute.Finesse);
+
+            return
+                perception * 2 +
+                finesse +
+                definition.initiativeBonus +
+                GetStatusInitiativeModifier();
+        }
+
         public int RollInitiative()
         {
-            int perception = definition != null
-                ? definition.GetModifier(AbilityAttribute.Perception)
-                : 0;
-
-            int bonus =
-                definition != null
-                    ? definition.initiativeBonus
-                    : 0;
-
-            return UnityEngine.Random.Range(1, 21) +
-                   perception +
-                   bonus +
-                   GetStatusInitiativeModifier();
+            return GetInitiativeScore();
         }
 
         public void BeginTurn()
