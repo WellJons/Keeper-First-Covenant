@@ -134,6 +134,13 @@ namespace KeeperFirstCovenant.World
             }
 
             onDiscovered?.Invoke();
+
+            TacticalGrid3D navigation =
+                FindFirstObjectByType<
+                    TacticalGrid3D>();
+
+            navigation
+                ?.RebuildForDynamicWorld();
         }
 
         private void ApplyHiddenState()
