@@ -122,6 +122,10 @@ namespace KeeperFirstCovenant.UI
                         MainMenuTheme.Panel.b,
                         0.72f));
 
+            KeeperUiSkin.DecorateMajorPanel(
+                vignette,
+                true);
+
             RectTransform panelRect =
                 vignette.rectTransform;
 
