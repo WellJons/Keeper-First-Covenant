@@ -417,6 +417,20 @@ namespace KeeperFirstCovenant.World
             }
         }
 
+        public void DebugResetAwareness()
+        {
+            _suspicion.Clear();
+
+            Awareness =
+                AwarenessLevel.Unaware;
+
+            LastStimulusPosition =
+                transform.position;
+
+            AwarenessChanged?.Invoke(
+                Awareness);
+        }
+
         private float GetSuspicion(
             CombatantRuntime target)
         {
