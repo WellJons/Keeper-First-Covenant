@@ -207,6 +207,34 @@ namespace KeeperFirstCovenant.EditorTools
             profile.environmentImpulseForce =
                 impulseForce;
 
+            switch (tier)
+            {
+                case ImpactTier.Mythic:
+                    profile.worldNoiseRadius = 32f;
+                    profile.worldNoiseIntensity = 1.8f;
+                    break;
+
+                case ImpactTier.Devastating:
+                    profile.worldNoiseRadius = 26f;
+                    profile.worldNoiseIntensity = 1.5f;
+                    break;
+
+                case ImpactTier.Heavy:
+                    profile.worldNoiseRadius = 20f;
+                    profile.worldNoiseIntensity = 1.25f;
+                    break;
+
+                case ImpactTier.Light:
+                    profile.worldNoiseRadius = 10f;
+                    profile.worldNoiseIntensity = 0.8f;
+                    break;
+
+                default:
+                    profile.worldNoiseRadius = 4f;
+                    profile.worldNoiseIntensity = 0.5f;
+                    break;
+            }
+
             EditorUtility.SetDirty(profile);
         }
 
