@@ -100,6 +100,41 @@ namespace KeeperFirstCovenant.EditorTools
                 SurfaceType.None;
             EditorUtility.SetDirty(shove);
 
+            CombatActionDefinition rift =
+                GetOrCreateAction(
+                    "Rift",
+                    "Разрыв");
+
+            rift.category =
+                CombatActionCategory.Unique;
+            rift.targetKind =
+                TargetKind.Self;
+            rift.actionPointCost = 1;
+            rift.manaCost = 12;
+            rift.strainCost = 80;
+            rift.rangeMeters = 0.5f;
+            rift.areaRadius = 0f;
+            rift.areaTargetRule =
+                AreaTargetRule.PrimaryOnly;
+            rift.requiresLineOfSight = false;
+            rift.ignoresCover = true;
+            rift.usesHeightAdvantage = false;
+            rift.requiresAttackRoll = false;
+            rift.damage =
+                new DiceFormula(0, 2, 0);
+            rift.healing =
+                new DiceFormula(0, 2, 0);
+            rift.barrier =
+                new DiceFormula(0, 2, 0);
+            rift.scalingAttribute =
+                AbilityAttribute.None;
+            rift.scalingMultiplier = 0f;
+            rift.freeMovementMetersGranted = 15f;
+            rift.freeMovementSuppressesOpportunityAttacks = true;
+            rift.createsSurface =
+                SurfaceType.None;
+            EditorUtility.SetDirty(rift);
+
             CombatActionDefinition fireBurst =
                 GetOrCreateAction(
                     "FireBurst",
