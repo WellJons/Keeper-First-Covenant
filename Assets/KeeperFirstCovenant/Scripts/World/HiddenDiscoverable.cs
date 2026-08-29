@@ -94,19 +94,19 @@ namespace KeeperFirstCovenant.World
                 if (!_attemptedBy.Add(id))
                     continue;
 
-                int modifier =
+                int perception =
                     member.Definition != null
                         ? member.Definition
-                            .GetModifier(
+                            .GetAttribute(
                                 AbilityAttribute.Perception)
                         : 0;
 
-                int secretRoll =
-                    Random.Range(1, 21) +
-                    modifier;
+                SkillCheckResult result =
+                    SkillCheckResolver.Resolve(
+                        perception,
+                        perceptionDifficulty);
 
-                if (secretRoll >=
-                    perceptionDifficulty)
+                if (result.Success)
                 {
                     Reveal();
                     return;
