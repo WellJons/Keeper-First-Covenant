@@ -109,10 +109,31 @@ namespace KeeperFirstCovenant.UI
                 GUILayout.Label(
                     $"AP {actor.CurrentActionPoints}   " +
                     $"Move " +
-                    $"{actor.RemainingMovement:0.0} m   " +
-                    $"Reaction " +
+                    $"{actor.RemainingMovement:0.0} m" +
+                    (actor.FreeMovementRemaining > 0.01f
+                        ? $" + {actor.FreeMovementRemaining:0.0} FREE"
+                        : string.Empty) +
+                    $"   Reaction " +
                     $"{actor.ReactionsRemaining}",
                     _text);
+
+                ArcaneStrainComponent strain =
+                    actor.GetComponent<
+                        ArcaneStrainComponent>();
+
+                if (strain != null)
+                {
+                    GUILayout.Label(
+                        $"Strain: {strain.Current}/{strain.Max}" +
+                        (strain.IsCritical
+                            ? "  CRITICAL"
+                            : strain.IsSevere
+                                ? "  SEVERE"
+                                : strain.IsStrained
+                                    ? "  STRAINED"
+                                    : string.Empty),
+                        _text);
+                }
 
                 bool partyControlled =
                     actor.Faction ==
@@ -221,7 +242,7 @@ namespace KeeperFirstCovenant.UI
             GUILayout.Label(
                 $"Path: " +
                 $"{playerController.MovementPreviewCost:0.0} m / " +
-                $"{actor.RemainingMovement:0.0} m   " +
+                $"{actor.TotalMovementAvailable:0.0} m   " +
                 $"{state}",
                 _text);
         }
