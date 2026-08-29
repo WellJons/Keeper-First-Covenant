@@ -56,6 +56,25 @@ namespace KeeperFirstCovenant.EditorTools
                 4.5f,
                 4.5f);
 
+            CombatPresentationProfile fireDevastating =
+                GetOrCreateProfile(
+                    "Impact_FireDevastating");
+
+            Configure(
+                fireDevastating,
+                ImpactTier.Devastating,
+                0.48f,
+                0.36f,
+                22f,
+                0.075f,
+                0.035f,
+                new Color(1f, 0.18f, 0.02f),
+                24f,
+                12f,
+                0.42f,
+                6.5f,
+                8f);
+
             CombatPresentationProfile lightning =
                 GetOrCreateProfile(
                     "Impact_LightningHeavy");
@@ -143,6 +162,10 @@ namespace KeeperFirstCovenant.EditorTools
             Assign(
                 "Action_FireBurst.asset",
                 fireHeavy);
+
+            Assign(
+                "Action_DevCataclysmFireball.asset",
+                fireDevastating);
 
             Assign(
                 "Action_LightningArc.asset",
