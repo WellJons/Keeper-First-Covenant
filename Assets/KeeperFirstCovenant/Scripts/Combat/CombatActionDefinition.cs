@@ -53,6 +53,15 @@ namespace KeeperFirstCovenant.Combat
         public bool ignoresCover;
         public bool usesHeightAdvantage = true;
 
+        [Tooltip("Direct attacks can gain deterministic impact from side/back positioning.")]
+        public bool usesFlanking;
+
+        [Range(0, 50)]
+        public int sideFlankImpactBonus = 10;
+
+        [Range(0, 75)]
+        public int backFlankImpactBonus = 25;
+
         [Header("Attack")]
         [Tooltip("Legacy compatibility flag. Normal combat resolution is deterministic.")]
         public bool requiresAttackRoll = true;
