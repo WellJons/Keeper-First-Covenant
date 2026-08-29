@@ -116,6 +116,15 @@ namespace KeeperFirstCovenant.Combat
                         .AddComponent<
                             BreakGaugeComponent>();
                 }
+
+                if (combatant.GetComponent<
+                        CombatActionStateComponent>() ==
+                    null)
+                {
+                    combatant.gameObject
+                        .AddComponent<
+                            CombatActionStateComponent>();
+                }
             }
         }
     }
