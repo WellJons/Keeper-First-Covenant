@@ -64,8 +64,11 @@ namespace KeeperFirstCovenant.EditorTools
             AddIfMissing<
                 CombatLogService>(systems);
 
-            AddIfMissing<
-                CombatStartOnPlay>(systems);
+            CombatStartOnPlay autoStart =
+                AddIfMissing<
+                    CombatStartOnPlay>(systems);
+
+            autoStart.Configure(false);
 
             AddIfMissing<
                 TacticalPlayerController>(
