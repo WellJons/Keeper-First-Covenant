@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using KeeperFirstCovenant.World;
 using UnityEngine;
 
 namespace KeeperFirstCovenant.Combat
@@ -26,6 +27,15 @@ namespace KeeperFirstCovenant.Combat
         [SerializeField] private float agentRadius = 0.4f;
         [SerializeField] private float groundProbeHeight = 8f;
         [SerializeField] private float groundProbeDistance = 20f;
+
+        [SerializeField, Min(0.05f)]
+        private float maxStepHeight = 0.6f;
+
+        [SerializeField, Min(0.05f)]
+        private float maxWalkDrop = 1.1f;
+
+        [SerializeField, Range(0f, 1f)]
+        private float minimumGroundNormalY = 0.65f;
 
         [Header("Layers")]
         [SerializeField] private LayerMask obstacleMask = ~0;
@@ -64,15 +74,15 @@ namespace KeeperFirstCovenant.Combat
                     Vector3 horizontal = _origin + new Vector3((x + 0.5f) * cellSize, 0f, (z + 0.5f) * cellSize);
                     Vector3 probeStart = horizontal + Vector3.up * groundProbeHeight;
 
-                    bool hasGround = Physics.Raycast(
-                        probeStart,
-                        Vector3.down,
-                        out RaycastHit hit,
-                        groundProbeDistance,
-                        groundMask,
-                        QueryTriggerInteraction.Ignore);
+                    bool hasGround =
+                        TryProbeGround(
+                            horizontal,
+                            out RaycastHit hit);
 
-                    Vector3 world = hasGround ? hit.point : horizontal;
+                    Vector3 world =
+                        hasGround
+                            ? hit.point
+                            : horizontal;
                     bool blocked =
                         IsBlockedByWorld(
                             world);
@@ -107,21 +117,16 @@ namespace KeeperFirstCovenant.Combat
                 return false;
             }
 
-            Vector3 probeStart =
+            Vector3 horizontal =
                 new Vector3(
                     world.x,
-                    transform.position.y +
-                    groundProbeHeight,
+                    transform.position.y,
                     world.z);
 
             bool hasGround =
-                Physics.Raycast(
-                    probeStart,
-                    Vector3.down,
-                    out RaycastHit hit,
-                    groundProbeDistance,
-                    groundMask,
-                    QueryTriggerInteraction.Ignore);
+                TryProbeGround(
+                    horizontal,
+                    out RaycastHit hit);
 
             if (!hasGround)
             {
@@ -441,6 +446,76 @@ namespace KeeperFirstCovenant.Combat
             return total;
         }
 
+        private bool TryProbeGround(
+            Vector3 horizontal,
+            out RaycastHit bestHit)
+        {
+            Vector3 start =
+                new Vector3(
+                    horizontal.x,
+                    transform.position.y +
+                    groundProbeHeight,
+                    horizontal.z);
+
+            RaycastHit[] hits =
+                Physics.RaycastAll(
+                    start,
+                    Vector3.down,
+                    groundProbeDistance,
+                    groundMask,
+                    QueryTriggerInteraction.Ignore);
+
+            bool found = false;
+            float bestDistance =
+                float.PositiveInfinity;
+
+            bestHit = default;
+
+            foreach (RaycastHit hit in hits)
+            {
+                if (hit.distance >= bestDistance)
+                    continue;
+
+                if (hit.normal.y <
+                    minimumGroundNormalY)
+                {
+                    continue;
+                }
+
+                Collider collider =
+                    hit.collider;
+
+                if (collider == null)
+                    continue;
+
+                if (collider
+                        .GetComponentInParent<
+                            CombatantRuntime>() != null)
+                {
+                    continue;
+                }
+
+                if (collider
+                        .GetComponentInParent<
+                            LockableDoor>() != null ||
+                    collider
+                        .GetComponentInParent<
+                            EnvironmentalDestructible>() != null ||
+                    collider.attachedRigidbody != null)
+                {
+                    continue;
+                }
+
+                bestDistance =
+                    hit.distance;
+
+                bestHit = hit;
+                found = true;
+            }
+
+            return found;
+        }
+
         private bool IsBlockedByWorld(
             Vector3 groundPoint)
         {
@@ -494,15 +569,53 @@ namespace KeeperFirstCovenant.Combat
                     if (nx < 0 || nz < 0 || nx >= _width || nz >= _height)
                         continue;
 
-                    if (dx != 0 && dz != 0)
+                    Node candidate =
+                        _nodes[nx, nz];
+
+                    float verticalDelta =
+                        candidate.world.y -
+                        node.world.y;
+
+                    if (verticalDelta >
+                            maxStepHeight ||
+                        verticalDelta <
+                            -maxWalkDrop)
                     {
-                        Node sideA = _nodes[node.x + dx, node.z];
-                        Node sideB = _nodes[node.x, node.z + dz];
-                        if (!sideA.walkable || !sideB.walkable)
-                            continue;
+                        continue;
                     }
 
-                    yield return _nodes[nx, nz];
+                    if (dx != 0 && dz != 0)
+                    {
+                        Node sideA =
+                            _nodes[
+                                node.x + dx,
+                                node.z];
+
+                        Node sideB =
+                            _nodes[
+                                node.x,
+                                node.z + dz];
+
+                        if (!sideA.walkable ||
+                            !sideB.walkable)
+                        {
+                            continue;
+                        }
+
+                        if (Mathf.Abs(
+                                sideA.world.y -
+                                node.world.y) >
+                                maxStepHeight ||
+                            Mathf.Abs(
+                                sideB.world.y -
+                                node.world.y) >
+                                maxStepHeight)
+                        {
+                            continue;
+                        }
+                    }
+
+                    yield return candidate;
                 }
             }
         }
