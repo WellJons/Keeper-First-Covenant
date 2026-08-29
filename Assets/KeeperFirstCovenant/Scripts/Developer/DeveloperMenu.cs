@@ -326,6 +326,20 @@ namespace KeeperFirstCovenant.Developer
 
                 GUILayout.EndHorizontal();
             }
+
+            else if (entry is CombatActionDefinition action)
+            {
+                GUILayout.BeginHorizontal();
+
+                if (GUILayout.Button(
+                        "Grant ability",
+                        GUILayout.Height(22f)))
+                {
+                    GrantAbility(action);
+                }
+
+                GUILayout.EndHorizontal();
+            }
         }
 
         private void DrawComparisonColumn(
@@ -576,6 +590,7 @@ namespace KeeperFirstCovenant.Developer
             LabelPair("Target", a.targetKind.ToString());
             LabelPair("AP cost", a.actionPointCost);
             LabelPair("Mana cost", a.manaCost);
+            LabelPair("Strain cost", a.strainCost);
             LabelPair("Range", $"{a.rangeMeters:0.0} m");
             LabelPair("AoE", $"{a.areaRadius:0.0} m");
             LabelPair("AoE rule", a.areaTargetRule.ToString());
@@ -609,6 +624,27 @@ namespace KeeperFirstCovenant.Developer
             LabelPair(
                 "Height",
                 a.usesHeightAdvantage ? "Applied" : "Ignored");
+
+            if (a.freeMovementMetersGranted > 0f)
+            {
+                LabelPair(
+                    "Free movement",
+                    $"{a.freeMovementMetersGranted:0.0} m");
+
+                LabelPair(
+                    "Suppress reactions",
+                    a.freeMovementSuppressesOpportunityAttacks
+                        ? "Yes"
+                        : "No");
+            }
+
+            if (a.presentationProfile != null)
+            {
+                LabelPair(
+                    "Impact tier",
+                    a.presentationProfile
+                        .impactTier.ToString());
+            }
 
             if (a.createsSurface != SurfaceType.None)
             {
@@ -719,6 +755,31 @@ namespace KeeperFirstCovenant.Developer
                 foreach (CombatantRuntime c in Enemies())
                 {
                     c.DebugKill();
+                }
+            }
+
+            CombatantRuntime preferred =
+                PreferredPartyMember();
+
+            ArcaneStrainComponent strain =
+                preferred != null
+                    ? preferred.GetComponent<
+                        ArcaneStrainComponent>()
+                    : null;
+
+            if (strain != null)
+            {
+                GUILayout.Space(6f);
+
+                GUILayout.Label(
+                    $"Current strain: " +
+                    $"{strain.Current}/{strain.Max}");
+
+                if (GUILayout.Button(
+                        "Clear strain"))
+                {
+                    strain.Clear();
+                    preferred.DebugRestoreTurnResources();
                 }
             }
 
@@ -913,6 +974,12 @@ namespace KeeperFirstCovenant.Developer
             go.AddComponent<TacticalUnitMover>();
             go.AddComponent<EquipmentComponent>();
 
+            if (definition.characterId == "edward")
+            {
+                go.AddComponent<
+                    ArcaneStrainComponent>();
+            }
+
             if (definition.faction ==
                 CombatFaction.Player ||
                 definition.faction ==
@@ -931,6 +998,42 @@ namespace KeeperFirstCovenant.Developer
                 director.AddParticipant(
                     runtime);
             }
+        }
+
+        private void GrantAbility(
+            CombatActionDefinition action)
+        {
+            if (action == null)
+                return;
+
+            CombatantRuntime recipient =
+                PreferredPartyMember();
+
+            if (recipient == null)
+                return;
+
+            DeveloperGrantedActions grants =
+                recipient.GetComponent<
+                    DeveloperGrantedActions>();
+
+            if (grants == null)
+            {
+                grants =
+                    recipient.gameObject
+                        .AddComponent<
+                            DeveloperGrantedActions>();
+            }
+
+            if (action.strainCost > 0 &&
+                recipient.GetComponent<
+                    ArcaneStrainComponent>() == null)
+            {
+                recipient.gameObject
+                    .AddComponent<
+                        ArcaneStrainComponent>();
+            }
+
+            grants.Grant(action);
         }
 
         private void GiveItem(
