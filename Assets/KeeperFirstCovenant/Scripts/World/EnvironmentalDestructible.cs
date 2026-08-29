@@ -137,6 +137,13 @@ namespace KeeperFirstCovenant.World
             }
 
             onDestroyed?.Invoke();
+
+            TacticalGrid3D navigation =
+                FindFirstObjectByType<
+                    TacticalGrid3D>();
+
+            navigation
+                ?.RebuildForDynamicWorld();
         }
 
         public void DebugRestore()
