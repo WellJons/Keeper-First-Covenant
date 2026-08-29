@@ -1,4 +1,5 @@
 using System;
+using KeeperFirstCovenant.Discoveries;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -35,6 +36,20 @@ namespace KeeperFirstCovenant.World
 
         [SerializeField]
         private HiddenDiscoverable discoverySource;
+
+        [Header("Journal")]
+        [SerializeField]
+        private bool addToDiscoveryJournal;
+
+        [SerializeField]
+        private string discoveryId;
+
+        [SerializeField]
+        private DiscoveryCategory discoveryCategory =
+            DiscoveryCategory.Lore;
+
+        [SerializeField]
+        private string discoveryLocationName;
 
         [SerializeField]
         private bool invokeOncePerSave = true;
@@ -84,6 +99,18 @@ namespace KeeperFirstCovenant.World
             discoverySource = source;
         }
 
+        public void ConfigureDiscovery(
+            string id,
+            DiscoveryCategory categoryValue,
+            string locationName = null)
+        {
+            addToDiscoveryJournal = true;
+            discoveryId = id;
+            discoveryCategory = categoryValue;
+            discoveryLocationName =
+                locationName ?? string.Empty;
+        }
+
         public bool CanInspect(GameObject actor)
         {
             if (actor == null)
@@ -123,6 +150,21 @@ namespace KeeperFirstCovenant.World
                 world?.SetFlag(
                     flag,
                     true);
+
+                if (addToDiscoveryJournal)
+                {
+                    DiscoveryJournal.Instance
+                        .Discover(
+                            string.IsNullOrWhiteSpace(
+                                discoveryId)
+                                ? "inspect." +
+                                  InspectionId
+                                : discoveryId,
+                            DisplayName,
+                            Description,
+                            discoveryCategory,
+                            discoveryLocationName);
+                }
 
                 onFirstInspected?.Invoke();
             }
