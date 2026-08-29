@@ -21,12 +21,16 @@ namespace KeeperFirstCovenant.Combat
         public string displayName = "Action";
         [TextArea] public string description;
         public Sprite icon;
+        public CombatPresentationProfile presentationProfile;
         public CombatActionCategory category;
         public TargetKind targetKind = TargetKind.Enemy;
 
         [Header("Costs and targeting")]
         [Min(0)] public int actionPointCost = 1;
         [Min(0)] public int manaCost;
+
+        [Tooltip("Special anti-spam resource used by extreme techniques such as Edward's Rift.")]
+        [Min(0)] public int strainCost;
         [Min(0f)] public float rangeMeters = 1.8f;
         [Min(0f)] public float areaRadius;
         public AreaTargetRule areaTargetRule = AreaTargetRule.PrimaryOnly;
@@ -51,6 +55,12 @@ namespace KeeperFirstCovenant.Combat
 
         [Header("Status")]
         public StatusApplication[] statusApplications;
+
+        [Header("Rule-breaking movement")]
+        [Min(0f)]
+        public float freeMovementMetersGranted;
+
+        public bool freeMovementSuppressesOpportunityAttacks;
 
         [Header("Forced movement")]
         [Min(0f)]
