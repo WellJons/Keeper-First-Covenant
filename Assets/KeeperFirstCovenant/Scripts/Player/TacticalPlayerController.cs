@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using KeeperFirstCovenant.Combat;
 using KeeperFirstCovenant.Developer;
+using KeeperFirstCovenant.Dialogue;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -154,8 +155,11 @@ namespace KeeperFirstCovenant.Player
 
         private bool CanAcceptInput()
         {
-            if (DeveloperMenu.IsOpen)
+            if (DeveloperMenu.IsOpen ||
+                DialogueRunner.IsDialogueActive)
+            {
                 return false;
+            }
 
             if (_currentActor == null ||
                 !_currentActor.IsAlive ||
