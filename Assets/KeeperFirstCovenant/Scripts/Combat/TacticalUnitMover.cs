@@ -66,7 +66,10 @@ namespace KeeperFirstCovenant.Combat
 
             _moveRoutine =
                 StartCoroutine(
-                    MoveRoutine(path, onComplete));
+                    MoveRoutine(
+                        path,
+                        onComplete,
+                        true));
 
             return true;
         }
@@ -117,7 +120,41 @@ namespace KeeperFirstCovenant.Combat
 
             _moveRoutine =
                 StartCoroutine(
-                    MoveRoutine(trimmed, onComplete));
+                    MoveRoutine(
+                        trimmed,
+                        onComplete,
+                        true));
+
+            return true;
+        }
+
+        public bool TryMoveExploration(
+            TacticalGrid3D grid,
+            Vector3 destination,
+            Action onComplete = null)
+        {
+            if (grid == null ||
+                _combatant == null ||
+                !_combatant.IsAlive ||
+                IsMoving)
+            {
+                return false;
+            }
+
+            List<Vector3> path =
+                grid.FindContinuousPath(
+                    transform.position,
+                    destination);
+
+            if (path.Count == 0)
+                return false;
+
+            _moveRoutine =
+                StartCoroutine(
+                    MoveRoutine(
+                        path,
+                        onComplete,
+                        false));
 
             return true;
         }
@@ -133,7 +170,8 @@ namespace KeeperFirstCovenant.Combat
 
         private IEnumerator MoveRoutine(
             IReadOnlyList<Vector3> path,
-            Action onComplete)
+            Action onComplete,
+            bool consumeMovement)
         {
             for (int i = 0; i < path.Count; i++)
             {
@@ -145,7 +183,8 @@ namespace KeeperFirstCovenant.Combat
                 float stepCost =
                     Vector3.Distance(from, target);
 
-                if (!_combatant.TrySpendMovement(
+                if (consumeMovement &&
+                    !_combatant.TrySpendMovement(
                         stepCost))
                 {
                     break;
