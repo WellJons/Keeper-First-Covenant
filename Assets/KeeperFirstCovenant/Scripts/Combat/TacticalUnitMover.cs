@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using KeeperFirstCovenant.World;
 using UnityEngine;
 
 namespace KeeperFirstCovenant.Combat
@@ -12,6 +13,7 @@ namespace KeeperFirstCovenant.Combat
         [SerializeField, Min(0f)] private float stopDistance = 0.03f;
 
         private CombatantRuntime _combatant;
+        private WorldFacing _facing;
         private Coroutine _moveRoutine;
 
         public bool IsMoving => _moveRoutine != null;
@@ -29,6 +31,7 @@ namespace KeeperFirstCovenant.Combat
         private void Awake()
         {
             _combatant = GetComponent<CombatantRuntime>();
+            _facing = GetComponent<WorldFacing>();
         }
 
         public bool TryMoveTo(
@@ -180,6 +183,10 @@ namespace KeeperFirstCovenant.Combat
 
                 Vector3 from = transform.position;
                 Vector3 target = path[i];
+
+                _facing?.FaceDirection(
+                    target - from);
+
                 float stepCost =
                     Vector3.Distance(from, target);
 
