@@ -170,6 +170,14 @@ namespace KeeperFirstCovenant.EditorTools
                         LootTableDefinition>(
                         LootPath);
 
+            CharacterDefinition stormGuard =
+                AssetDatabase
+                    .LoadAssetAtPath<
+                        CharacterDefinition>(
+                        "Assets/KeeperFirstCovenant/" +
+                        "Generated/Data/" +
+                        "Character_dev_storm_guard.asset");
+
             CombatantRuntime[] combatants =
                 Object.FindObjectsByType<
                     CombatantRuntime>(
@@ -178,6 +186,21 @@ namespace KeeperFirstCovenant.EditorTools
             foreach (CombatantRuntime combatant
                      in combatants)
             {
+                if (stormGuard != null &&
+                    combatant.Definition != null &&
+                    combatant.Definition.characterId ==
+                        "road_bandit")
+                {
+                    combatant.SetDefinition(
+                        stormGuard);
+
+                    combatant.gameObject.name =
+                        "DEV Storm Guard";
+
+                    EditorUtility.SetDirty(
+                        combatant);
+                }
+
                 AddIfMissing<
                     CombatAutoRegister>(
                         combatant.gameObject);
