@@ -1,8 +1,30 @@
+using System;
 using System.Linq;
+using KeeperFirstCovenant.World;
 using UnityEngine;
 
 namespace KeeperFirstCovenant.Combat
 {
+    public readonly struct ForcedMovementCollisionEvent
+    {
+        public readonly CombatantRuntime Target;
+        public readonly CombatantRuntime Other;
+        public readonly Vector3 Point;
+        public readonly float ForceMeters;
+
+        public ForcedMovementCollisionEvent(
+            CombatantRuntime target,
+            CombatantRuntime other,
+            Vector3 point,
+            float forceMeters)
+        {
+            Target = target;
+            Other = other;
+            Point = point;
+            ForceMeters = forceMeters;
+        }
+    }
+
     public sealed class ForcedMovementSystem : MonoBehaviour
     {
         public static ForcedMovementSystem Instance { get; private set; }
@@ -18,6 +40,17 @@ namespace KeeperFirstCovenant.Combat
 
         [SerializeField, Min(1f)]
         private float fatalDrop = 12f;
+
+        [Header("Collision impact")]
+        [SerializeField, Min(0f)]
+        private float collisionDamagePerMeter = 3f;
+
+        [SerializeField, Min(0f)]
+        private float collisionBreakPerMeter = 8f;
+
+        public static event Action<
+            ForcedMovementCollisionEvent>
+            CollisionOccurred;
 
         private TacticalGrid3D _grid;
 
@@ -123,19 +156,59 @@ namespace KeeperFirstCovenant.Combat
                 float verticalDelta =
                     cellWorld.y - current.y;
 
-                if (verticalDelta > maxStepUp)
-                    return;
+                float remainingForce =
+                    Mathf.Max(
+                        _grid.CellSize,
+                        (steps - i) *
+                        _grid.CellSize);
 
-                if (IsOccupied(
+                if (verticalDelta > maxStepUp)
+                {
+                    ApplyCollisionImpact(
+                        source,
+                        target,
+                        null,
+                        current +
+                        direction *
+                        (_grid.CellSize * 0.5f),
+                        remainingForce);
+
+                    return;
+                }
+
+                CombatantRuntime occupant =
+                    FindOccupant(
                         target,
                         cellWorld,
-                        _grid.CellSize))
+                        _grid.CellSize);
+
+                if (occupant != null)
                 {
+                    ApplyCollisionImpact(
+                        source,
+                        target,
+                        occupant,
+                        (target.transform.position +
+                         occupant.transform.position) *
+                        0.5f,
+                        remainingForce);
+
                     return;
                 }
 
                 if (!walkable)
+                {
+                    ApplyCollisionImpact(
+                        source,
+                        target,
+                        null,
+                        current +
+                        direction *
+                        (_grid.CellSize * 0.5f),
+                        remainingForce);
+
                     return;
+                }
 
                 target.transform.position =
                     cellWorld;
@@ -185,6 +258,121 @@ namespace KeeperFirstCovenant.Combat
                     source != null
                         ? source.gameObject
                         : gameObject));
+
+            target.GetComponent<
+                    BreakGaugeComponent>()
+                ?.AddBreak(
+                    Mathf.CeilToInt(
+                        drop * 6f));
+        }
+
+        private void ApplyCollisionImpact(
+            CombatantRuntime source,
+            CombatantRuntime target,
+            CombatantRuntime other,
+            Vector3 point,
+            float forceMeters)
+        {
+            float force =
+                Mathf.Max(
+                    0.5f,
+                    forceMeters);
+
+            int damage =
+                Mathf.Max(
+                    1,
+                    Mathf.CeilToInt(
+                        force *
+                        collisionDamagePerMeter));
+
+            int breakDamage =
+                Mathf.Max(
+                    1,
+                    Mathf.CeilToInt(
+                        force *
+                        collisionBreakPerMeter));
+
+            target.ApplyDamage(
+                new DamagePacket(
+                    damage,
+                    DamageType.Physical,
+                    source != null
+                        ? source.gameObject
+                        : gameObject));
+
+            target.GetComponent<
+                    BreakGaugeComponent>()
+                ?.AddBreak(
+                    breakDamage);
+
+            if (other != null &&
+                other.IsAlive)
+            {
+                int secondaryDamage =
+                    Mathf.Max(
+                        1,
+                        Mathf.CeilToInt(
+                            damage * 0.65f));
+
+                other.ApplyDamage(
+                    new DamagePacket(
+                        secondaryDamage,
+                        DamageType.Physical,
+                        source != null
+                            ? source.gameObject
+                            : target.gameObject));
+
+                other.GetComponent<
+                        BreakGaugeComponent>()
+                    ?.AddBreak(
+                        Mathf.CeilToInt(
+                            breakDamage * 0.75f));
+            }
+            else
+            {
+                Collider[] colliders =
+                    Physics.OverlapSphere(
+                        point,
+                        0.6f,
+                        ~0,
+                        QueryTriggerInteraction.Ignore);
+
+                foreach (EnvironmentalDestructible destructible
+                         in colliders
+                            .Select(value =>
+                                value.GetComponentInParent<
+                                    EnvironmentalDestructible>())
+                            .Where(value =>
+                                value != null)
+                            .Distinct())
+                {
+                    destructible.ApplyImpact(
+                        ImpactTier.Heavy,
+                        force * 2.5f,
+                        point);
+                }
+            }
+
+            WorldNoiseSystem.Emit(
+                point,
+                Mathf.Clamp(
+                    5f + force * 2f,
+                    6f,
+                    18f),
+                source != null
+                    ? source.gameObject
+                    : target.gameObject,
+                Mathf.Clamp(
+                    0.8f + force * 0.12f,
+                    0.8f,
+                    1.8f));
+
+            CollisionOccurred?.Invoke(
+                new ForcedMovementCollisionEvent(
+                    target,
+                    other,
+                    point,
+                    force));
         }
 
         private static void ApplyFatalFall(
@@ -206,10 +394,11 @@ namespace KeeperFirstCovenant.Combat
                         : target.gameObject));
         }
 
-        private static bool IsOccupied(
-            CombatantRuntime target,
-            Vector3 point,
-            float cellSize)
+        private static CombatantRuntime
+            FindOccupant(
+                CombatantRuntime target,
+                Vector3 point,
+                float cellSize)
         {
             float radius =
                 Mathf.Max(
@@ -220,10 +409,15 @@ namespace KeeperFirstCovenant.Combat
                 .FindObjectsByType<
                     CombatantRuntime>(
                     FindObjectsSortMode.None)
-                .Any(x =>
+                .Where(x =>
                     x != null &&
                     x != target &&
-                    x.CanBeTargeted &&
+                    x.CanBeTargeted)
+                .OrderBy(x =>
+                    Vector3.Distance(
+                        x.transform.position,
+                        point))
+                .FirstOrDefault(x =>
                     Vector3.Distance(
                         x.transform.position,
                         point) <= radius);
