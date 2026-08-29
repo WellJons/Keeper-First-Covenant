@@ -1,0 +1,60 @@
+using KeeperFirstCovenant.Core;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+
+namespace KeeperFirstCovenant.UI
+{
+    public sealed class InGameMenuInstaller : MonoBehaviour
+    {
+        private static InGameMenuInstaller instance;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        private static void Bootstrap()
+        {
+            if (instance != null)
+                return;
+
+            var root = new GameObject("Keeper_InGameMenuInstaller");
+            instance = root.AddComponent<InGameMenuInstaller>();
+        }
+
+        private void Awake()
+        {
+            if (instance != null && instance != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+
+            instance = this;
+            DontDestroyOnLoad(gameObject);
+            SceneManager.sceneLoaded += OnSceneLoaded;
+        }
+
+        private void OnDestroy()
+        {
+            if (instance == this)
+            {
+                SceneManager.sceneLoaded -= OnSceneLoaded;
+                instance = null;
+            }
+        }
+
+        private static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            if (scene.name == GameFlowController.BootSceneName ||
+                scene.name == GameFlowController.MainMenuSceneName)
+            {
+                return;
+            }
+
+            InGamePauseController existing = FindFirstObjectByType<InGamePauseController>();
+            if (existing != null)
+                return;
+
+            var root = new GameObject("Keeper_InGamePauseMenu");
+            SceneManager.MoveGameObjectToScene(root, scene);
+            root.AddComponent<InGamePauseController>();
+        }
+    }
+}

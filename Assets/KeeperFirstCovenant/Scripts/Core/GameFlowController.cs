@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using KeeperFirstCovenant.UI;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -14,6 +15,10 @@ namespace KeeperFirstCovenant.Core
         private const string ActiveSlotKey = "Keeper.ActiveSaveSlot";
         private static GameFlowController instance;
 
+        private float sessionBasePlayTime;
+        private float sessionElapsedPlayTime;
+        private bool sessionClockRunning;
+
         public static GameFlowController Instance
         {
             get
@@ -26,8 +31,24 @@ namespace KeeperFirstCovenant.Core
         public bool IsTransitioning { get; private set; }
         public int ActiveSlotId { get; private set; }
 
+        public bool IsGameplayScene
+        {
+            get
+            {
+                Scene scene = SceneManager.GetActiveScene();
+                return scene.IsValid() &&
+                       scene.isLoaded &&
+                       scene.name != BootSceneName &&
+                       scene.name != MainMenuSceneName;
+            }
+        }
+
+        public float CurrentPlayTimeSeconds =>
+            Mathf.Max(0f, sessionBasePlayTime + sessionElapsedPlayTime);
+
         public event Action<string> FlowError;
         public event Action<float> TransitionProgress;
+        public event Action<SaveGameData> GameSaved;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Bootstrap()
@@ -35,6 +56,7 @@ namespace KeeperFirstCovenant.Core
             SettingsService.Load();
             EnsureExists();
             GameAudioService.EnsureExists();
+            LoadingScreenController.EnsureExists();
         }
 
         private static void EnsureExists()
@@ -60,8 +82,22 @@ namespace KeeperFirstCovenant.Core
 
             instance = this;
             DontDestroyOnLoad(gameObject);
+
             ActiveSlotId = PlayerPrefs.GetInt(ActiveSlotKey, -1);
             SceneManager.sceneLoaded += OnSceneLoaded;
+        }
+
+        private void Update()
+        {
+            if (!sessionClockRunning ||
+                IsTransitioning ||
+                Time.timeScale <= 0f ||
+                !IsGameplayScene)
+            {
+                return;
+            }
+
+            sessionElapsedPlayTime += Time.unscaledDeltaTime;
         }
 
         private void OnDestroy()
@@ -71,6 +107,18 @@ namespace KeeperFirstCovenant.Core
                 SceneManager.sceneLoaded -= OnSceneLoaded;
                 instance = null;
             }
+        }
+
+        private void OnApplicationQuit()
+        {
+            if (IsGameplayScene && ActiveSlotId > 0)
+                SaveCurrentGame(false);
+        }
+
+        private void OnApplicationPause(bool pauseStatus)
+        {
+            if (pauseStatus && IsGameplayScene && ActiveSlotId > 0)
+                SaveCurrentGame(false);
         }
 
         public bool TryContinue()
@@ -104,6 +152,10 @@ namespace KeeperFirstCovenant.Core
             }
 
             ActiveSlotId = data.slotId;
+            sessionBasePlayTime = data.playTimeSeconds;
+            sessionElapsedPlayTime = 0f;
+            sessionClockRunning = false;
+
             PersistActiveSlot();
             BeginLoad(data.sceneName);
             return true;
@@ -128,13 +180,81 @@ namespace KeeperFirstCovenant.Core
             }
 
             ActiveSlotId = data.slotId;
+            sessionBasePlayTime = Mathf.Max(0f, data.playTimeSeconds);
+            sessionElapsedPlayTime = 0f;
+            sessionClockRunning = false;
+
             PersistActiveSlot();
             BeginLoad(sceneName);
             return true;
         }
 
-        public void ReturnToMainMenu()
+        public bool LoadActiveSlot()
         {
+            SaveGameData data = ActiveSlotId > 0
+                ? SaveGameService.LoadSlot(ActiveSlotId)
+                : null;
+
+            if (data == null)
+            {
+                ReportError("Активное сохранение не найдено.");
+                return false;
+            }
+
+            return LoadSave(data);
+        }
+
+        public bool SaveCurrentGame(bool manualSave = true, string locationOverride = null)
+        {
+            if (!IsGameplayScene)
+            {
+                ReportError("Сохранять игру можно только внутри игровой сцены.");
+                return false;
+            }
+
+            if (ActiveSlotId < 1)
+            {
+                ReportError("У текущей игры нет активного слота сохранения.");
+                return false;
+            }
+
+            SaveGameData data = SaveGameService.LoadSlot(ActiveSlotId);
+            if (data == null)
+            {
+                ReportError("Активное сохранение повреждено или отсутствует.");
+                return false;
+            }
+
+            Scene scene = SceneManager.GetActiveScene();
+            data.sceneName = scene.name;
+
+            if (!string.IsNullOrWhiteSpace(locationOverride))
+                data.locationName = locationOverride;
+            else if (string.IsNullOrWhiteSpace(data.locationName))
+                data.locationName = scene.name;
+
+            data.playTimeSeconds = CurrentPlayTimeSeconds;
+            data.manualSave = manualSave;
+
+            if (!SaveGameService.WriteSave(data))
+            {
+                ReportError("Не удалось записать сохранение.");
+                return false;
+            }
+
+            sessionBasePlayTime = data.playTimeSeconds;
+            sessionElapsedPlayTime = 0f;
+
+            GameSaved?.Invoke(data);
+            return true;
+        }
+
+        public void ReturnToMainMenu(bool saveBeforeLeave = true)
+        {
+            if (saveBeforeLeave && IsGameplayScene && ActiveSlotId > 0)
+                SaveCurrentGame(false);
+
+            sessionClockRunning = false;
             BeginLoad(MainMenuSceneName);
         }
 
@@ -148,6 +268,9 @@ namespace KeeperFirstCovenant.Core
 
         public void QuitGame()
         {
+            if (IsGameplayScene && ActiveSlotId > 0)
+                SaveCurrentGame(false);
+
 #if UNITY_EDITOR
             UnityEditor.EditorApplication.isPlaying = false;
 #else
@@ -158,51 +281,84 @@ namespace KeeperFirstCovenant.Core
         private IEnumerator LoadSceneRoutine(string sceneName)
         {
             IsTransitioning = true;
+            sessionClockRunning = false;
             Time.timeScale = 1f;
+
+            LoadingScreenController.Instance.Show(sceneName);
             TransitionProgress?.Invoke(0f);
+
+            yield return null;
 
             AsyncOperation operation = SceneManager.LoadSceneAsync(sceneName);
             if (operation == null)
             {
                 IsTransitioning = false;
+                LoadingScreenController.Instance.HideImmediate();
                 ReportError($"Не удалось начать загрузку сцены «{sceneName}».");
                 yield break;
             }
+
+            operation.allowSceneActivation = true;
 
             while (!operation.isDone)
             {
                 float progress = Mathf.Clamp01(operation.progress / 0.9f);
                 TransitionProgress?.Invoke(progress);
+                LoadingScreenController.Instance.SetProgress(progress);
                 yield return null;
             }
 
             TransitionProgress?.Invoke(1f);
+            LoadingScreenController.Instance.SetProgress(1f);
+
+            yield return new WaitForSecondsRealtime(0.12f);
+
+            LoadingScreenController.Instance.Hide();
             IsTransitioning = false;
+
+            if (IsGameplayScene)
+                sessionClockRunning = true;
         }
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
             if (scene.name == MainMenuSceneName)
             {
+                sessionClockRunning = false;
                 GameAudioService.Instance.PlayMenuAmbience();
                 return;
             }
 
             if (scene.name == BootSceneName)
+            {
+                sessionClockRunning = false;
                 return;
+            }
 
             GameAudioService.Instance.StopMenuAmbience();
 
             if (ActiveSlotId > 0)
             {
                 SaveGameData current = SaveGameService.LoadSlot(ActiveSlotId);
-                string location = current != null && !string.IsNullOrWhiteSpace(current.locationName)
-                    ? current.locationName
-                    : scene.name;
 
-                float playTime = current != null ? current.playTimeSeconds : 0f;
-                SaveGameService.UpdateLocation(ActiveSlotId, scene.name, location, playTime);
+                if (current != null)
+                {
+                    sessionBasePlayTime = Mathf.Max(0f, current.playTimeSeconds);
+                    sessionElapsedPlayTime = 0f;
+
+                    string location = !string.IsNullOrWhiteSpace(current.locationName)
+                        ? current.locationName
+                        : scene.name;
+
+                    SaveGameService.UpdateLocation(
+                        ActiveSlotId,
+                        scene.name,
+                        location,
+                        sessionBasePlayTime);
+                }
             }
+
+            sessionClockRunning = !IsTransitioning;
         }
 
         private void PersistActiveSlot()
