@@ -1,4 +1,8 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using KeeperFirstCovenant.Combat;
+using KeeperFirstCovenant.Inventory;
 using KeeperFirstCovenant.World;
 using UnityEngine;
 
@@ -13,6 +17,25 @@ namespace KeeperFirstCovenant.Core
         public float hour = 9f;
     }
 
+    [Serializable]
+    internal sealed class PartyMemberSavePayload
+    {
+        public string characterId;
+        public Vector3 position;
+        public Vector3 eulerAngles;
+        public CombatantRuntimeSnapshot combatant;
+        public InventorySnapshot inventory;
+        public EquipmentSnapshot equipment;
+    }
+
+    [Serializable]
+    internal sealed class PartySavePayload
+    {
+        public int version = 1;
+        public List<PartyMemberSavePayload> members =
+            new List<PartyMemberSavePayload>();
+    }
+
     public static class GameplaySaveBridge
     {
         public static void CaptureInto(SaveGameData save)
@@ -20,6 +43,30 @@ namespace KeeperFirstCovenant.Core
             if (save == null)
                 return;
 
+            CaptureWorld(save);
+            CaptureParty(save);
+        }
+
+        public static void RestoreFrom(SaveGameData save)
+        {
+            if (save == null)
+                return;
+
+            RestoreWorld(save);
+            RestoreParty(save);
+        }
+
+        public static void ResetRuntimeState()
+        {
+            if (WorldState.Instance != null)
+                WorldState.Instance.ResetState();
+
+            if (WorldTimeSystem.Instance != null)
+                WorldTimeSystem.Instance.SetTime(9f, 1);
+        }
+
+        private static void CaptureWorld(SaveGameData save)
+        {
             var payload = new WorldSavePayload();
 
             if (WorldState.Instance != null)
@@ -34,9 +81,9 @@ namespace KeeperFirstCovenant.Core
             save.worldStateJson = JsonUtility.ToJson(payload);
         }
 
-        public static void RestoreFrom(SaveGameData save)
+        private static void RestoreWorld(SaveGameData save)
         {
-            if (save == null || string.IsNullOrWhiteSpace(save.worldStateJson))
+            if (string.IsNullOrWhiteSpace(save.worldStateJson))
                 return;
 
             try
@@ -60,13 +107,167 @@ namespace KeeperFirstCovenant.Core
             }
         }
 
-        public static void ResetRuntimeState()
+        private static void CaptureParty(SaveGameData save)
         {
-            if (WorldState.Instance != null)
-                WorldState.Instance.ResetState();
+            var payload = new PartySavePayload();
 
-            if (WorldTimeSystem.Instance != null)
-                WorldTimeSystem.Instance.SetTime(9f, 1);
+            CombatantRuntime[] combatants =
+                UnityEngine.Object.FindObjectsByType<CombatantRuntime>(
+                    FindObjectsSortMode.None);
+
+            foreach (CombatantRuntime combatant in combatants)
+            {
+                if (!IsPartyMember(combatant))
+                    continue;
+
+                string characterId = combatant.Definition.characterId;
+
+                var member = new PartyMemberSavePayload
+                {
+                    characterId = characterId,
+                    position = combatant.transform.position,
+                    eulerAngles = combatant.transform.eulerAngles,
+                    combatant = combatant.CaptureRuntimeSnapshot()
+                };
+
+                InventoryComponent inventory =
+                    combatant.GetComponent<InventoryComponent>();
+
+                if (inventory != null)
+                    member.inventory = inventory.CaptureSnapshot();
+
+                EquipmentComponent equipment =
+                    combatant.GetComponent<EquipmentComponent>();
+
+                if (equipment != null)
+                    member.equipment = equipment.CaptureSnapshot();
+
+                payload.members.Add(member);
+            }
+
+            payload.members = payload.members
+                .OrderBy(member => member.characterId, StringComparer.Ordinal)
+                .ToList();
+
+            save.partyStateJson = JsonUtility.ToJson(payload);
+        }
+
+        private static void RestoreParty(SaveGameData save)
+        {
+            if (string.IsNullOrWhiteSpace(save.partyStateJson))
+                return;
+
+            PartySavePayload payload;
+
+            try
+            {
+                payload = JsonUtility.FromJson<PartySavePayload>(
+                    save.partyStateJson);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning(
+                    "Keeper party state could not be decoded. " + exception.Message);
+                return;
+            }
+
+            if (payload?.members == null)
+                return;
+
+            CombatantRuntime[] loaded =
+                UnityEngine.Object.FindObjectsByType<CombatantRuntime>(
+                    FindObjectsSortMode.None);
+
+            Dictionary<string, CombatantRuntime> byId = loaded
+                .Where(IsPartyMember)
+                .GroupBy(value => value.Definition.characterId)
+                .ToDictionary(
+                    group => group.Key,
+                    group => group.First(),
+                    StringComparer.Ordinal);
+
+            Dictionary<string, ItemDefinition> items =
+                BuildLoadedItemCatalog();
+
+            foreach (PartyMemberSavePayload saved in payload.members)
+            {
+                if (saved == null ||
+                    string.IsNullOrWhiteSpace(saved.characterId) ||
+                    !byId.TryGetValue(saved.characterId, out CombatantRuntime runtime))
+                {
+                    continue;
+                }
+
+                runtime.transform.position = saved.position;
+                runtime.transform.rotation =
+                    Quaternion.Euler(saved.eulerAngles);
+
+                runtime.RestoreRuntimeSnapshot(saved.combatant);
+
+                InventoryComponent inventory =
+                    runtime.GetComponent<InventoryComponent>();
+
+                inventory?.RestoreSnapshot(
+                    saved.inventory,
+                    itemId => ResolveItem(items, itemId));
+
+                EquipmentComponent equipment =
+                    runtime.GetComponent<EquipmentComponent>();
+
+                equipment?.RestoreSnapshot(
+                    saved.equipment,
+                    itemId => ResolveItem(items, itemId));
+            }
+        }
+
+        private static Dictionary<string, ItemDefinition>
+            BuildLoadedItemCatalog()
+        {
+            var result =
+                new Dictionary<string, ItemDefinition>(
+                    StringComparer.Ordinal);
+
+            ItemDefinition[] loaded =
+                Resources.FindObjectsOfTypeAll<ItemDefinition>();
+
+            foreach (ItemDefinition item in loaded)
+            {
+                if (item == null ||
+                    string.IsNullOrWhiteSpace(item.itemId) ||
+                    result.ContainsKey(item.itemId))
+                {
+                    continue;
+                }
+
+                result[item.itemId] = item;
+            }
+
+            return result;
+        }
+
+        private static ItemDefinition ResolveItem(
+            IReadOnlyDictionary<string, ItemDefinition> catalog,
+            string itemId)
+        {
+            if (catalog == null ||
+                string.IsNullOrWhiteSpace(itemId))
+            {
+                return null;
+            }
+
+            return catalog.TryGetValue(itemId, out ItemDefinition item)
+                ? item
+                : null;
+        }
+
+        private static bool IsPartyMember(CombatantRuntime combatant)
+        {
+            return combatant != null &&
+                   combatant.Definition != null &&
+                   !string.IsNullOrWhiteSpace(
+                       combatant.Definition.characterId) &&
+                   (combatant.Faction == CombatFaction.Player ||
+                    combatant.Faction == CombatFaction.Ally);
         }
     }
 }

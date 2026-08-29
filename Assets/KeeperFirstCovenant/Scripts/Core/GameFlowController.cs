@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using KeeperFirstCovenant.Combat;
 using KeeperFirstCovenant.UI;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -208,6 +209,13 @@ namespace KeeperFirstCovenant.Core
 
         public bool SaveCurrentGame(bool manualSave = true, string locationOverride = null)
         {
+            if (TurnCombatDirector.Instance != null &&
+                TurnCombatDirector.Instance.State == CombatState.Active)
+            {
+                ReportError("Сохранение во время активного боя пока недоступно.");
+                return false;
+            }
+
             if (!IsGameplayScene)
             {
                 ReportError("Сохранять игру можно только внутри игровой сцены.");

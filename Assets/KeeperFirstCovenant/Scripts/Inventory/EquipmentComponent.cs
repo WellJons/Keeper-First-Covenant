@@ -12,6 +12,20 @@ namespace KeeperFirstCovenant.Inventory
         public ItemDefinition item;
     }
 
+    [Serializable]
+    public sealed class EquippedItemSnapshot
+    {
+        public EquipmentSlot slot;
+        public string itemId;
+    }
+
+    [Serializable]
+    public sealed class EquipmentSnapshot
+    {
+        public List<EquippedItemSnapshot> items =
+            new List<EquippedItemSnapshot>();
+    }
+
     public sealed class EquipmentComponent : MonoBehaviour
     {
         [SerializeField]
@@ -196,6 +210,63 @@ namespace KeeperFirstCovenant.Inventory
                     }
                 }
             }
+        }
+
+        public EquipmentSnapshot CaptureSnapshot()
+        {
+            var snapshot = new EquipmentSnapshot();
+
+            foreach (EquippedItemEntry entry in equipped)
+            {
+                if (entry?.item == null ||
+                    string.IsNullOrWhiteSpace(entry.item.itemId))
+                {
+                    continue;
+                }
+
+                snapshot.items.Add(new EquippedItemSnapshot
+                {
+                    slot = entry.slot,
+                    itemId = entry.item.itemId
+                });
+            }
+
+            return snapshot;
+        }
+
+        public void RestoreSnapshot(
+            EquipmentSnapshot snapshot,
+            Func<string, ItemDefinition> resolver)
+        {
+            equipped.Clear();
+
+            if (snapshot?.items != null && resolver != null)
+            {
+                foreach (EquippedItemSnapshot saved in snapshot.items)
+                {
+                    if (saved == null ||
+                        string.IsNullOrWhiteSpace(saved.itemId))
+                    {
+                        continue;
+                    }
+
+                    ItemDefinition item = resolver(saved.itemId);
+                    if (item == null)
+                    {
+                        Debug.LogWarning(
+                            $"Equipped item '{saved.itemId}' could not be restored on {name}.");
+                        continue;
+                    }
+
+                    equipped.Add(new EquippedItemEntry
+                    {
+                        slot = saved.slot,
+                        item = item
+                    });
+                }
+            }
+
+            Changed?.Invoke();
         }
 
         private ItemDefinition UnequipInternal(

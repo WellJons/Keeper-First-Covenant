@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using KeeperFirstCovenant.Combat;
 using KeeperFirstCovenant.Core;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -704,15 +705,23 @@ namespace KeeperFirstCovenant.UI
 
         private void RequestMainMenu()
         {
+            bool combatActive =
+                TurnCombatDirector.Instance != null &&
+                TurnCombatDirector.Instance.State == CombatState.Active;
+
+            string message = combatActive
+                ? "Вернуться в главное меню?\nАктивный бой не сохраняется — будет использовано последнее сохранение до боя."
+                : "Вернуться в главное меню?\nТекущий прогресс будет автоматически сохранён.";
+
             ShowConfirm(
-                "Вернуться в главное меню?\nТекущий прогресс будет автоматически сохранён.",
+                message,
                 "В меню",
                 () =>
                 {
                     RestoreGameplayState();
                     paused = false;
                     root.SetActive(false);
-                    Flow.ReturnToMainMenu(true);
+                    Flow.ReturnToMainMenu(!combatActive);
                 });
         }
 

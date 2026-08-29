@@ -11,6 +11,19 @@ namespace KeeperFirstCovenant.Inventory
         [Min(1)] public int amount = 1;
     }
 
+    [Serializable]
+    public sealed class InventoryItemSnapshot
+    {
+        public string itemId;
+        public int amount;
+    }
+
+    [Serializable]
+    public sealed class InventorySnapshot
+    {
+        public List<InventoryItemSnapshot> items = new List<InventoryItemSnapshot>();
+    }
+
     public sealed class InventoryComponent : MonoBehaviour
     {
         [SerializeField] private List<InventoryStack> items = new List<InventoryStack>();
@@ -188,6 +201,76 @@ namespace KeeperFirstCovenant.Inventory
                 if (stack != null && stack.item == item)
                     count += Mathf.Max(0, stack.amount);
             return count;
+        }
+
+        public InventorySnapshot CaptureSnapshot()
+        {
+            var snapshot = new InventorySnapshot();
+
+            foreach (InventoryStack stack in items)
+            {
+                if (stack?.item == null ||
+                    string.IsNullOrWhiteSpace(stack.item.itemId) ||
+                    stack.amount <= 0)
+                {
+                    continue;
+                }
+
+                snapshot.items.Add(new InventoryItemSnapshot
+                {
+                    itemId = stack.item.itemId,
+                    amount = stack.amount
+                });
+            }
+
+            return snapshot;
+        }
+
+        public void RestoreSnapshot(
+            InventorySnapshot snapshot,
+            Func<string, ItemDefinition> resolver)
+        {
+            items.Clear();
+
+            if (snapshot?.items != null && resolver != null)
+            {
+                foreach (InventoryItemSnapshot saved in snapshot.items)
+                {
+                    if (saved == null ||
+                        string.IsNullOrWhiteSpace(saved.itemId) ||
+                        saved.amount <= 0)
+                    {
+                        continue;
+                    }
+
+                    ItemDefinition item = resolver(saved.itemId);
+                    if (item == null)
+                    {
+                        Debug.LogWarning(
+                            $"Inventory item '{saved.itemId}' could not be restored on {name}.");
+                        continue;
+                    }
+
+                    int remaining = saved.amount;
+
+                    while (remaining > 0)
+                    {
+                        int stackAmount = item.stackable
+                            ? Mathf.Min(Mathf.Max(1, item.maxStack), remaining)
+                            : 1;
+
+                        items.Add(new InventoryStack
+                        {
+                            item = item,
+                            amount = stackAmount
+                        });
+
+                        remaining -= stackAmount;
+                    }
+                }
+            }
+
+            Changed?.Invoke();
         }
     }
 }

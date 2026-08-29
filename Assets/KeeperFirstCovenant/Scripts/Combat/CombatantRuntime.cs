@@ -7,6 +7,18 @@ using UnityEngine;
 
 namespace KeeperFirstCovenant.Combat
 {
+    [Serializable]
+    public sealed class CombatantRuntimeSnapshot
+    {
+        public string characterId;
+        public int currentHealth;
+        public int currentMana;
+        public int barrier;
+        public int downedRoundsRemaining;
+        public bool isDowned;
+        public bool isDead;
+    }
+
     public sealed class CombatantRuntime : MonoBehaviour
     {
         [Serializable]
@@ -368,6 +380,69 @@ namespace KeeperFirstCovenant.Combat
             _reactionsRemaining--;
             Changed?.Invoke(this);
             return true;
+        }
+
+        public CombatantRuntimeSnapshot CaptureRuntimeSnapshot()
+        {
+            return new CombatantRuntimeSnapshot
+            {
+                characterId = definition != null
+                    ? definition.characterId
+                    : string.Empty,
+                currentHealth = _currentHealth,
+                currentMana = _currentMana,
+                barrier = _barrier,
+                downedRoundsRemaining = _downedRoundsRemaining,
+                isDowned = _isDowned,
+                isDead = _isDead
+            };
+        }
+
+        public void RestoreRuntimeSnapshot(
+            CombatantRuntimeSnapshot snapshot)
+        {
+            if (snapshot == null)
+                return;
+
+            _statuses.Clear();
+            _freeMovementRemaining = 0f;
+            _freeMovementSuppressesReactions = false;
+            _currentActionPoints = 0;
+            _remainingMovement = 0f;
+            _reactionsRemaining = 0;
+
+            int maxHealth = definition != null
+                ? Mathf.Max(1, definition.maxHealth)
+                : 1;
+
+            int maxMana = definition != null
+                ? Mathf.Max(0, definition.maxMana)
+                : 0;
+
+            _currentHealth = Mathf.Clamp(
+                snapshot.currentHealth,
+                0,
+                maxHealth);
+
+            _currentMana = Mathf.Clamp(
+                snapshot.currentMana,
+                0,
+                maxMana);
+
+            _barrier = Mathf.Max(0, snapshot.barrier);
+            _isDead = snapshot.isDead;
+            _isDowned = !_isDead && snapshot.isDowned;
+            _downedRoundsRemaining = _isDowned
+                ? Mathf.Max(1, snapshot.downedRoundsRemaining)
+                : 0;
+
+            if (_isDead || _isDowned)
+                _currentHealth = 0;
+            else if (_currentHealth <= 0)
+                _currentHealth = 1;
+
+            _deathRaised = _isDead;
+            Changed?.Invoke(this);
         }
 
         public void DebugRestoreFull()
