@@ -159,6 +159,64 @@ namespace KeeperFirstCovenant.EditorTools
             EditorUtility.SetDirty(
                 stormRupture);
 
+            CombatActionDefinition stormExecution =
+                GetOrCreate<
+                    CombatActionDefinition>(
+                    DataRoot +
+                    "/Action_DevStormExecution.asset");
+
+            stormExecution.actionId =
+                "dev_storm_execution";
+
+            stormExecution.displayName =
+                "Удар сердца бури";
+
+            stormExecution.category =
+                CombatActionCategory.Unique;
+
+            stormExecution.targetKind =
+                TargetKind.Enemy;
+
+            stormExecution.actionPointCost = 2;
+            stormExecution.manaCost = 5;
+            stormExecution.strainCost = 0;
+            stormExecution.rangeMeters = 7.5f;
+            stormExecution.areaRadius = 0f;
+
+            stormExecution.areaTargetRule =
+                AreaTargetRule.PrimaryOnly;
+
+            stormExecution.requiresLineOfSight = true;
+            stormExecution.ignoresCover = false;
+            stormExecution.usesHeightAdvantage = true;
+            stormExecution.requiresAttackRoll = false;
+
+            stormExecution.damage =
+                new DiceFormula(4, 6, 4);
+
+            stormExecution.damageType =
+                DamageType.Lightning;
+
+            stormExecution.scalingAttribute =
+                AbilityAttribute.Intellect;
+
+            stormExecution.scalingMultiplier = 0.9f;
+            stormExecution.breakPower = 32;
+            stormExecution.pushDistanceMeters = 1.5f;
+            stormExecution.pushAwayFromActor = true;
+
+            stormExecution.createsSurface =
+                SurfaceType.Electrified;
+
+            stormExecution.surfaceRadius = 1.6f;
+            stormExecution.surfaceDurationTurns = 1;
+
+            stormExecution.windUpTurns = 0;
+            stormExecution.cooldownTurns = 2;
+
+            EditorUtility.SetDirty(
+                stormExecution);
+
             CreateEnemy(
                 "dev_bandit_skirmisher",
                 "DEV Bandit Skirmisher",
@@ -223,13 +281,11 @@ namespace KeeperFirstCovenant.EditorTools
                     ? new[]
                     {
                         swordSlash,
-                        shockNeedle,
-                        stormRupture
+                        shockNeedle
                     }
                     : new[]
                     {
-                        shockNeedle,
-                        stormRupture
+                        shockNeedle
                     },
                 new[]
                 {
