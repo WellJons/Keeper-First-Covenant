@@ -279,7 +279,7 @@ namespace KeeperFirstCovenant.UI
                 new Vector2(0f, 0.5f),
                 new Vector2(0f, 0.5f),
                 new Vector2(100f, -10f),
-                new Vector2(440f, 600f));
+                new Vector2(440f, 720f));
 
             Image background = panel.gameObject.AddComponent<Image>();
             background.color = new Color(MainMenuTheme.Panel.r, MainMenuTheme.Panel.g, MainMenuTheme.Panel.b, 0.78f);
