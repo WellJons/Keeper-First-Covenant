@@ -3,6 +3,7 @@ using System.Collections;
 using KeeperFirstCovenant.Combat;
 using KeeperFirstCovenant.Dialogue;
 using KeeperFirstCovenant.UI;
+using KeeperFirstCovenant.World;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -20,6 +21,10 @@ namespace KeeperFirstCovenant.Core
         private float sessionBasePlayTime;
         private float sessionElapsedPlayTime;
         private bool sessionClockRunning;
+
+        private string pendingTravelSceneName;
+        private string pendingTravelSpawnId;
+        private string pendingTravelLocationName;
 
         public static GameFlowController Instance
         {
@@ -143,6 +148,7 @@ namespace KeeperFirstCovenant.Core
                 return false;
             }
 
+            ClearPendingTravel();
             GameplaySaveBridge.ResetRuntimeState();
 
             SaveGameData data = SaveGameService.CreateNewGame(
@@ -183,6 +189,8 @@ namespace KeeperFirstCovenant.Core
                 return false;
             }
 
+            ClearPendingTravel();
+
             ActiveSlotId = data.slotId;
             sessionBasePlayTime = Mathf.Max(0f, data.playTimeSeconds);
             sessionElapsedPlayTime = 0f;
@@ -208,7 +216,9 @@ namespace KeeperFirstCovenant.Core
             return LoadSave(data);
         }
 
-        public bool SaveCurrentGame(bool manualSave = true, string locationOverride = null)
+        public bool SaveCurrentGame(
+            bool manualSave = true,
+            string locationOverride = null)
         {
             if (DialogueRunner.IsDialogueActive)
             {
@@ -268,11 +278,59 @@ namespace KeeperFirstCovenant.Core
             return true;
         }
 
+        public bool TravelToScene(
+            string sceneName,
+            string spawnId = "default",
+            string locationName = null,
+            bool saveBeforeTravel = true)
+        {
+            if (IsTransitioning)
+                return false;
+
+            if (DialogueRunner.IsDialogueActive)
+            {
+                ReportError("Нельзя сменить локацию во время диалога.");
+                return false;
+            }
+
+            if (TurnCombatDirector.Instance != null &&
+                TurnCombatDirector.Instance.State == CombatState.Active)
+            {
+                ReportError("Нельзя сменить локацию во время активного боя.");
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(sceneName) ||
+                !Application.CanStreamedLevelBeLoaded(sceneName))
+            {
+                ReportError($"Локация «{sceneName}» недоступна.");
+                return false;
+            }
+
+            if (saveBeforeTravel &&
+                IsGameplayScene &&
+                ActiveSlotId > 0 &&
+                !SaveCurrentGame(false))
+            {
+                return false;
+            }
+
+            pendingTravelSceneName = sceneName;
+            pendingTravelSpawnId = string.IsNullOrWhiteSpace(spawnId)
+                ? "default"
+                : spawnId;
+            pendingTravelLocationName = locationName;
+
+            BeginLoad(sceneName);
+            return true;
+        }
+
         public void ReturnToMainMenu(bool saveBeforeLeave = true)
         {
             if (saveBeforeLeave && IsGameplayScene && ActiveSlotId > 0)
                 SaveCurrentGame(false);
 
+            ClearPendingTravel();
             sessionClockRunning = false;
             BeginLoad(MainMenuSceneName);
         }
@@ -312,6 +370,7 @@ namespace KeeperFirstCovenant.Core
             if (operation == null)
             {
                 IsTransitioning = false;
+                ClearPendingTravel();
                 LoadingScreenController.Instance.HideImmediate();
                 ReportError($"Не удалось начать загрузку сцены «{sceneName}».");
                 yield break;
@@ -343,6 +402,7 @@ namespace KeeperFirstCovenant.Core
         {
             if (scene.name == MainMenuSceneName)
             {
+                ClearPendingTravel();
                 sessionClockRunning = false;
                 GameAudioService.Instance.PlayMenuAmbience();
                 return;
@@ -356,30 +416,54 @@ namespace KeeperFirstCovenant.Core
 
             GameAudioService.Instance.StopMenuAmbience();
 
-            if (ActiveSlotId > 0)
+            SaveGameData current = ActiveSlotId > 0
+                ? SaveGameService.LoadSlot(ActiveSlotId)
+                : null;
+
+            if (current != null)
             {
-                SaveGameData current = SaveGameService.LoadSlot(ActiveSlotId);
+                sessionBasePlayTime = Mathf.Max(0f, current.playTimeSeconds);
+                sessionElapsedPlayTime = 0f;
+                GameplaySaveBridge.RestoreFrom(current);
+            }
 
-                if (current != null)
+            bool explicitTravel =
+                !string.IsNullOrWhiteSpace(pendingTravelSceneName) &&
+                string.Equals(
+                    pendingTravelSceneName,
+                    scene.name,
+                    StringComparison.Ordinal);
+
+            if (explicitTravel)
+            {
+                string spawnId = pendingTravelSpawnId;
+                string location = pendingTravelLocationName;
+                ClearPendingTravel();
+
+                if (!SceneSpawnPoint.TryPlaceParty(spawnId))
                 {
-                    sessionBasePlayTime = Mathf.Max(0f, current.playTimeSeconds);
-                    sessionElapsedPlayTime = 0f;
+                    Debug.LogWarning(
+                        $"Spawn point «{spawnId}» was not found in scene «{scene.name}».");
+                }
 
-                    string location = !string.IsNullOrWhiteSpace(current.locationName)
-                        ? current.locationName
-                        : scene.name;
-
-                    SaveGameService.UpdateLocation(
-                        ActiveSlotId,
-                        scene.name,
-                        location,
-                        sessionBasePlayTime);
-
-                    GameplaySaveBridge.RestoreFrom(current);
+                if (ActiveSlotId > 0)
+                {
+                    SaveCurrentGame(
+                        false,
+                        string.IsNullOrWhiteSpace(location)
+                            ? scene.name
+                            : location);
                 }
             }
 
             sessionClockRunning = !IsTransitioning;
+        }
+
+        private void ClearPendingTravel()
+        {
+            pendingTravelSceneName = null;
+            pendingTravelSpawnId = null;
+            pendingTravelLocationName = null;
         }
 
         private void PersistActiveSlot()
