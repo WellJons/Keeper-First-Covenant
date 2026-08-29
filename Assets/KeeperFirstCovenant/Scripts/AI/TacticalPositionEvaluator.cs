@@ -113,6 +113,27 @@ namespace KeeperFirstCovenant.AI
             if (lineOfSight)
                 score += 20f;
 
+            if (action != null &&
+                action.usesFlanking)
+            {
+                FlankQuality flank =
+                    CombatTargetingService
+                        .GetFlankQualityFromPoint(
+                            position,
+                            target);
+
+                switch (flank)
+                {
+                    case FlankQuality.Back:
+                        score += 58f;
+                        break;
+
+                    case FlankQuality.Side:
+                        score += 24f;
+                        break;
+                }
+            }
+
             if (action != null)
             {
                 bool inRange =
