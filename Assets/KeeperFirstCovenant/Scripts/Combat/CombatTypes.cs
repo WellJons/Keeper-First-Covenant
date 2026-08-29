@@ -76,6 +76,16 @@ namespace KeeperFirstCovenant.Combat
         Detonation
     }
 
+    public enum ElementalReactionKind
+    {
+        None,
+        ConductiveSurge,
+        FlashFreeze,
+        ThermalShock,
+        Combustion,
+        ArcaneResonance
+    }
+
     [Serializable]
     public struct DiceFormula
     {
