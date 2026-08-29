@@ -99,6 +99,10 @@ namespace KeeperFirstCovenant.EditorTools
                     systems);
 
             AddIfMissing<
+                PartyFollowController>(
+                    systems);
+
+            AddIfMissing<
                 CombatDebugHUD>(systems);
 
             AddIfMissing<
