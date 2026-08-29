@@ -88,6 +88,21 @@ namespace KeeperFirstCovenant.Combat
                     ActionFailureReason.InvalidAction,
                     actor.transform.position);
 
+            CombatActionStateComponent actionState =
+                CombatActionStateComponent
+                    .Ensure(actor);
+
+            if (actionState != null &&
+                !actionState.CanUse(
+                    action,
+                    out ActionFailureReason
+                        stateFailure))
+            {
+                return TacticalTargetPreview.Invalid(
+                    stateFailure,
+                    actor.transform.position);
+            }
+
             if (!IsTargetKindValid(actor, action.targetKind, target, groundPoint))
             {
                 return TacticalTargetPreview.Invalid(
@@ -195,6 +210,23 @@ namespace KeeperFirstCovenant.Combat
                     Mathf.RoundToInt(
                         baseDamage *
                         tacticalMultiplier));
+
+            ComboExecutionContext comboPreview =
+                actionState != null
+                    ? actionState.PreviewCombo(
+                        action)
+                    : ComboExecutionContext.None;
+
+            if (comboPreview.Matched)
+            {
+                deterministicDamage =
+                    Mathf.RoundToInt(
+                        deterministicDamage *
+                        Mathf.Max(
+                            1f,
+                            comboPreview
+                                .DamageMultiplier));
+            }
 
             int damageMin = deterministicDamage;
             int damageMax = deterministicDamage;
