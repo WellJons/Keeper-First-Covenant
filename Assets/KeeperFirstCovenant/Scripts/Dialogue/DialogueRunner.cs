@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using KeeperFirstCovenant.Quests;
+using KeeperFirstCovenant.Relationships;
 using KeeperFirstCovenant.World;
 using UnityEngine;
 
@@ -404,6 +405,22 @@ namespace KeeperFirstCovenant.Dialogue
                            quest.status ==
                            QuestStatus.Failed;
 
+                case DialogueConditionKind
+                    .RelationshipAtLeast:
+                    return RelationshipLedger
+                               .Instance
+                               .GetApproval(
+                                   condition.key) >=
+                           condition.intValue;
+
+                case DialogueConditionKind
+                    .RelationshipAtMost:
+                    return RelationshipLedger
+                               .Instance
+                               .GetApproval(
+                                   condition.key) <=
+                           condition.intValue;
+
                 default:
                     return true;
             }
@@ -496,6 +513,24 @@ namespace KeeperFirstCovenant.Dialogue
                     .FailQuest:
                     quests.FailQuest(
                         effect.key);
+                    break;
+
+                case DialogueEffectKind
+                    .AddRelationship:
+                    RelationshipLedger
+                        .Instance
+                        .AddApproval(
+                            effect.key,
+                            effect.intValue);
+                    break;
+
+                case DialogueEffectKind
+                    .SetRelationship:
+                    RelationshipLedger
+                        .Instance
+                        .SetApproval(
+                            effect.key,
+                            effect.intValue);
                     break;
             }
         }
