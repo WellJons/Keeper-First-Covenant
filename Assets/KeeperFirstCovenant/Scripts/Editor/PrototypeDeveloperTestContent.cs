@@ -247,7 +247,18 @@ namespace KeeperFirstCovenant.EditorTools
                 4,
                 true,
                 20,
-                "Prototype lockpick for future exploration tests.");
+                "Prototype lockpick for exploration tests.");
+
+            CreateBasicItem(
+                "dev_road_key",
+                "DEV Road Ruin Key",
+                ItemCategory.Key,
+                ItemRarity.Common,
+                0.02f,
+                0,
+                false,
+                1,
+                "Prototype key for the generated locked-door test.");
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
