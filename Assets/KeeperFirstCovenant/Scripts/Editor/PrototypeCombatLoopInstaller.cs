@@ -100,6 +100,10 @@ namespace KeeperFirstCovenant.EditorTools
                 TacticalTargetingIndicator>(
                     systems);
 
+            AddIfMissing<
+                MovementPathIndicator>(
+                    systems);
+
             LootTableDefinition loot =
                 AssetDatabase
                     .LoadAssetAtPath<
@@ -155,8 +159,8 @@ namespace KeeperFirstCovenant.EditorTools
             Debug.Log(
                 "Keeper tactical combat installed. " +
                 "Includes party control, LOS, " +
-                "cover, height, AoE preview, " +
-                "surfaces and reactions. " +
+                "free movement, LOS, cover, height, " +
+                "AoE preview, surfaces and reactions. " +
                 "F1 opens the developer sandbox.");
         }
 
