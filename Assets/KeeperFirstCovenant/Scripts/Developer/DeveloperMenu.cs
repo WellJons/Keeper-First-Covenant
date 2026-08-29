@@ -687,6 +687,54 @@ namespace KeeperFirstCovenant.Developer
                 GUILayout.Width(330f));
 
             GUILayout.Label(
+                "WORLD TIME",
+                _sectionStyle);
+
+            WorldTimeSystem worldTime =
+                WorldTimeSystem.Instance;
+
+            if (worldTime != null)
+            {
+                int hours =
+                    Mathf.FloorToInt(
+                        worldTime.Hour);
+
+                int minutes =
+                    Mathf.FloorToInt(
+                        (worldTime.Hour - hours) *
+                        60f);
+
+                GUILayout.Label(
+                    $"Day {worldTime.Day}  " +
+                    $"{hours:00}:{minutes:00}  " +
+                    $"Vision x{worldTime.VisibilityMultiplier:0.00}");
+
+                GUILayout.BeginHorizontal();
+
+                if (GUILayout.Button("Dawn"))
+                    worldTime.SetTime(6.5f);
+
+                if (GUILayout.Button("Noon"))
+                    worldTime.SetTime(12f);
+
+                if (GUILayout.Button("Dusk"))
+                    worldTime.SetTime(19f);
+
+                if (GUILayout.Button("Night"))
+                    worldTime.SetTime(23f);
+
+                GUILayout.EndHorizontal();
+
+                if (GUILayout.Button(
+                        "Advance +1 hour"))
+                {
+                    worldTime.AdvanceHours(1f);
+                }
+            }
+
+            GUILayout.Space(8f);
+
+            GUILayout.Label(
                 "PARTY STEALTH",
                 _sectionStyle);
 
