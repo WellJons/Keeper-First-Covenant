@@ -114,7 +114,9 @@ namespace KeeperFirstCovenant.World
 
             if (director != null &&
                 director.State ==
-                    CombatState.Active)
+                    CombatState.Active &&
+                director.IsParticipant(
+                    _owner))
             {
                 return;
             }
@@ -475,6 +477,18 @@ namespace KeeperFirstCovenant.World
 
                 AwarenessChanged?.Invoke(
                     Awareness);
+            }
+
+            TurnCombatDirector director =
+                TurnCombatDirector.Instance;
+
+            if (director != null &&
+                director.State ==
+                    CombatState.Active)
+            {
+                director.AddParticipant(
+                    _owner);
+                return;
             }
 
             WorldCombatEngagementService service =
