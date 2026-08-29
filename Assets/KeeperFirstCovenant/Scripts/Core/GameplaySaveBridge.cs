@@ -388,26 +388,7 @@ namespace KeeperFirstCovenant.Core
         private static Dictionary<string, ItemDefinition>
             BuildLoadedItemCatalog()
         {
-            var result =
-                new Dictionary<string, ItemDefinition>(
-                    StringComparer.Ordinal);
-
-            ItemDefinition[] loaded =
-                Resources.FindObjectsOfTypeAll<ItemDefinition>();
-
-            foreach (ItemDefinition item in loaded)
-            {
-                if (item == null ||
-                    string.IsNullOrWhiteSpace(item.itemId) ||
-                    result.ContainsKey(item.itemId))
-                {
-                    continue;
-                }
-
-                result[item.itemId] = item;
-            }
-
-            return result;
+            return ItemCatalogService.BuildLookup();
         }
 
         private static ItemDefinition ResolveItem(
