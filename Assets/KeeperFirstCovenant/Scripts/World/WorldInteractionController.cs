@@ -48,8 +48,30 @@ namespace KeeperFirstCovenant.World
                 return;
 
             GameObject actor = FindInteractionActor();
-            if (actor != null && interactable.CanInteract(actor))
-                interactable.Interact(actor);
+
+            if (actor == null ||
+                !interactable.CanInteract(actor))
+            {
+                return;
+            }
+
+            Keyboard keyboard = Keyboard.current;
+
+            bool forceDoor =
+                keyboard != null &&
+                (keyboard.leftShiftKey.isPressed ||
+                 keyboard.rightShiftKey.isPressed) &&
+                interactable is LockableDoor;
+
+            if (forceDoor)
+            {
+                ((LockableDoor)interactable)
+                    .TryForceOpen(actor);
+
+                return;
+            }
+
+            interactable.Interact(actor);
         }
 
         private static GameObject FindInteractionActor()
