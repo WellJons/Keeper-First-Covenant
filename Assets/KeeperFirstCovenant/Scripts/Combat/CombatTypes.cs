@@ -112,11 +112,7 @@ namespace KeeperFirstCovenant.Combat
 
         public int Roll()
         {
-            int total = flatBonus;
-            for (int i = 0; i < diceCount; i++)
-                total += UnityEngine.Random.Range(1, dieSides + 1);
-
-            return total;
+            return DeterministicValue;
         }
 
         public int DeterministicValue
@@ -142,16 +138,16 @@ namespace KeeperFirstCovenant.Combat
 
         public override string ToString()
         {
-            if (diceCount <= 0)
-                return flatBonus.ToString();
+            if (Minimum == Maximum)
+                return DeterministicValue.ToString();
 
-            string bonus = flatBonus == 0
-                ? string.Empty
-                : flatBonus > 0
-                    ? " + " + flatBonus
-                    : " - " + Mathf.Abs(flatBonus);
-
-            return diceCount + "d" + dieSides + bonus;
+            return
+                DeterministicValue +
+                " (" +
+                Minimum +
+                "-" +
+                Maximum +
+                ")";
         }
     }
 
