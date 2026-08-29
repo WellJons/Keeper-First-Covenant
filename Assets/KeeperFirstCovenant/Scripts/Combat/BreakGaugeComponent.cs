@@ -173,11 +173,18 @@ namespace KeeperFirstCovenant.Combat
             CombatantRuntime target,
             CombatActionResult result)
         {
+            bool hasBreakImpact =
+                action != null &&
+                (result.Damage > 0 ||
+                 action.breakPower > 0 ||
+                 action.pushDistanceMeters > 0.01f ||
+                 result.ComboBreakBonus > 0);
+
             if (target != owner ||
                 action == null ||
                 !result.Executed ||
                 !result.Hit ||
-                result.Damage <= 0)
+                !hasBreakImpact)
             {
                 return;
             }
