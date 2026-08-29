@@ -142,6 +142,8 @@ namespace KeeperFirstCovenant.AI
             _mover.TryMoveExploration(
                 navigation,
                 destination);
+        }
+
         private void SearchArea(
             Vector3 destination)
         {
@@ -229,8 +231,6 @@ namespace KeeperFirstCovenant.AI
             _searchUntil = 0f;
             _nextSearchTurn = 0f;
             _searchStep = 0;
-        }
-
         }
     }
 }
