@@ -8,6 +8,14 @@ namespace KeeperFirstCovenant.Combat
         [SerializeField] private bool startAutomatically = false;
         [SerializeField, Min(0f)] private float startDelay = 0.15f;
 
+        public void Configure(
+            bool automatic,
+            float delay = 0.15f)
+        {
+            startAutomatically = automatic;
+            startDelay = Mathf.Max(0f, delay);
+        }
+
         private IEnumerator Start()
         {
             if (!startAutomatically)
