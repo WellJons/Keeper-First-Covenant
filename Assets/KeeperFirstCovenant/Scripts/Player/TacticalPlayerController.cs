@@ -242,6 +242,23 @@ namespace KeeperFirstCovenant.Player
 
             _selectedAction = actions[index];
             ClearCursorPreview();
+
+            if (_selectedAction != null &&
+                _selectedAction.targetKind ==
+                    TargetKind.Self)
+            {
+                CombatActionResult result =
+                    CombatActionExecutor.Execute(
+                        _currentActor,
+                        _selectedAction,
+                        _currentActor);
+
+                if (result.Executed)
+                {
+                    _selectedAction = null;
+                    ClearCursorPreview();
+                }
+            }
         }
 
         private void UpdateCursorPreview(
