@@ -238,7 +238,22 @@ namespace KeeperFirstCovenant.Combat
                 return;
             }
 
-            CancelCharge();
+            CombatActionDefinition interrupted =
+                action;
+
+            if (CancelCharge() &&
+                interrupted != null &&
+                owner != null)
+            {
+                CombatActionStateComponent
+                    .Ensure(owner)
+                    ?.PutOnCooldown(
+                        interrupted,
+                        Mathf.Max(
+                            1,
+                            interrupted
+                                .cooldownTurns));
+            }
         }
 
         private void OnOwnerDied(
