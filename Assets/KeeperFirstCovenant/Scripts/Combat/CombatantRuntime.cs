@@ -764,7 +764,8 @@ namespace KeeperFirstCovenant.Combat
                     active.definition.dealsDamageEachTurn)
                 {
                     int amount =
-                        active.definition.turnDamage.Roll() *
+                        active.definition.turnDamage
+                            .DeterministicValue *
                         Mathf.Max(1, active.intensity);
 
                     ApplyDamage(new DamagePacket(
