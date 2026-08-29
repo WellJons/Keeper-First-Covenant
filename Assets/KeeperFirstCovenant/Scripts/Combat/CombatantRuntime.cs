@@ -27,6 +27,8 @@ namespace KeeperFirstCovenant.Combat
         private float _remainingMovement;
         private int _barrier;
         private int _reactionsRemaining;
+        private float _freeMovementRemaining;
+        private bool _freeMovementSuppressesReactions;
         private int _downedRoundsRemaining;
         private bool _isDowned;
         private bool _isDead;
@@ -57,6 +59,14 @@ namespace KeeperFirstCovenant.Combat
         public int CurrentMana => _currentMana;
         public int CurrentActionPoints => _currentActionPoints;
         public float RemainingMovement => _remainingMovement;
+        public float FreeMovementRemaining => _freeMovementRemaining;
+        public float TotalMovementAvailable =>
+            _remainingMovement + _freeMovementRemaining;
+
+        public bool SuppressOpportunityAttacks =>
+            _freeMovementSuppressesReactions &&
+            _freeMovementRemaining > 0.01f;
+
         public int Barrier => _barrier;
         public int ReactionsRemaining => _reactionsRemaining;
 
@@ -86,6 +96,8 @@ namespace KeeperFirstCovenant.Combat
             _statuses.Clear();
             _barrier = 0;
             _reactionsRemaining = 0;
+            _freeMovementRemaining = 0f;
+            _freeMovementSuppressesReactions = false;
             _downedRoundsRemaining = 0;
             _isDowned = false;
             _isDead = false;
@@ -147,10 +159,19 @@ namespace KeeperFirstCovenant.Combat
                     ? equipment.GetMovementBonus()
                     : 0f);
 
+            ArcaneStrainComponent strain =
+                GetComponent<ArcaneStrainComponent>();
+
+            float strainMultiplier =
+                strain != null
+                    ? strain.GetMovementMultiplier()
+                    : 1f;
+
             return Mathf.Max(
                 0f,
                 baseMovement *
-                GetStatusMovementMultiplier());
+                GetStatusMovementMultiplier() *
+                strainMultiplier);
         }
 
         public void PrepareForCombat()
@@ -189,15 +210,33 @@ namespace KeeperFirstCovenant.Combat
             if (!IsAlive)
                 return;
 
+            ArcaneStrainComponent strain =
+                GetComponent<ArcaneStrainComponent>();
+
+            strain?.OnOwnerTurnStarted();
+
+            _freeMovementRemaining = 0f;
+            _freeMovementSuppressesReactions = false;
+
+            int strainApPenalty =
+                strain != null
+                    ? strain.GetActionPointPenalty()
+                    : 0;
+
             _currentActionPoints = Mathf.Max(
                 0,
                 definition.actionPoints +
-                GetStatusActionPointModifier());
+                GetStatusActionPointModifier() -
+                strainApPenalty);
 
             _remainingMovement =
                 GetMovementCapacity();
 
-            _reactionsRemaining = 1;
+            _reactionsRemaining =
+                strain != null &&
+                strain.BlocksReactions()
+                    ? 0
+                    : 1;
 
             TurnStarted?.Invoke(this);
             Changed?.Invoke(this);
@@ -208,7 +247,11 @@ namespace KeeperFirstCovenant.Combat
             if (!IsAlive)
                 return;
 
+            _freeMovementRemaining = 0f;
+            _freeMovementSuppressesReactions = false;
+
             TurnEnded?.Invoke(this);
+            Changed?.Invoke(this);
         }
 
         public bool TrySpendActionPoints(int amount)
@@ -243,14 +286,50 @@ namespace KeeperFirstCovenant.Combat
         {
             if (!IsAlive ||
                 meters < 0f ||
-                _remainingMovement + 0.001f < meters)
+                TotalMovementAvailable + 0.001f < meters)
             {
                 return false;
             }
 
-            _remainingMovement -= meters;
+            float remainingCost = meters;
+
+            if (_freeMovementRemaining > 0f)
+            {
+                float fromFree =
+                    Mathf.Min(
+                        _freeMovementRemaining,
+                        remainingCost);
+
+                _freeMovementRemaining -= fromFree;
+                remainingCost -= fromFree;
+            }
+
+            if (remainingCost > 0f)
+                _remainingMovement -= remainingCost;
+
+            if (_freeMovementRemaining <= 0.01f)
+            {
+                _freeMovementRemaining = 0f;
+                _freeMovementSuppressesReactions = false;
+            }
+
             Changed?.Invoke(this);
             return true;
+        }
+
+        public void GrantFreeMovement(
+            float meters,
+            bool suppressOpportunityAttacks)
+        {
+            if (!IsAlive || meters <= 0f)
+                return;
+
+            _freeMovementRemaining += meters;
+
+            if (suppressOpportunityAttacks)
+                _freeMovementSuppressesReactions = true;
+
+            Changed?.Invoke(this);
         }
 
         public bool TrySpendReaction()
@@ -292,7 +371,18 @@ namespace KeeperFirstCovenant.Combat
             _remainingMovement =
                 GetMovementCapacity();
 
-            _reactionsRemaining = 1;
+            _freeMovementRemaining = 0f;
+            _freeMovementSuppressesReactions = false;
+
+            ArcaneStrainComponent strain =
+                GetComponent<ArcaneStrainComponent>();
+
+            _reactionsRemaining =
+                strain != null &&
+                strain.BlocksReactions()
+                    ? 0
+                    : 1;
+
             Changed?.Invoke(this);
         }
 
