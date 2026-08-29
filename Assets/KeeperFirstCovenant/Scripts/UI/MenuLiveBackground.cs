@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -52,7 +54,7 @@ namespace KeeperFirstCovenant.UI
             }
             else
             {
-                Texture2D bundledBackground = Resources.Load<Texture2D>(BundledBackgroundResource);
+                Texture2D bundledBackground = LoadBundledBackground();
                 if (bundledBackground != null)
                 {
                     BuildAuthoredTextureLayer(
@@ -157,6 +159,53 @@ namespace KeeperFirstCovenant.UI
                 ringB.localRotation = Quaternion.Euler(0f, 0f, -10f + Mathf.Sin(time * 0.075f + 1f) * ringSpeed * 0.55f);
 
             UpdateEmbers();
+        }
+
+        private static Texture2D LoadBundledBackground()
+        {
+            // The approved menu artwork is stored as small text chunks so it remains
+            // reliable in the repository without depending on Unity importer metadata.
+            var builder = new StringBuilder(26000);
+
+            for (int index = 1; index <= 5; index++)
+            {
+                TextAsset chunk = Resources.Load<TextAsset>(
+                    $"Menu/MainMenu_Background_{index:00}");
+
+                if (chunk == null || string.IsNullOrWhiteSpace(chunk.text))
+                {
+                    // Compatibility fallback if a normal texture is added later.
+                    return Resources.Load<Texture2D>(BundledBackgroundResource);
+                }
+
+                builder.Append(chunk.text.Trim());
+            }
+
+            try
+            {
+                byte[] bytes = Convert.FromBase64String(builder.ToString());
+                var texture = new Texture2D(2, 2, TextureFormat.RGB24, false, false)
+                {
+                    name = "MainMenu_Background_Approved",
+                    wrapMode = TextureWrapMode.Clamp,
+                    filterMode = FilterMode.Bilinear
+                };
+
+                if (!texture.LoadImage(bytes, true))
+                {
+                    Destroy(texture);
+                    return null;
+                }
+
+                return texture;
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning(
+                    "Keeper menu background could not be decoded. " + exception.Message);
+
+                return Resources.Load<Texture2D>(BundledBackgroundResource);
+            }
         }
 
         private static void BuildAuthoredTextureLayer(
