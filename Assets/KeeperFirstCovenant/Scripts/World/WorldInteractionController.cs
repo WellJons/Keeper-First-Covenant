@@ -172,24 +172,34 @@ namespace KeeperFirstCovenant.World
                 currentInspectable.CanInspect(
                     currentActor))
             {
+                WorldInspectable capturedInspectable =
+                    currentInspectable;
+
+                GameObject capturedInspectionActor =
+                    currentActor;
+
+                Collider capturedInspectionCollider =
+                    currentCollider;
+
                 if (currentInRange)
                 {
-                    currentInspectable.Inspect(
-                        currentActor);
+                    capturedInspectable.Inspect(
+                        capturedInspectionActor);
                 }
                 else
                 {
                     TryApproachTarget(
-                        currentActor,
-                        currentCollider,
+                        capturedInspectionActor,
+                        capturedInspectionCollider,
                         () =>
                         {
-                            if (currentInspectable != null &&
-                                currentInspectable.CanInspect(
-                                    currentActor))
+                            if (capturedInspectable != null &&
+                                capturedInspectionActor != null &&
+                                capturedInspectable.CanInspect(
+                                    capturedInspectionActor))
                             {
-                                currentInspectable.Inspect(
-                                    currentActor);
+                                capturedInspectable.Inspect(
+                                    capturedInspectionActor);
                             }
                         });
                 }
