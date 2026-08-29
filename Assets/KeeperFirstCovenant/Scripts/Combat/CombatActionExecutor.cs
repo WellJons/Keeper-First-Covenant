@@ -461,20 +461,9 @@ namespace KeeperFirstCovenant.Combat
                         action.scalingAttribute)
                     : 0;
 
-            int hitRoll = 0;
+            int hitRoll = 100;
             bool critical = false;
             bool hit = true;
-
-            if (action.requiresAttackRoll)
-            {
-                hitRoll =
-                    UnityEngine.Random.Range(1, 101);
-
-                critical = hitRoll <= 5;
-                hit =
-                    critical ||
-                    hitRoll <= hitChance;
-            }
 
             int damage = 0;
             int healing = 0;
@@ -521,6 +510,7 @@ namespace KeeperFirstCovenant.Combat
                             target.AddBarrier(barrier);
 
                         ApplyStatuses(
+                            actor,
                             action,
                             target);
                     }
@@ -560,32 +550,25 @@ namespace KeeperFirstCovenant.Combat
                 return 0;
             }
 
-            int value = formula.Roll();
-
-            if (critical &&
-                formula.diceCount > 0)
-            {
-                for (int i = 0;
-                     i < formula.diceCount;
-                     i++)
-                {
-                    value +=
-                        UnityEngine.Random.Range(
-                            1,
-                            Mathf.Max(
-                                2,
-                                formula.dieSides) + 1);
-                }
-            }
+            int value =
+                formula.DeterministicValue;
 
             value += Mathf.RoundToInt(
                 attributeModifier *
                 scalingMultiplier);
 
+            if (critical)
+            {
+                value =
+                    Mathf.RoundToInt(
+                        value * 1.5f);
+            }
+
             return Mathf.Max(0, value);
         }
 
         private static void ApplyStatuses(
+            CombatantRuntime actor,
             CombatActionDefinition action,
             CombatantRuntime target)
         {
@@ -598,10 +581,27 @@ namespace KeeperFirstCovenant.Combat
                 if (application.effect == null)
                     continue;
 
-                if (UnityEngine.Random.value >
-                    application.chance)
+                if (application.requiresResistanceCheck)
                 {
-                    continue;
+                    int attackPower =
+                        actor.Definition != null
+                            ? actor.Definition.GetAttribute(
+                                action.scalingAttribute)
+                            : 0;
+
+                    attackPower +=
+                        Mathf.Max(
+                            0,
+                            application.statusPower);
+
+                    int resistance =
+                        target.Definition != null
+                            ? target.Definition.GetAttribute(
+                                application.resistanceAttribute)
+                            : 0;
+
+                    if (attackPower < resistance)
+                        continue;
                 }
 
                 target.ApplyStatus(
