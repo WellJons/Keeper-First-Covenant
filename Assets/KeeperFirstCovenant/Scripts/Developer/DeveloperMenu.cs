@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using KeeperFirstCovenant.AI;
 using KeeperFirstCovenant.Characters;
 using KeeperFirstCovenant.Combat;
 using KeeperFirstCovenant.Inventory;
@@ -986,6 +987,13 @@ namespace KeeperFirstCovenant.Developer
                 CombatFaction.Ally)
             {
                 go.AddComponent<InventoryComponent>();
+                go.AddComponent<StealthSignature>();
+            }
+            else if (definition.faction ==
+                     CombatFaction.Enemy)
+            {
+                go.AddComponent<PerceptionSensor>();
+                go.AddComponent<EnemyInvestigationBrain>();
             }
 
             _spawned.Add(go);
