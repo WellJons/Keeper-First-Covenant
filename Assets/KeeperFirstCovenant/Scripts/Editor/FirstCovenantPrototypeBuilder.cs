@@ -247,6 +247,8 @@ namespace KeeperFirstCovenant.EditorTools
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
+            ItemCatalogBuilder.Rebuild();
+
             Selection.activeGameObject = root;
             Debug.Log("Keeper: First Covenant prototype scene built at " + ScenePath);
         }
