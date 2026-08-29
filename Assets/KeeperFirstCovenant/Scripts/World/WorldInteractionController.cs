@@ -53,12 +53,7 @@ namespace KeeperFirstCovenant.World
                     return door.GetInteractionHint(currentActor);
 
                 if (currentInteractable is TrapMechanism trap)
-                {
-                    if (trap.IsSpent)
-                        return "Ловушка обезврежена";
-
-                    return "ЛКМ — попытаться обезвредить";
-                }
+                    return trap.GetInteractionHint(currentActor);
 
                 return "ЛКМ — " + CurrentPrompt.ToLowerInvariant();
             }
