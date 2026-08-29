@@ -105,6 +105,16 @@ namespace KeeperFirstCovenant.World
 
             _triggered = true;
 
+            foreach (CombatantRuntime participant
+                     in participants)
+            {
+                TacticalUnitMover mover =
+                    participant.GetComponent<
+                        TacticalUnitMover>();
+
+                mover?.CancelMovement();
+            }
+
             director.BeginCombat(
                 participants);
         }
