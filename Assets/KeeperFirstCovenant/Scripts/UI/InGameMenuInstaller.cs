@@ -55,6 +55,7 @@ namespace KeeperFirstCovenant.UI
             var root = new GameObject("Keeper_InGamePauseMenu");
             SceneManager.MoveGameObjectToScene(root, scene);
             root.AddComponent<InGamePauseController>();
+            root.AddComponent<QuestTrackerHud>();
         }
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using KeeperFirstCovenant.Combat;
 using KeeperFirstCovenant.Core;
+using KeeperFirstCovenant.Quests;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -17,9 +18,11 @@ namespace KeeperFirstCovenant.UI
         private GameObject root;
         private GameObject mainPanel;
         private GameObject loadPanel;
+        private GameObject journalPanel;
         private GameObject settingsPanel;
         private GameObject confirmPanel;
         private RectTransform loadList;
+        private RectTransform journalList;
 
         private Text statusText;
         private Text activeSaveText;
@@ -91,6 +94,11 @@ namespace KeeperFirstCovenant.UI
                 else if (loadPanel.activeSelf)
                 {
                     loadPanel.SetActive(false);
+                    mainPanel.SetActive(true);
+                }
+                else if (journalPanel.activeSelf)
+                {
+                    journalPanel.SetActive(false);
                     mainPanel.SetActive(true);
                 }
                 else if (settingsPanel.activeSelf)
@@ -167,10 +175,12 @@ namespace KeeperFirstCovenant.UI
 
             mainPanel = BuildMainPanel(root.transform);
             loadPanel = BuildLoadPanel(root.transform);
+            journalPanel = BuildJournalPanel(root.transform);
             settingsPanel = BuildSettingsPanel(root.transform);
             confirmPanel = BuildConfirmPanel(root.transform);
 
             loadPanel.SetActive(false);
+            journalPanel.SetActive(false);
             settingsPanel.SetActive(false);
             confirmPanel.SetActive(false);
         }
@@ -272,6 +282,7 @@ namespace KeeperFirstCovenant.UI
             AddButton(panel, "Resume", "Продолжить", Resume);
             AddButton(panel, "Save", "Сохранить игру", SaveGame);
             AddButton(panel, "Load", "Загрузить игру", OpenLoadPanel);
+            AddButton(panel, "Journal", "Журнал", OpenJournal);
             AddButton(panel, "Settings", "Настройки", OpenSettings);
             AddButton(panel, "MainMenu", "Главное меню", RequestMainMenu);
             AddButton(panel, "Quit", "Выход из игры", RequestQuit);
@@ -380,6 +391,209 @@ namespace KeeperFirstCovenant.UI
                             root.SetActive(false);
                             Flow.LoadSave(captured);
                         });
+                });
+            }
+        }
+
+        private GameObject BuildJournalPanel(Transform parent)
+        {
+            GameObject panel = CreateWindow(
+                parent,
+                "JournalPanel",
+                "ЖУРНАЛ",
+                out RectTransform content,
+                out Button back);
+
+            back.onClick.AddListener(() =>
+            {
+                GameAudioService.Instance.PlayClick();
+                journalPanel.SetActive(false);
+                mainPanel.SetActive(true);
+            });
+
+            journalList =
+                MenuUiFactory.CreateRect(
+                    "QuestList",
+                    content);
+
+            MenuUiFactory.Stretch(journalList);
+
+            VerticalLayoutGroup layout =
+                journalList.gameObject
+                    .AddComponent<VerticalLayoutGroup>();
+
+            layout.spacing = 12f;
+            layout.childControlHeight = true;
+            layout.childControlWidth = true;
+            layout.childForceExpandHeight = false;
+            layout.childForceExpandWidth = true;
+
+            return panel;
+        }
+
+        private void RefreshJournal()
+        {
+            for (int i = journalList.childCount - 1;
+                 i >= 0;
+                 i--)
+            {
+                Destroy(
+                    journalList.GetChild(i).gameObject);
+            }
+
+            IReadOnlyList<QuestEntryState> quests =
+                QuestJournal.Instance.Quests;
+
+            if (quests == null || quests.Count == 0)
+            {
+                Text empty = MenuUiFactory.CreateText(
+                    "Empty",
+                    journalList,
+                    "Журнал пока пуст.",
+                    19,
+                    MainMenuTheme.MutedText,
+                    TextAnchor.MiddleCenter);
+
+                empty.gameObject
+                    .AddComponent<LayoutElement>()
+                    .preferredHeight = 120f;
+
+                return;
+            }
+
+            foreach (QuestEntryState quest in quests
+                         .Where(value => value != null)
+                         .OrderBy(value => value.status)
+                         .ThenBy(value => value.title))
+            {
+                BuildQuestRow(quest);
+            }
+        }
+
+        private void BuildQuestRow(
+            QuestEntryState quest)
+        {
+            Image row = MenuUiFactory.CreateImage(
+                "Quest_" + quest.questId,
+                journalList,
+                new Color(
+                    MainMenuTheme.PanelSoft.r,
+                    MainMenuTheme.PanelSoft.g,
+                    MainMenuTheme.PanelSoft.b,
+                    0.92f));
+
+            LayoutElement element =
+                row.gameObject
+                    .AddComponent<LayoutElement>();
+
+            int objectiveCount =
+                quest.objectives != null
+                    ? quest.objectives.Count
+                    : 0;
+
+            element.preferredHeight =
+                Mathf.Clamp(
+                    116f + objectiveCount * 28f,
+                    116f,
+                    250f);
+
+            string status =
+                quest.status == QuestStatus.Completed
+                    ? "ЗАВЕРШЕНО"
+                    : quest.status == QuestStatus.Failed
+                        ? "ПРОВАЛЕНО"
+                        : quest.tracked
+                            ? "ОТСЛЕЖИВАЕТСЯ"
+                            : "АКТИВНО";
+
+            Text heading = MenuUiFactory.CreateText(
+                "Heading",
+                row.transform,
+                quest.title + "   •   " + status,
+                19,
+                quest.status == QuestStatus.Active
+                    ? MainMenuTheme.Text
+                    : MainMenuTheme.MutedText,
+                TextAnchor.UpperLeft);
+
+            heading.rectTransform.anchorMin =
+                new Vector2(0f, 0.74f);
+            heading.rectTransform.anchorMax =
+                Vector2.one;
+            heading.rectTransform.offsetMin =
+                new Vector2(18f, 0f);
+            heading.rectTransform.offsetMax =
+                new Vector2(-18f, -12f);
+
+            string objectiveText =
+                quest.objectives == null ||
+                quest.objectives.Count == 0
+                    ? quest.description
+                    : string.Join(
+                        "\n",
+                        quest.objectives
+                            .Where(value => value != null)
+                            .Select(value =>
+                                (value.completed ? "✓ " : "• ") +
+                                value.description +
+                                (value.requiredAmount > 1
+                                    ? $"  {value.currentAmount}/{value.requiredAmount}"
+                                    : string.Empty)));
+
+            Text objectives = MenuUiFactory.CreateText(
+                "Objectives",
+                row.transform,
+                objectiveText,
+                14,
+                MainMenuTheme.MutedText,
+                TextAnchor.UpperLeft);
+
+            objectives.rectTransform.anchorMin =
+                Vector2.zero;
+            objectives.rectTransform.anchorMax =
+                new Vector2(1f, 0.76f);
+            objectives.rectTransform.offsetMin =
+                new Vector2(18f, 12f);
+            objectives.rectTransform.offsetMax =
+                new Vector2(-18f, 0f);
+
+            if (quest.status == QuestStatus.Active)
+            {
+                Button track = MenuUiFactory.CreateMenuButton(
+                    "Track",
+                    row.transform,
+                    quest.tracked
+                        ? "Отслеживается"
+                        : "Отслеживать",
+                    14);
+
+                RectTransform rect =
+                    track.GetComponent<RectTransform>();
+
+                rect.anchorMin =
+                    rect.anchorMax =
+                        new Vector2(1f, 1f);
+
+                rect.pivot =
+                    new Vector2(1f, 1f);
+
+                rect.anchoredPosition =
+                    new Vector2(-14f, -12f);
+
+                rect.sizeDelta =
+                    new Vector2(150f, 38f);
+
+                track.interactable = !quest.tracked;
+
+                string capturedId = quest.questId;
+
+                track.onClick.AddListener(() =>
+                {
+                    GameAudioService.Instance.PlayClick();
+                    QuestJournal.Instance.SetTracked(
+                        capturedId,
+                        true);
+                    RefreshJournal();
                 });
             }
         }
@@ -612,6 +826,7 @@ namespace KeeperFirstCovenant.UI
             root.SetActive(true);
             mainPanel.SetActive(true);
             loadPanel.SetActive(false);
+            journalPanel.SetActive(false);
             settingsPanel.SetActive(false);
             confirmPanel.SetActive(false);
 
@@ -658,6 +873,13 @@ namespace KeeperFirstCovenant.UI
             RefreshLoadSlots();
             mainPanel.SetActive(false);
             loadPanel.SetActive(true);
+        }
+
+        private void OpenJournal()
+        {
+            RefreshJournal();
+            mainPanel.SetActive(false);
+            journalPanel.SetActive(true);
         }
 
         private void OpenSettings()
