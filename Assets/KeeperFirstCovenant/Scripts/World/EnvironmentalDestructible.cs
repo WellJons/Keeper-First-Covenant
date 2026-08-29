@@ -36,6 +36,28 @@ namespace KeeperFirstCovenant.World
             _integrity = maxIntegrity;
         }
 
+        public void ConfigurePrototype(
+            float integrity,
+            ImpactTier minimumTier,
+            float damageMultiplier)
+        {
+            maxIntegrity =
+                Mathf.Max(
+                    1f,
+                    integrity);
+
+            minimumImpactTier =
+                minimumTier;
+
+            impactDamageMultiplier =
+                Mathf.Max(
+                    0f,
+                    damageMultiplier);
+
+            _integrity = maxIntegrity;
+            _destroyed = false;
+        }
+
         public void ApplyImpact(
             ImpactTier tier,
             float force,
