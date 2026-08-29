@@ -3,6 +3,7 @@ using System.Linq;
 using KeeperFirstCovenant.Combat;
 using KeeperFirstCovenant.Dialogue;
 using KeeperFirstCovenant.Inventory;
+using KeeperFirstCovenant.UI;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -112,7 +113,7 @@ namespace KeeperFirstCovenant.World
                 worldCamera = Camera.main;
 
             if (DialogueRunner.IsDialogueActive ||
-                UI.InspectionPanelController.IsOpen)
+                InspectionPanelController.IsOpen)
             {
                 ClearHover();
                 return;
