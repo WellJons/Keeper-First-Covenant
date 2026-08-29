@@ -319,9 +319,8 @@ namespace KeeperFirstCovenant.AI
                 }
 
                 float expectedDamage =
-                    (action.damage.Minimum +
-                     action.damage.Maximum) *
-                    0.5f;
+                    action.damage
+                        .DeterministicValue;
 
                 TacticalTargetPreview preview =
                     action.targetKind ==
@@ -384,7 +383,7 @@ namespace KeeperFirstCovenant.AI
                 {
                     score += 1000f;
                     score +=
-                        preview.HitChance * 0.2f;
+                        preview.DamageMax * 0.35f;
                 }
 
                 if (score > bestScore)
