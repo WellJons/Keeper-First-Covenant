@@ -63,11 +63,14 @@ namespace KeeperFirstCovenant.World
 
         private CombatantRuntime _owner;
         private float _nextScan;
+        private float _environmentSuspicion;
 
         public float HighestSuspicion =>
-            _suspicion.Count == 0
-                ? 0f
-                : _suspicion.Values.Max();
+            Mathf.Max(
+                _environmentSuspicion,
+                _suspicion.Count == 0
+                    ? 0f
+                    : _suspicion.Values.Max());
 
         public CombatantRuntime Owner => _owner;
         public float VisionRange => visionRange;
@@ -308,6 +311,19 @@ namespace KeeperFirstCovenant.World
                     suspicionDecayPerSecond *
                     delta);
             }
+
+            if (_environmentSuspicion > 0f)
+            {
+                _environmentSuspicion =
+                    Mathf.Max(
+                        0f,
+                        _environmentSuspicion -
+                        suspicionDecayPerSecond *
+                        0.65f *
+                        delta);
+
+                RefreshAwareness();
+            }
         }
 
         private bool CanSee(
@@ -446,16 +462,6 @@ namespace KeeperFirstCovenant.World
                         CombatantRuntime>()
                     : null;
 
-            if (source == null ||
-                !source.IsAlive ||
-                (source.Faction !=
-                     CombatFaction.Player &&
-                 source.Faction !=
-                     CombatFaction.Ally))
-            {
-                return;
-            }
-
             float closeness =
                 1f -
                 Mathf.Clamp01(
@@ -472,6 +478,30 @@ namespace KeeperFirstCovenant.World
                 noise.Intensity *
                 (0.5f + closeness);
 
+            bool identifiableSource =
+                source != null &&
+                source.IsAlive &&
+                (source.Faction ==
+                     CombatFaction.Player ||
+                 source.Faction ==
+                     CombatFaction.Ally);
+
+            if (!identifiableSource)
+            {
+                _environmentSuspicion =
+                    Mathf.Clamp(
+                        _environmentSuspicion +
+                        gain,
+                        0f,
+                        Mathf.Max(
+                            suspiciousThreshold,
+                            detectionThreshold -
+                            0.01f));
+
+                RefreshAwareness();
+                return;
+            }
+
             SetSuspicion(
                 source,
                 GetSuspicion(source) + gain);
@@ -486,6 +516,7 @@ namespace KeeperFirstCovenant.World
         public void DebugResetAwareness()
         {
             _suspicion.Clear();
+            _environmentSuspicion = 0f;
 
             Awareness =
                 AwarenessLevel.Unaware;
