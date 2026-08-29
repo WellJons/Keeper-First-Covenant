@@ -26,6 +26,9 @@ namespace KeeperFirstCovenant.World
         [SerializeField, Min(1)]
         private int disarmDifficulty = 13;
 
+        [SerializeField, Min(0)]
+        private int toolBonus = 2;
+
         [SerializeField]
         private string requiredToolItemId =
             "dev_lockpick";
@@ -71,8 +74,8 @@ namespace KeeperFirstCovenant.World
 
         public string InteractionPrompt =>
             revealed
-                ? "Disarm trap"
-                : "Unknown mechanism";
+                ? "Обезвредить ловушку"
+                : "Неизвестный механизм";
 
         private void Awake()
         {
@@ -126,25 +129,27 @@ namespace KeeperFirstCovenant.World
             int finesse =
                 combatant?.Definition != null
                     ? combatant.Definition
-                        .GetModifier(
+                        .GetAttribute(
                             AbilityAttribute.Finesse)
                     : 0;
 
             int perception =
                 combatant?.Definition != null
                     ? combatant.Definition
-                        .GetModifier(
+                        .GetAttribute(
                             AbilityAttribute.Perception)
-                    : 0;
+                    : 10;
 
-            int roll =
-                Random.Range(1, 21) +
-                finesse +
-                Mathf.Max(
-                    0,
-                    perception);
+            SkillCheckResult result =
+                SkillCheckResolver.Resolve(
+                    finesse,
+                    disarmDifficulty,
+                    perception,
+                    toolRequired
+                        ? toolBonus
+                        : 0);
 
-            if (roll >= disarmDifficulty)
+            if (result.Success)
             {
                 _spent = true;
                 return true;
