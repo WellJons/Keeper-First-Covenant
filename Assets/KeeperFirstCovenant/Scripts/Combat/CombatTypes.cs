@@ -99,6 +99,24 @@ namespace KeeperFirstCovenant.Combat
             return total;
         }
 
+        public int DeterministicValue
+        {
+            get
+            {
+                if (diceCount <= 0)
+                    return flatBonus;
+
+                float averagePerDie =
+                    (Mathf.Max(2, dieSides) + 1) *
+                    0.5f;
+
+                return Mathf.RoundToInt(
+                    diceCount *
+                    averagePerDie +
+                    flatBonus);
+            }
+        }
+
         public int Minimum => diceCount + flatBonus;
         public int Maximum => diceCount * dieSides + flatBonus;
 
