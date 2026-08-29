@@ -62,6 +62,9 @@ namespace KeeperFirstCovenant.UI
                 canvasRect,
                 new Color(0.02f, 0.025f, 0.03f, 0.66f));
 
+            KeeperUiSkin.DecorateSection(
+                panel);
+
             RectTransform panelRect =
                 panel.rectTransform;
 
