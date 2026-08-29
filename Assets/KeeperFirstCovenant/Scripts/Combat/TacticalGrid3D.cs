@@ -222,16 +222,43 @@ namespace KeeperFirstCovenant.Combat
 
             Vector3 origin =
                 from +
-                Vector3.up * agentRadius;
+                Vector3.up *
+                (agentRadius + 0.08f);
 
-            return !Physics.SphereCast(
-                origin,
-                agentRadius,
-                delta.normalized,
-                out _,
-                distance,
-                obstacleMask,
-                QueryTriggerInteraction.Ignore);
+            RaycastHit[] hits =
+                Physics.SphereCastAll(
+                    origin,
+                    agentRadius,
+                    delta.normalized,
+                    distance,
+                    obstacleMask,
+                    QueryTriggerInteraction.Ignore);
+
+            foreach (RaycastHit hit in hits)
+            {
+                Collider collider =
+                    hit.collider;
+
+                if (collider == null)
+                    continue;
+
+                if (collider
+                        .GetComponentInParent<
+                            CombatantRuntime>() != null)
+                {
+                    continue;
+                }
+
+                if (hit.normal.y >=
+                    minimumGroundNormalY)
+                {
+                    continue;
+                }
+
+                return false;
+            }
+
+            return true;
         }
 
         private static List<Vector3>
