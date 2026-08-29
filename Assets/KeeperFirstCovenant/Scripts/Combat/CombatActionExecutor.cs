@@ -17,7 +17,9 @@ namespace KeeperFirstCovenant.Combat
         NotEnoughActionPoints,
         NotEnoughMana,
         MissingStrainResource,
-        NotEnoughStrainCapacity
+        NotEnoughStrainCapacity,
+        ActionOnCooldown,
+        ComboRequirementMissing
     }
 
     public readonly struct CombatActionResult
