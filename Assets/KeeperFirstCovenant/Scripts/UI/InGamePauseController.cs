@@ -487,7 +487,7 @@ namespace KeeperFirstCovenant.UI
                 TextAnchor.MiddleLeft;
 
             tabLayout.childControlHeight = true;
-            tabLayout.childControlWidth = false;
+            tabLayout.childControlWidth = true;
             tabLayout.childForceExpandHeight = true;
             tabLayout.childForceExpandWidth = false;
 
@@ -622,12 +622,40 @@ namespace KeeperFirstCovenant.UI
             }
 
             if (journalQuestTabButton != null)
-                journalQuestTabButton.interactable =
-                    journalDiscoveryMode;
+            {
+                journalQuestTabButton.interactable = true;
+
+                Text label =
+                    journalQuestTabButton.transform
+                        .Find("Label")
+                        ?.GetComponent<Text>();
+
+                if (label != null)
+                {
+                    label.color =
+                        journalDiscoveryMode
+                            ? MainMenuTheme.Silver
+                            : MainMenuTheme.Warm;
+                }
+            }
 
             if (journalDiscoveryTabButton != null)
-                journalDiscoveryTabButton.interactable =
-                    !journalDiscoveryMode;
+            {
+                journalDiscoveryTabButton.interactable = true;
+
+                Text label =
+                    journalDiscoveryTabButton.transform
+                        .Find("Label")
+                        ?.GetComponent<Text>();
+
+                if (label != null)
+                {
+                    label.color =
+                        journalDiscoveryMode
+                            ? MainMenuTheme.Warm
+                            : MainMenuTheme.Silver;
+                }
+            }
 
             if (journalDiscoveryMode)
             {
