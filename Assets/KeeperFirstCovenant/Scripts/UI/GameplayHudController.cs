@@ -769,17 +769,55 @@ namespace KeeperFirstCovenant.UI
                     playerController.SelectedAction ==
                     action;
 
+                CombatActionStateComponent state =
+                    actor != null
+                        ? CombatActionStateComponent
+                            .Ensure(actor)
+                        : null;
+
+                int cooldown =
+                    state != null
+                        ? state.GetCooldownRemaining(
+                            action)
+                        : 0;
+
+                bool comboReady =
+                    state != null &&
+                    state.MatchesCombo(action);
+
+                bool stateUsable =
+                    state == null ||
+                    state.CanUse(
+                        action,
+                        out _);
+
+                string combatState =
+                    cooldown > 0
+                        ? $"   CD {cooldown}"
+                        : comboReady
+                            ? $"   КОМБО ×{Mathf.Max(2, state.ComboDepth + 1)}"
+                            : string.Empty;
+
                 entry.label.text =
                     $"{i + 1}. " +
                     (selected ? "▶ " : string.Empty) +
                     action.displayName +
+                    combatState +
                     $"\nAP {action.actionPointCost}" +
                     (action.manaCost > 0
                         ? $"  MP {action.manaCost}"
                         : string.Empty);
 
+                entry.label.color =
+                    comboReady
+                        ? MainMenuTheme.Warm
+                        : stateUsable
+                            ? MainMenuTheme.Text
+                            : MainMenuTheme.MutedText;
+
                 entry.button.interactable =
                     partyControlled &&
+                    stateUsable &&
                     actor.CurrentActionPoints >=
                         action.actionPointCost &&
                     actor.CurrentMana >=
@@ -882,7 +920,8 @@ namespace KeeperFirstCovenant.UI
             {
                 previewText.text =
                     "Недоступно: " +
-                    preview.Failure;
+                    FormatActionFailure(
+                        preview.Failure);
                 return;
             }
 
@@ -905,6 +944,30 @@ namespace KeeperFirstCovenant.UI
                 $"Урон {damage}   •   " +
                 $"{preview.Distance:0.0} м" +
                 tactical;
+        }
+
+        private static string FormatActionFailure(
+            ActionFailureReason reason)
+        {
+            switch (reason)
+            {
+                case ActionFailureReason.OutOfRange:
+                    return "слишком далеко";
+                case ActionFailureReason.NoLineOfSight:
+                    return "нет линии атаки";
+                case ActionFailureReason.NotEnoughActionPoints:
+                    return "не хватает очков действия";
+                case ActionFailureReason.NotEnoughMana:
+                    return "не хватает маны";
+                case ActionFailureReason.ActionOnCooldown:
+                    return "приём восстанавливается";
+                case ActionFailureReason.ComboRequirementMissing:
+                    return "нужна предыдущая связка";
+                case ActionFailureReason.NotEnoughStrainCapacity:
+                    return "слишком высокая нагрузка";
+                default:
+                    return reason.ToString();
+            }
         }
 
         private static void
