@@ -25,6 +25,7 @@ namespace KeeperFirstCovenant.Core
         public string partyStateJson = "";
         public string questStateJson = "";
         public string discoveryStateJson = "";
+        public string relationshipStateJson = "";
         public string thumbnailRelativePath = "";
 
         public DateTime GetModifiedUtc()
