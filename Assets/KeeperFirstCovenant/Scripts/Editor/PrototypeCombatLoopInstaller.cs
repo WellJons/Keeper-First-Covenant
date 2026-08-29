@@ -103,13 +103,41 @@ namespace KeeperFirstCovenant.EditorTools
                 ForcedMovementSystem>(
                     systems);
 
-            AddIfMissing<
+            RemoveIfPresent<
                 TacticalTargetingIndicator>(
                     systems);
 
-            AddIfMissing<
+            RemoveIfPresent<
                 MovementPathIndicator>(
                     systems);
+
+            LineRenderer legacyLine =
+                systems.GetComponent<
+                    LineRenderer>();
+
+            if (legacyLine != null)
+            {
+                Undo.DestroyObjectImmediate(
+                    legacyLine);
+            }
+
+            GameObject targetingPreview =
+                GetOrCreateChild(
+                    systems,
+                    "TargetingPreview");
+
+            AddIfMissing<
+                TacticalTargetingIndicator>(
+                    targetingPreview);
+
+            GameObject movementPreview =
+                GetOrCreateChild(
+                    systems,
+                    "MovementPathPreview");
+
+            AddIfMissing<
+                MovementPathIndicator>(
+                    movementPreview);
 
             LootTableDefinition loot =
                 AssetDatabase
@@ -165,10 +193,49 @@ namespace KeeperFirstCovenant.EditorTools
 
             Debug.Log(
                 "Keeper tactical combat installed. " +
-                "Includes party control, LOS, " +
-                "free movement, LOS, cover, height, " +
+                "Includes party control, free movement, " +
+                "LOS, cover, height, " +
                 "AoE preview, surfaces and reactions. " +
                 "F1 opens the developer sandbox.");
+        }
+
+        private static GameObject GetOrCreateChild(
+            GameObject parent,
+            string childName)
+        {
+            Transform existing =
+                parent.transform.Find(
+                    childName);
+
+            if (existing != null)
+                return existing.gameObject;
+
+            GameObject child =
+                new GameObject(childName);
+
+            Undo.RegisterCreatedObjectUndo(
+                child,
+                "Create " + childName);
+
+            child.transform.SetParent(
+                parent.transform,
+                false);
+
+            return child;
+        }
+
+        private static void RemoveIfPresent<T>(
+            GameObject go)
+            where T : Component
+        {
+            T component =
+                go.GetComponent<T>();
+
+            if (component != null)
+            {
+                Undo.DestroyObjectImmediate(
+                    component);
+            }
         }
 
         private static T AddIfMissing<T>(
