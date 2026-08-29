@@ -323,6 +323,11 @@ namespace KeeperFirstCovenant.EditorTools
                 "Камень старше дороги. По краю проходит почти стёртая резьба, " +
                 "а в одной из трещин застряла тёмная пыль. " +
                 "Это тестовый объект для механики осмотра.");
+
+            inspectable.ConfigureDiscovery(
+                "dev_cracked_road_stone",
+                DiscoveryCategory.Lore,
+                "Дорога к Рейнхольму");
         }
 
         private static void CreateWorldPickup(
