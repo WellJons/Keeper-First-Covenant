@@ -35,6 +35,58 @@ namespace KeeperFirstCovenant.EditorTools
                     9f,
                     AbilityAttribute.Intellect);
 
+            CombatActionDefinition cataclysmFireball =
+                GetOrCreate<
+                    CombatActionDefinition>(
+                    DataRoot +
+                    "/Action_DevCataclysmFireball.asset");
+
+            cataclysmFireball.actionId =
+                "dev_cataclysm_fireball";
+
+            cataclysmFireball.displayName =
+                "DEV Cataclysm Fireball";
+
+            cataclysmFireball.category =
+                CombatActionCategory.Spell;
+
+            cataclysmFireball.targetKind =
+                TargetKind.Ground;
+
+            cataclysmFireball.actionPointCost = 2;
+            cataclysmFireball.manaCost = 15;
+            cataclysmFireball.strainCost = 0;
+            cataclysmFireball.rangeMeters = 14f;
+            cataclysmFireball.areaRadius = 4.2f;
+
+            cataclysmFireball.areaTargetRule =
+                AreaTargetRule.Everyone;
+
+            cataclysmFireball.requiresLineOfSight = true;
+            cataclysmFireball.ignoresCover = true;
+            cataclysmFireball.usesHeightAdvantage = false;
+            cataclysmFireball.requiresAttackRoll = false;
+
+            cataclysmFireball.damage =
+                new DiceFormula(4, 8, 4);
+
+            cataclysmFireball.damageType =
+                DamageType.Fire;
+
+            cataclysmFireball.scalingAttribute =
+                AbilityAttribute.Intellect;
+
+            cataclysmFireball.scalingMultiplier = 1f;
+
+            cataclysmFireball.createsSurface =
+                SurfaceType.Fire;
+
+            cataclysmFireball.surfaceRadius = 4.2f;
+            cataclysmFireball.surfaceDurationTurns = 3;
+
+            EditorUtility.SetDirty(
+                cataclysmFireball);
+
             CombatActionDefinition shockNeedle =
                 GetAction(
                     "ShockNeedle",
