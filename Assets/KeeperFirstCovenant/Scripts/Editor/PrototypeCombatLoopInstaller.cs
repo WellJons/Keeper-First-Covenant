@@ -95,6 +95,14 @@ namespace KeeperFirstCovenant.EditorTools
                     systems);
 
             AddIfMissing<
+                WorldTimeSystem>(
+                    systems);
+
+            AddIfMissing<
+                WorldLightingController>(
+                    systems);
+
+            AddIfMissing<
                 StealthController>(
                     systems);
 
