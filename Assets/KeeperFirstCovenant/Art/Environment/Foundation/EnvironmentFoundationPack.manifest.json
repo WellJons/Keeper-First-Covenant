@@ -1,0 +1,70 @@
+{
+  "packId": "keeper.environment.foundation.v2",
+  "displayName": "Environment Foundation",
+  "version": "1.0.0",
+  "unityVersion": "6000.5.10f1",
+  "renderPipeline": "Universal Render Pipeline 17.5.0",
+  "style": "high-detail hand-painted fantasy, top-down three-quarter 2.5D",
+  "sourceTextures": [
+    {
+      "id": "Ground_MeadowGrass_A",
+      "kind": "ground",
+      "size": "1254x1254",
+      "sha256": "383f84dc17aad286317970dcf7d635e18699b2013c18abd67c037a8a9fdc4fe9"
+    },
+    {
+      "id": "Ground_WoodlandDirt_A",
+      "kind": "ground",
+      "size": "1254x1254",
+      "sha256": "51e19aab11dce65dd64ef49d2b48f3d6e765a736a615e2bee79cdea2f41ac9f0"
+    },
+    {
+      "id": "Ground_NaturalStone_A",
+      "kind": "ground",
+      "size": "1254x1254",
+      "sha256": "f1d819602a7dbb66c937b86e5c7899ce0e475802b8497e99d9d7d977952eb20d"
+    },
+    {
+      "id": "Road_PackedDirt_A",
+      "kind": "road",
+      "size": "1254x1254",
+      "sha256": "cb70c116b1a4c5df3a6d8ecaf62dd1c5e95b9c1ca0f0b92db84b76e5e4b73da4"
+    },
+    {
+      "id": "Road_OldCobble_A",
+      "kind": "road",
+      "size": "1254x1254",
+      "sha256": "11bd5ceb2199a71b5766352bf163b717a66389ceabb46fc744dbc96b44970219"
+    },
+    {
+      "id": "Grass_LowMeadow_A",
+      "kind": "interactiveFoliage",
+      "size": "1536x1024",
+      "sha256": "6bea38a086ec967da80cf52724d3285d6527ba512b69a77816f1c201f21a51b0"
+    },
+    {
+      "id": "Grass_TallMeadow_A",
+      "kind": "interactiveFoliage",
+      "size": "1312x1199",
+      "sha256": "a2887ecdefd58cfec49b75d9ed15b8db1e2b74674eff21f92d4f11007bee54c2"
+    },
+    {
+      "id": "Grass_Wildflowers_A",
+      "kind": "interactiveFoliage",
+      "size": "1536x1024",
+      "sha256": "c6350a948b4d78461ebfb25465ba6b10793d7c4cd3ebf9efa47b784a59ba7fad"
+    }
+  ],
+  "generatedPrefabCount": 16,
+  "runtimeFeatures": [
+    "walkable colliders",
+    "Unity 6 PhysicsMaterial profiles",
+    "per-position road surface resolution",
+    "procedural footstep particles",
+    "modular road topology",
+    "interactive foliage bending",
+    "non-synchronized wind gusts",
+    "wildflower pollen VFX",
+    "concealment, movement and flammability metadata"
+  ]
+}

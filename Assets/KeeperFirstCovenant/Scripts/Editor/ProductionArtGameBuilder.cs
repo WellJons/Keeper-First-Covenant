@@ -20,8 +20,10 @@ namespace KeeperFirstCovenant.EditorTools
         {
             ProductionSheetCharacterBuilder.BuildAllCharacters();
             ProductionSheetWorldBuilder.BuildWorld();
+            EnvironmentFoundationPackBuilder.EnsureBuilt(true);
             BuildPlayableScene();
             ProductionArtValidator.Validate(true);
+            EnvironmentFoundationValidator.Validate(true);
 
             Debug.Log(
                 "Approved production art has been built into game assets and the playable scene.");
@@ -31,6 +33,7 @@ namespace KeeperFirstCovenant.EditorTools
         public static void BuildPlayableScene()
         {
             EnsureSceneFolder();
+            EnvironmentFoundationPackBuilder.EnsureBuilt(false);
 
             if (AssetDatabase.LoadAssetAtPath<GameObject>(
                     ProductionSheetCharacterBuilder.EdwardPrefabPath) == null)
@@ -50,6 +53,8 @@ namespace KeeperFirstCovenant.EditorTools
 
             GameObject root =
                 new GameObject("Keeper_ProductionArt_Playground");
+
+            root.AddComponent<KeeperFirstCovenant.Environment.EnvironmentWindController>();
 
             GameObject systems =
                 new GameObject("Systems");
@@ -80,6 +85,8 @@ namespace KeeperFirstCovenant.EditorTools
                     "Aelis",
                     new Vector3(-3.3f, 0f, -1.15f),
                     root.transform);
+
+            EnvironmentFoundationPackBuilder.AttachSurfaceEffects(edward);
 
             if (edward != null)
             {
@@ -131,6 +138,13 @@ namespace KeeperFirstCovenant.EditorTools
 
         private static void BuildGround(Transform parent)
         {
+            if (EnvironmentFoundationPackBuilder.LoadPrefab(
+                    "Ground_MeadowGrass_4m") != null)
+            {
+                EnvironmentFoundationPackBuilder.BuildFoundationGround(parent);
+                return;
+            }
+
             GameObject collision =
                 new GameObject("GroundCollision");
 
@@ -222,8 +236,13 @@ namespace KeeperFirstCovenant.EditorTools
             Place("Grass", -4.0f, -3.3f);
             Place("Flowers", 4.2f, -2.8f);
             Place("StoneStairs", 0.0f, 6.0f);
-            Place("RoadStraight", -1.0f, 1.7f);
-            Place("RoadWide", 1.0f, 0.1f);
+
+            if (EnvironmentFoundationPackBuilder.LoadPrefab(
+                    "Ground_MeadowGrass_4m") == null)
+            {
+                Place("RoadStraight", -1.0f, 1.7f);
+                Place("RoadWide", 1.0f, 0.1f);
+            }
 
             void Place(
                 string id,
