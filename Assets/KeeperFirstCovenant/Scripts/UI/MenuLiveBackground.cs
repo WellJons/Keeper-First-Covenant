@@ -6,6 +6,8 @@ namespace KeeperFirstCovenant.UI
 {
     public sealed class MenuLiveBackground : MonoBehaviour
     {
+        private const string BundledBackgroundResource = "Menu/MainMenu_Background";
+
         [Header("Optional authored layers")]
         [SerializeField] private Sprite farBackground;
         [SerializeField] private Sprite midground;
@@ -41,23 +43,62 @@ namespace KeeperFirstCovenant.UI
             baseImage.color = Color.white;
             baseImage.raycastTarget = false;
 
-            BuildAuthoredLayer(root, farBackground, "FarArt", out farArtRect, 1.06f, 0.35f);
+            bool hasPrimaryArt = false;
+
+            if (farBackground != null)
+            {
+                BuildAuthoredLayer(root, farBackground, "FarArt", out farArtRect, 1.06f, 1f);
+                hasPrimaryArt = true;
+            }
+            else
+            {
+                Texture2D bundledBackground = Resources.Load<Texture2D>(BundledBackgroundResource);
+                if (bundledBackground != null)
+                {
+                    BuildAuthoredTextureLayer(
+                        root,
+                        bundledBackground,
+                        "BundledMainMenuBackground",
+                        out farArtRect,
+                        1.06f,
+                        1f);
+
+                    hasPrimaryArt = true;
+                }
+            }
+
             BuildAuthoredLayer(root, midground, "MidgroundArt", out midArtRect, 1.08f, 0.55f);
 
-            fogA = BuildFog(root, "FogCold", new Color(0.42f, 0.58f, 0.64f, 0.10f), 0.15f);
-            fogB = BuildFog(root, "FogWarm", new Color(0.68f, 0.30f, 0.12f, 0.075f), -0.11f);
+            fogA = BuildFog(
+                root,
+                "FogCold",
+                new Color(0.42f, 0.58f, 0.64f, hasPrimaryArt ? 0.065f : 0.10f),
+                0.15f);
 
-            ringA = BuildRing(root, "SilverIncompleteRing", 520f, 0.72f, 302f);
-            ringA.anchorMin = ringA.anchorMax = new Vector2(0.76f, 0.47f);
-            ringA.anchoredPosition = Vector2.zero;
+            fogB = BuildFog(
+                root,
+                "FogWarm",
+                new Color(0.68f, 0.30f, 0.12f, hasPrimaryArt ? 0.045f : 0.075f),
+                -0.11f);
 
-            ringB = BuildRing(root, "BrokenRestraintRing", 760f, 0.18f, 236f);
-            ringB.anchorMin = ringB.anchorMax = new Vector2(0.79f, 0.45f);
-            ringB.anchoredPosition = Vector2.zero;
+            if (!hasPrimaryArt)
+            {
+                ringA = BuildRing(root, "SilverIncompleteRing", 520f, 0.72f, 302f);
+                ringA.anchorMin = ringA.anchorMax = new Vector2(0.76f, 0.47f);
+                ringA.anchoredPosition = Vector2.zero;
+
+                ringB = BuildRing(root, "BrokenRestraintRing", 760f, 0.18f, 236f);
+                ringB.anchorMin = ringB.anchorMax = new Vector2(0.79f, 0.45f);
+                ringB.anchoredPosition = Vector2.zero;
+            }
 
             BuildAuthoredLayer(root, foreground, "ForegroundArt", out foregroundRect, 1.10f, 0.82f);
 
-            Image lowerShade = MenuUiFactory.CreateImage("LowerShade", root, new Color(0f, 0f, 0f, 0.30f));
+            Image lowerShade = MenuUiFactory.CreateImage(
+                "LowerShade",
+                root,
+                new Color(0f, 0f, 0f, hasPrimaryArt ? 0.18f : 0.30f));
+
             RectTransform shadeRect = lowerShade.rectTransform;
             shadeRect.anchorMin = new Vector2(0f, 0f);
             shadeRect.anchorMax = new Vector2(1f, 0.32f);
@@ -81,7 +122,11 @@ namespace KeeperFirstCovenant.UI
             float driftY = Mathf.Sin(time * 0.052f + 0.8f) * cameraDrift * 0.32f;
 
             if (farArtRect != null)
+            {
                 farArtRect.anchoredPosition = new Vector2(driftX * 0.22f, driftY * 0.20f);
+                float breathe = 1.06f + Mathf.Sin(time * 0.045f) * 0.006f;
+                farArtRect.localScale = Vector3.one * breathe;
+            }
 
             if (midArtRect != null)
                 midArtRect.anchoredPosition = new Vector2(driftX * 0.52f, driftY * 0.45f);
@@ -112,6 +157,32 @@ namespace KeeperFirstCovenant.UI
                 ringB.localRotation = Quaternion.Euler(0f, 0f, -10f + Mathf.Sin(time * 0.075f + 1f) * ringSpeed * 0.55f);
 
             UpdateEmbers();
+        }
+
+        private static void BuildAuthoredTextureLayer(
+            RectTransform parent,
+            Texture2D texture,
+            string name,
+            out RectTransform rect,
+            float scale,
+            float alpha)
+        {
+            if (texture == null)
+            {
+                rect = null;
+                return;
+            }
+
+            RectTransform imageRect = MenuUiFactory.CreateRect(name, parent);
+            MenuUiFactory.Stretch(imageRect, -80f, -50f, -80f, -50f);
+            imageRect.localScale = Vector3.one * scale;
+
+            RawImage image = imageRect.gameObject.AddComponent<RawImage>();
+            image.texture = texture;
+            image.color = new Color(1f, 1f, 1f, alpha);
+            image.raycastTarget = false;
+
+            rect = imageRect;
         }
 
         private static void BuildAuthoredLayer(
@@ -242,7 +313,10 @@ namespace KeeperFirstCovenant.UI
                 for (int x = 0; x < width; x++)
                 {
                     float u = x / (float)(width - 1);
-                    Color baseColor = Color.Lerp(MainMenuTheme.BackgroundWarm, MainMenuTheme.BackgroundCold, Mathf.SmoothStep(0f, 1f, v));
+                    Color baseColor = Color.Lerp(
+                        MainMenuTheme.BackgroundWarm,
+                        MainMenuTheme.BackgroundCold,
+                        Mathf.SmoothStep(0f, 1f, v));
 
                     float warmGlow = Radial(u, v, 0.18f, 0.18f, 0.44f) * 0.34f;
                     float coldGlow = Radial(u, v, 0.78f, 0.52f, 0.50f) * 0.22f;
