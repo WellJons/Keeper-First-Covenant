@@ -16,14 +16,19 @@ namespace KeeperFirstCovenant.World
         [SerializeField, Min(0.5f)] private float maxInteractionDistance = 4.25f;
 
         private IInteractable currentInteractable;
+        private WorldInspectable currentInspectable;
         private GameObject currentActor;
         private Vector3 currentHitPoint;
         private Collider currentCollider;
         private bool currentInRange;
         private float currentDistance;
 
-        public bool HasHoverTarget => currentInteractable != null;
+        public bool HasHoverTarget =>
+            currentInteractable != null ||
+            currentInspectable != null;
+
         public IInteractable CurrentInteractable => currentInteractable;
+        public WorldInspectable CurrentInspectable => currentInspectable;
         public GameObject CurrentActor => currentActor;
         public Vector3 CurrentHitPoint => currentHitPoint;
         public Collider CurrentCollider => currentCollider;
@@ -34,13 +39,15 @@ namespace KeeperFirstCovenant.World
         public string CurrentPrompt =>
             currentInteractable != null
                 ? currentInteractable.InteractionPrompt
-                : string.Empty;
+                : currentInspectable != null
+                    ? currentInspectable.DisplayName
+                    : string.Empty;
 
         public string CurrentContextHint
         {
             get
             {
-                if (currentInteractable == null)
+                if (!HasHoverTarget)
                     return string.Empty;
 
                 if (!currentInRange)
@@ -49,13 +56,45 @@ namespace KeeperFirstCovenant.World
                         $"Слишком далеко   •   {currentDistance:0.0} м";
                 }
 
+                string actionHint =
+                    string.Empty;
+
                 if (currentInteractable is LockableDoor door)
-                    return door.GetInteractionHint(currentActor);
+                {
+                    actionHint =
+                        door.GetInteractionHint(
+                            currentActor);
+                }
+                else if (currentInteractable is TrapMechanism trap)
+                {
+                    actionHint =
+                        trap.GetInteractionHint(
+                            currentActor);
+                }
+                else if (currentInteractable != null)
+                {
+                    actionHint =
+                        "ЛКМ — " +
+                        CurrentPrompt
+                            .ToLowerInvariant();
+                }
 
-                if (currentInteractable is TrapMechanism trap)
-                    return trap.GetInteractionHint(currentActor);
+                bool inspectable =
+                    currentInspectable != null &&
+                    currentInspectable
+                        .CanInspect(
+                            currentActor);
 
-                return "ЛКМ — " + CurrentPrompt.ToLowerInvariant();
+                if (inspectable)
+                {
+                    return string.IsNullOrWhiteSpace(
+                            actionHint)
+                        ? "ПКМ — осмотреть"
+                        : actionHint +
+                          "   •   ПКМ — осмотреть";
+                }
+
+                return actionHint;
             }
         }
 
@@ -72,7 +111,8 @@ namespace KeeperFirstCovenant.World
             if (worldCamera == null)
                 worldCamera = Camera.main;
 
-            if (DialogueRunner.IsDialogueActive)
+            if (DialogueRunner.IsDialogueActive ||
+                UI.InspectionPanelController.IsOpen)
             {
                 ClearHover();
                 return;
@@ -96,6 +136,19 @@ namespace KeeperFirstCovenant.World
 
             UpdateHover(
                 mouse.position.ReadValue());
+
+            if (mouse.rightButton.wasPressedThisFrame &&
+                currentInspectable != null &&
+                currentActor != null &&
+                currentInRange &&
+                currentInspectable.CanInspect(
+                    currentActor))
+            {
+                currentInspectable.Inspect(
+                    currentActor);
+
+                return;
+            }
 
             if (!mouse.leftButton.wasPressedThisFrame ||
                 currentInteractable == null ||
@@ -150,14 +203,23 @@ namespace KeeperFirstCovenant.World
                 return;
             }
 
-            IInteractable interactable =
+            MonoBehaviour[] behaviours =
                 hit.collider
                     .GetComponentsInParent<
-                        MonoBehaviour>(true)
+                        MonoBehaviour>(true);
+
+            IInteractable interactable =
+                behaviours
                     .OfType<IInteractable>()
                     .FirstOrDefault();
 
-            if (interactable == null)
+            WorldInspectable inspectable =
+                hit.collider
+                    .GetComponentInParent<
+                        WorldInspectable>();
+
+            if (interactable == null &&
+                inspectable == null)
             {
                 ClearHover();
                 return;
@@ -182,12 +244,17 @@ namespace KeeperFirstCovenant.World
                 !ReferenceEquals(
                     currentInteractable,
                     interactable) ||
+                currentInspectable !=
+                    inspectable ||
                 currentCollider != hit.collider ||
                 currentActor != actor ||
                 currentInRange != inRange;
 
             currentInteractable =
                 interactable;
+
+            currentInspectable =
+                inspectable;
 
             currentCollider =
                 hit.collider;
@@ -250,12 +317,14 @@ namespace KeeperFirstCovenant.World
         private void ClearHover()
         {
             if (currentInteractable == null &&
+                currentInspectable == null &&
                 currentCollider == null)
             {
                 return;
             }
 
             currentInteractable = null;
+            currentInspectable = null;
             currentCollider = null;
             currentActor = null;
             currentHitPoint = Vector3.zero;
