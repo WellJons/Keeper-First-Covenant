@@ -274,6 +274,18 @@ namespace KeeperFirstCovenant.AI
                     expectedDamage +
                     action.rangeMeters;
 
+                ElementalSurfaceSystem surfaces =
+                    ElementalSurfaceSystem.Instance;
+
+                if (surfaces != null)
+                {
+                    score +=
+                        surfaces
+                            .GetImpactReactionScore(
+                                action.damageType,
+                                target.transform.position);
+                }
+
                 if (preview.Valid)
                 {
                     score += 1000f;
