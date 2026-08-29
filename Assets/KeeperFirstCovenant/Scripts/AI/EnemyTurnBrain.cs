@@ -197,10 +197,17 @@ namespace KeeperFirstCovenant.AI
             }
 
             TacticalTargetPreview preview =
-                CombatTargetingService.Analyze(
-                    actor,
-                    action,
-                    target);
+                action.targetKind ==
+                    TargetKind.Ground
+                    ? CombatTargetingService.Analyze(
+                        actor,
+                        action,
+                        null,
+                        target.transform.position)
+                    : CombatTargetingService.Analyze(
+                        actor,
+                        action,
+                        target);
 
             return preview.Valid;
         }
@@ -222,11 +229,60 @@ namespace KeeperFirstCovenant.AI
                          CombatFaction.Player ||
                      x.Faction ==
                          CombatFaction.Ally))
-                .OrderBy(x =>
-                    Vector3.SqrMagnitude(
-                        x.transform.position -
-                        actor.transform.position))
+                .OrderByDescending(x =>
+                    ScoreTarget(
+                        actor,
+                        x))
                 .FirstOrDefault();
+        }
+
+        private static float ScoreTarget(
+            CombatantRuntime actor,
+            CombatantRuntime target)
+        {
+            if (actor == null ||
+                target == null ||
+                target.Definition == null)
+            {
+                return float.MinValue;
+            }
+
+            float distance =
+                Vector3.Distance(
+                    actor.transform.position,
+                    target.transform.position);
+
+            float maxHealth =
+                Mathf.Max(
+                    1f,
+                    target.Definition.maxHealth);
+
+            float healthRatio =
+                Mathf.Clamp01(
+                    target.CurrentHealth /
+                    maxHealth);
+
+            float score =
+                -distance * 2.2f +
+                (1f - healthRatio) * 38f;
+
+            score -=
+                target.Barrier * 0.18f;
+
+            BreakGaugeComponent breakGauge =
+                target.GetComponent<
+                    BreakGaugeComponent>();
+
+            if (breakGauge != null)
+            {
+                score +=
+                    breakGauge.Normalized * 18f;
+
+                if (breakGauge.IsBroken)
+                    score += 26f;
+            }
+
+            return score;
         }
 
         private static CombatActionDefinition
@@ -250,8 +306,10 @@ namespace KeeperFirstCovenant.AI
                      in actions)
             {
                 if (action == null ||
-                    action.targetKind !=
-                        TargetKind.Enemy ||
+                    (action.targetKind !=
+                         TargetKind.Enemy &&
+                     action.targetKind !=
+                         TargetKind.Ground) ||
                     actor.CurrentActionPoints <
                         action.actionPointCost ||
                     actor.CurrentMana <
@@ -266,10 +324,17 @@ namespace KeeperFirstCovenant.AI
                     0.5f;
 
                 TacticalTargetPreview preview =
-                    CombatTargetingService.Analyze(
-                        actor,
-                        action,
-                        target);
+                    action.targetKind ==
+                        TargetKind.Ground
+                        ? CombatTargetingService.Analyze(
+                            actor,
+                            action,
+                            null,
+                            target.transform.position)
+                        : CombatTargetingService.Analyze(
+                            actor,
+                            action,
+                            target);
 
                 float score =
                     expectedDamage +
@@ -285,6 +350,34 @@ namespace KeeperFirstCovenant.AI
                             .GetImpactReactionScore(
                                 action.damageType,
                                 target.transform.position);
+                }
+
+                BreakGaugeComponent breakGauge =
+                    target.GetComponent<
+                        BreakGaugeComponent>();
+
+                if (breakGauge != null)
+                {
+                    if (breakGauge.IsBroken)
+                    {
+                        score +=
+                            expectedDamage * 0.85f;
+                    }
+                    else
+                    {
+                        score +=
+                            action.breakPower *
+                            (0.25f +
+                             breakGauge.Normalized *
+                             0.75f);
+                    }
+                }
+
+                if (action.areaRadius > 0.1f)
+                {
+                    score +=
+                        preview.AffectedTargets *
+                        8f;
                 }
 
                 if (preview.Valid)
@@ -316,6 +409,18 @@ namespace KeeperFirstCovenant.AI
                 !actor.IsAlive ||
                 !target.IsAlive)
             {
+                yield break;
+            }
+
+            if (action.targetKind ==
+                TargetKind.Ground)
+            {
+                CombatActionExecutor.Execute(
+                    actor,
+                    action,
+                    null,
+                    target.transform.position);
+
                 yield break;
             }
 
