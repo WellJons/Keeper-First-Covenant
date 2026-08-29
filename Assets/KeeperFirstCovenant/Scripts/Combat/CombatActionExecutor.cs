@@ -32,6 +32,7 @@ namespace KeeperFirstCovenant.Combat
         public readonly int HitChance;
         public readonly int AffectedTargets;
         public readonly ActionFailureReason Failure;
+        public readonly ActiveDefenseOutcome DefenseOutcome;
 
         public CombatActionResult(
             bool executed,
@@ -43,7 +44,9 @@ namespace KeeperFirstCovenant.Combat
             int hitRoll,
             int hitChance,
             int affectedTargets,
-            ActionFailureReason failure)
+            ActionFailureReason failure,
+            ActiveDefenseOutcome defenseOutcome =
+                ActiveDefenseOutcome.None)
         {
             Executed = executed;
             Hit = hit;
@@ -55,6 +58,7 @@ namespace KeeperFirstCovenant.Combat
             HitChance = hitChance;
             AffectedTargets = affectedTargets;
             Failure = failure;
+            DefenseOutcome = defenseOutcome;
         }
 
         public static CombatActionResult Failed(
@@ -123,7 +127,8 @@ namespace KeeperFirstCovenant.Combat
                 action,
                 target,
                 groundPoint,
-                false);
+                false,
+                ActiveDefenseOutcome.None);
         }
 
         public static CombatActionResult ExecuteReaction(
@@ -136,7 +141,23 @@ namespace KeeperFirstCovenant.Combat
                 action,
                 target,
                 null,
-                true);
+                true,
+                ActiveDefenseOutcome.None);
+        }
+
+        public static CombatActionResult ExecuteWithDefense(
+            CombatantRuntime actor,
+            CombatActionDefinition action,
+            CombatantRuntime target,
+            ActiveDefenseOutcome defenseOutcome)
+        {
+            return ExecuteInternal(
+                actor,
+                action,
+                target,
+                null,
+                false,
+                defenseOutcome);
         }
 
         private static CombatActionResult ExecuteInternal(
@@ -144,7 +165,8 @@ namespace KeeperFirstCovenant.Combat
             CombatActionDefinition action,
             CombatantRuntime target,
             Vector3? groundPoint,
-            bool reaction)
+            bool reaction,
+            ActiveDefenseOutcome defenseOutcome)
         {
             if (actor == null ||
                 !actor.IsAlive ||
@@ -301,12 +323,18 @@ namespace KeeperFirstCovenant.Combat
                         ? candidatePreview.HitChance
                         : preview.HitChance;
 
+                ActiveDefenseOutcome candidateDefense =
+                    candidate == target
+                        ? defenseOutcome
+                        : ActiveDefenseOutcome.None;
+
                 SingleTargetResolution resolved =
                     ResolveTarget(
                         actor,
                         action,
                         candidate,
-                        hitChance);
+                        hitChance,
+                        candidateDefense);
 
                 if (firstRoll == 0)
                 {
@@ -331,7 +359,8 @@ namespace KeeperFirstCovenant.Combat
                         resolved.hitRoll,
                         hitChance,
                         1,
-                        ActionFailureReason.None);
+                        ActionFailureReason.None,
+                        candidateDefense);
 
                 ActionResolved?.Invoke(
                     action,
@@ -383,7 +412,8 @@ namespace KeeperFirstCovenant.Combat
                 firstRoll,
                 firstChance,
                 affected.Count,
-                ActionFailureReason.None);
+                ActionFailureReason.None,
+                defenseOutcome);
 
             if (affected.Count == 0)
             {
@@ -465,7 +495,8 @@ namespace KeeperFirstCovenant.Combat
                 CombatantRuntime actor,
                 CombatActionDefinition action,
                 CombatantRuntime target,
-                int hitChance)
+                int hitChance,
+                ActiveDefenseOutcome defenseOutcome)
         {
             int attributeModifier =
                 actor.Definition != null
@@ -489,6 +520,11 @@ namespace KeeperFirstCovenant.Combat
                     action.scalingMultiplier,
                     critical);
 
+                damage =
+                    ApplyActiveDefense(
+                        damage,
+                        defenseOutcome);
+
                 if (damage > 0)
                 {
                     target.ApplyDamage(
@@ -499,7 +535,22 @@ namespace KeeperFirstCovenant.Combat
                             critical));
                 }
 
-                if (target.CanBeTargeted)
+                bool avoidsSecondaryEffects =
+                    defenseOutcome ==
+                        ActiveDefenseOutcome.PerfectDodge ||
+                    defenseOutcome ==
+                        ActiveDefenseOutcome.PerfectParry;
+
+                if (defenseOutcome ==
+                    ActiveDefenseOutcome.PerfectParry)
+                {
+                    ApplyPerfectParryCounter(
+                        actor,
+                        target);
+                }
+
+                if (target.CanBeTargeted &&
+                    !avoidsSecondaryEffects)
                 {
                     healing = RollScaled(
                         action.healing,
@@ -548,6 +599,65 @@ namespace KeeperFirstCovenant.Combat
                 healing = healing,
                 barrier = barrier
             };
+        }
+
+        private static int ApplyActiveDefense(
+            int damage,
+            ActiveDefenseOutcome outcome)
+        {
+            switch (outcome)
+            {
+                case ActiveDefenseOutcome.Dodge:
+                    return Mathf.RoundToInt(
+                        damage * 0.45f);
+
+                case ActiveDefenseOutcome.Parry:
+                    return Mathf.RoundToInt(
+                        damage * 0.25f);
+
+                case ActiveDefenseOutcome.PerfectDodge:
+                case ActiveDefenseOutcome.PerfectParry:
+                    return 0;
+
+                default:
+                    return damage;
+            }
+        }
+
+        private static void ApplyPerfectParryCounter(
+            CombatantRuntime attacker,
+            CombatantRuntime defender)
+        {
+            if (attacker == null ||
+                defender == null ||
+                !attacker.IsAlive)
+            {
+                return;
+            }
+
+            int finesse =
+                defender.Definition != null
+                    ? defender.Definition.GetAttribute(
+                        AbilityAttribute.Finesse)
+                    : 10;
+
+            int counterDamage =
+                Mathf.Max(
+                    3,
+                    2 + finesse / 4);
+
+            attacker.ApplyDamage(
+                new DamagePacket(
+                    counterDamage,
+                    DamageType.Physical,
+                    defender.gameObject,
+                    true));
+
+            BreakGaugeComponent gauge =
+                attacker.GetComponent<
+                    BreakGaugeComponent>();
+
+            gauge?.AddBreak(28);
         }
 
         private static int RollScaled(
