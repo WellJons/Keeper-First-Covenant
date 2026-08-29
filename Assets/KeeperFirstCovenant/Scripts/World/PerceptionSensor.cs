@@ -296,9 +296,17 @@ namespace KeeperFirstCovenant.World
 
             if (flat.sqrMagnitude > 0.001f)
             {
+                WorldFacing facing =
+                    GetComponent<WorldFacing>();
+
+                Vector3 lookDirection =
+                    facing != null
+                        ? facing.Forward
+                        : transform.forward;
+
                 float angle =
                     Vector3.Angle(
-                        transform.forward,
+                        lookDirection,
                         flat.normalized);
 
                 if (angle >
