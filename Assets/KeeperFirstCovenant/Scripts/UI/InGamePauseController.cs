@@ -20,6 +20,7 @@ namespace KeeperFirstCovenant.UI
         private GameObject mainPanel;
         private GameObject loadPanel;
         private GameObject journalPanel;
+        private CharacterInventoryPanel characterInventoryPanel;
         private GameObject settingsPanel;
         private GameObject confirmPanel;
         private RectTransform loadList;
@@ -74,6 +75,15 @@ namespace KeeperFirstCovenant.UI
                 return;
             }
 
+            if (!paused &&
+                Keyboard.current != null &&
+                Keyboard.current.iKey.wasPressedThisFrame)
+            {
+                OpenPause();
+                OpenCharacterInventory();
+                return;
+            }
+
             bool pausePressed =
                 Keyboard.current != null &&
                 Keyboard.current.escapeKey.wasPressedThisFrame;
@@ -98,6 +108,12 @@ namespace KeeperFirstCovenant.UI
                 else if (loadPanel.activeSelf)
                 {
                     loadPanel.SetActive(false);
+                    mainPanel.SetActive(true);
+                }
+                else if (characterInventoryPanel != null &&
+                         characterInventoryPanel.IsActive)
+                {
+                    characterInventoryPanel.Hide();
                     mainPanel.SetActive(true);
                 }
                 else if (journalPanel.activeSelf)
@@ -180,11 +196,24 @@ namespace KeeperFirstCovenant.UI
             mainPanel = BuildMainPanel(root.transform);
             loadPanel = BuildLoadPanel(root.transform);
             journalPanel = BuildJournalPanel(root.transform);
+
+            characterInventoryPanel =
+                new CharacterInventoryPanel();
+
+            characterInventoryPanel.Build(
+                root.transform,
+                () =>
+                {
+                    mainPanel.SetActive(true);
+                    SelectFirstButton(mainPanel);
+                });
+
             settingsPanel = BuildSettingsPanel(root.transform);
             confirmPanel = BuildConfirmPanel(root.transform);
 
             loadPanel.SetActive(false);
             journalPanel.SetActive(false);
+            characterInventoryPanel?.Hide();
             settingsPanel.SetActive(false);
             confirmPanel.SetActive(false);
         }
@@ -286,6 +315,11 @@ namespace KeeperFirstCovenant.UI
             AddButton(panel, "Resume", "Продолжить", Resume);
             AddButton(panel, "Save", "Сохранить игру", SaveGame);
             AddButton(panel, "Load", "Загрузить игру", OpenLoadPanel);
+            AddButton(
+                panel,
+                "Characters",
+                "Персонажи и инвентарь",
+                OpenCharacterInventory);
             AddButton(panel, "Journal", "Журнал", OpenJournal);
             AddButton(panel, "Settings", "Настройки", OpenSettings);
             AddButton(panel, "MainMenu", "Главное меню", RequestMainMenu);
@@ -877,6 +911,16 @@ namespace KeeperFirstCovenant.UI
             RefreshLoadSlots();
             mainPanel.SetActive(false);
             loadPanel.SetActive(true);
+        }
+
+        private void OpenCharacterInventory()
+        {
+            mainPanel.SetActive(false);
+            loadPanel.SetActive(false);
+            journalPanel.SetActive(false);
+            settingsPanel.SetActive(false);
+
+            characterInventoryPanel?.Show();
         }
 
         private void OpenJournal()
