@@ -230,6 +230,37 @@ namespace KeeperFirstCovenant.Combat
                         action.comboBreakBonus));
         }
 
+        public void PutOnCooldown(
+            CombatActionDefinition action,
+            int turns)
+        {
+            if (action == null ||
+                turns <= 0)
+            {
+                return;
+            }
+
+            string key =
+                GetActionKey(action);
+
+            if (string.IsNullOrWhiteSpace(key))
+                return;
+
+            int internalTurns =
+                turns + 1;
+
+            cooldowns[key] =
+                Mathf.Max(
+                    cooldowns.TryGetValue(
+                        key,
+                        out int existing)
+                        ? existing
+                        : 0,
+                    internalTurns);
+
+            StateChanged?.Invoke(owner);
+        }
+
         public ComboExecutionContext
             CommitAction(
                 CombatActionDefinition action)
@@ -272,22 +303,9 @@ namespace KeeperFirstCovenant.Combat
 
             if (action.cooldownTurns > 0)
             {
-                string key =
-                    GetActionKey(action);
-
-                if (!string.IsNullOrWhiteSpace(
-                        key))
-                {
-                    cooldowns[key] =
-                        Mathf.Max(
-                            cooldowns.TryGetValue(
-                                key,
-                                out int existing)
-                                ? existing
-                                : 0,
-                            action.cooldownTurns +
-                            1);
-                }
+                PutOnCooldown(
+                    action,
+                    action.cooldownTurns);
             }
 
             if (context.Matched)
