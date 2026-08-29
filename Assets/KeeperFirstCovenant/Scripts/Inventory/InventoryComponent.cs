@@ -106,6 +106,81 @@ namespace KeeperFirstCovenant.Inventory
             return true;
         }
 
+        public bool ContainsItemId(
+            string itemId,
+            int amount = 1)
+        {
+            if (string.IsNullOrWhiteSpace(
+                    itemId) ||
+                amount <= 0)
+            {
+                return false;
+            }
+
+            int count = 0;
+
+            foreach (InventoryStack stack
+                     in items)
+            {
+                if (stack?.item == null ||
+                    stack.item.itemId != itemId)
+                {
+                    continue;
+                }
+
+                count +=
+                    Mathf.Max(
+                        0,
+                        stack.amount);
+
+                if (count >= amount)
+                    return true;
+            }
+
+            return false;
+        }
+
+        public bool RemoveByItemId(
+            string itemId,
+            int amount = 1)
+        {
+            if (!ContainsItemId(
+                    itemId,
+                    amount))
+            {
+                return false;
+            }
+
+            for (int i = items.Count - 1;
+                 i >= 0 &&
+                 amount > 0;
+                 i--)
+            {
+                InventoryStack stack =
+                    items[i];
+
+                if (stack?.item == null ||
+                    stack.item.itemId != itemId)
+                {
+                    continue;
+                }
+
+                int removed =
+                    Mathf.Min(
+                        stack.amount,
+                        amount);
+
+                stack.amount -= removed;
+                amount -= removed;
+
+                if (stack.amount <= 0)
+                    items.RemoveAt(i);
+            }
+
+            Changed?.Invoke();
+            return true;
+        }
+
         public int Count(ItemDefinition item)
         {
             int count = 0;
