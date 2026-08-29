@@ -307,6 +307,16 @@ namespace KeeperFirstCovenant.World
                     RotateRoutine(target));
         }
 
+        private static void RebuildNavigation()
+        {
+            TacticalGrid3D navigation =
+                FindFirstObjectByType<
+                    TacticalGrid3D>();
+
+            navigation
+                ?.RebuildForDynamicWorld();
+        }
+
         private IEnumerator RotateRoutine(
             Quaternion target)
         {
@@ -326,6 +336,8 @@ namespace KeeperFirstCovenant.World
 
             hinge.localRotation = target;
             _rotationRoutine = null;
+
+            RebuildNavigation();
         }
     }
 }
