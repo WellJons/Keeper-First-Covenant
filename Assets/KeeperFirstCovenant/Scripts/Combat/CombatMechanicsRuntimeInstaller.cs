@@ -125,6 +125,15 @@ namespace KeeperFirstCovenant.Combat
                         .AddComponent<
                             CombatActionStateComponent>();
                 }
+
+                if (combatant.GetComponent<
+                        ChargedActionComponent>() ==
+                    null)
+                {
+                    combatant.gameObject
+                        .AddComponent<
+                            ChargedActionComponent>();
+                }
             }
         }
     }
