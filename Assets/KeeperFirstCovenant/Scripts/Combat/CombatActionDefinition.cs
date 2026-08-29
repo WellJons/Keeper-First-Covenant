@@ -82,6 +82,10 @@ namespace KeeperFirstCovenant.Combat
 
         public bool freeMovementSuppressesOpportunityAttacks;
 
+        [Header("Break / stagger")]
+        [Min(0)]
+        public int breakPower = 10;
+
         [Header("Forced movement")]
         [Min(0f)]
         public float pushDistanceMeters;
