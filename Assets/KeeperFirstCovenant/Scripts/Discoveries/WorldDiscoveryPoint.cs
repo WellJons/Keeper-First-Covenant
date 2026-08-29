@@ -1,4 +1,5 @@
 using KeeperFirstCovenant.Combat;
+using KeeperFirstCovenant.World;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -115,7 +116,7 @@ namespace KeeperFirstCovenant.Discoveries
         private string ResolveId()
         {
             return
-                World.WorldPersistenceUtility
+                WorldPersistenceUtility
                     .GetStableId(
                         this,
                         discoveryId);
