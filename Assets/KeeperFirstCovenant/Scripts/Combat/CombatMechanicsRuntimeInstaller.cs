@@ -9,6 +9,7 @@ namespace KeeperFirstCovenant.Combat
 
         private void Start()
         {
+            EnsureCoreSystems();
             EnsureMechanics();
         }
 
@@ -23,7 +24,51 @@ namespace KeeperFirstCovenant.Combat
             nextScan =
                 Time.unscaledTime + 0.75f;
 
+            EnsureCoreSystems();
             EnsureMechanics();
+        }
+
+        private void EnsureCoreSystems()
+        {
+            if (FindFirstObjectByType<
+                    ElementalSurfaceSystem>() ==
+                null)
+            {
+                gameObject.AddComponent<
+                    ElementalSurfaceSystem>();
+            }
+
+            if (FindFirstObjectByType<
+                    ForcedMovementSystem>() ==
+                null)
+            {
+                gameObject.AddComponent<
+                    ForcedMovementSystem>();
+            }
+
+            if (FindFirstObjectByType<
+                    OpportunityAttackSystem>() ==
+                null)
+            {
+                gameObject.AddComponent<
+                    OpportunityAttackSystem>();
+            }
+
+            if (FindFirstObjectByType<
+                    CombatPresentationDirector>() ==
+                null)
+            {
+                gameObject.AddComponent<
+                    CombatPresentationDirector>();
+            }
+
+            if (FindFirstObjectByType<
+                    ElementalReactionVfxController>() ==
+                null)
+            {
+                gameObject.AddComponent<
+                    ElementalReactionVfxController>();
+            }
         }
 
         private static void EnsureMechanics()
