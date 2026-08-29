@@ -91,6 +91,14 @@ namespace KeeperFirstCovenant.EditorTools
                     systems);
 
             AddIfMissing<
+                WorldCombatEngagementService>(
+                    systems);
+
+            AddIfMissing<
+                StealthController>(
+                    systems);
+
+            AddIfMissing<
                 CombatDebugHUD>(systems);
 
             AddIfMissing<
@@ -169,6 +177,24 @@ namespace KeeperFirstCovenant.EditorTools
                 AddIfMissing<
                     EquipmentComponent>(
                         combatant.gameObject);
+
+                if (combatant.Faction ==
+                        CombatFaction.Player ||
+                    combatant.Faction ==
+                        CombatFaction.Ally)
+                {
+                    AddIfMissing<
+                        StealthSignature>(
+                            combatant.gameObject);
+                }
+
+                if (combatant.Faction ==
+                    CombatFaction.Enemy)
+                {
+                    AddIfMissing<
+                        PerceptionSensor>(
+                            combatant.gameObject);
+                }
 
                 if (combatant.Definition != null &&
                     combatant.Definition.characterId ==
