@@ -57,6 +57,7 @@ namespace KeeperFirstCovenant.UI
             root.AddComponent<InGamePauseController>();
             root.AddComponent<GameplayHudController>();
             root.AddComponent<InteractionPromptHud>();
+            root.AddComponent<WorldTargetFrameHud>();
             root.AddComponent<ExplorationFocusHud>();
             root.AddComponent<StealthAwarenessHud>();
             root.AddComponent<LootToastController>();
