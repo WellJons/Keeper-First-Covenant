@@ -338,6 +338,28 @@ namespace KeeperFirstCovenant.Combat
             Changed?.Invoke(this);
         }
 
+        public void ApplyCurrentStrainRestrictions()
+        {
+            if (!IsAlive)
+                return;
+
+            ArcaneStrainComponent strain =
+                GetComponent<ArcaneStrainComponent>();
+
+            if (strain == null)
+                return;
+
+            _remainingMovement =
+                Mathf.Min(
+                    _remainingMovement,
+                    GetMovementCapacity());
+
+            if (strain.BlocksReactions())
+                _reactionsRemaining = 0;
+
+            Changed?.Invoke(this);
+        }
+
         public bool TrySpendReaction()
         {
             if (!IsAlive || _reactionsRemaining <= 0)
