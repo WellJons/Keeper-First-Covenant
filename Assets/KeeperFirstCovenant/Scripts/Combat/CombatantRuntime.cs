@@ -160,6 +160,13 @@ namespace KeeperFirstCovenant.Combat
 
             developerActions?.Collect(actions);
 
+            BossPhaseController bossPhases =
+                GetComponent<
+                    BossPhaseController>();
+
+            bossPhases?.CollectActions(
+                actions);
+
             return actions.ToArray();
         }
 
