@@ -16,6 +16,32 @@ namespace KeeperFirstCovenant.Combat
         public GameObject source;
     }
 
+    public readonly struct ElementalReactionEvent
+    {
+        public readonly ElementalReactionKind Kind;
+        public readonly Vector3 Point;
+        public readonly float Radius;
+        public readonly DamageType DamageType;
+        public readonly int BonusDamage;
+        public readonly GameObject Source;
+
+        public ElementalReactionEvent(
+            ElementalReactionKind kind,
+            Vector3 point,
+            float radius,
+            DamageType damageType,
+            int bonusDamage,
+            GameObject source)
+        {
+            Kind = kind;
+            Point = point;
+            Radius = radius;
+            DamageType = damageType;
+            BonusDamage = bonusDamage;
+            Source = source;
+        }
+    }
+
     public sealed class ElementalSurfaceSystem : MonoBehaviour
     {
         public static ElementalSurfaceSystem Instance { get; private set; }
@@ -29,6 +55,9 @@ namespace KeeperFirstCovenant.Combat
         private int _nextId = 1;
 
         public IReadOnlyList<SurfacePatch> Patches => patches;
+
+        public static event Action<ElementalReactionEvent>
+            ReactionTriggered;
 
         private void Awake()
         {
@@ -235,6 +264,262 @@ namespace KeeperFirstCovenant.Combat
                 source);
         }
 
+        public ElementalReactionKind PredictImpactReaction(
+            DamageType incomingDamage,
+            Vector3 point)
+        {
+            SurfacePatch patch =
+                FindPatchAt(point);
+
+            return patch != null
+                ? ResolveImpactReaction(
+                    patch.type,
+                    incomingDamage)
+                : ElementalReactionKind.None;
+        }
+
+        public float GetImpactReactionScore(
+            DamageType incomingDamage,
+            Vector3 point)
+        {
+            switch (PredictImpactReaction(
+                        incomingDamage,
+                        point))
+            {
+                case ElementalReactionKind.Combustion:
+                    return 32f;
+                case ElementalReactionKind.ConductiveSurge:
+                    return 26f;
+                case ElementalReactionKind.ArcaneResonance:
+                    return 24f;
+                case ElementalReactionKind.ThermalShock:
+                    return 20f;
+                case ElementalReactionKind.FlashFreeze:
+                    return 18f;
+                default:
+                    return 0f;
+            }
+        }
+
+        public ElementalReactionKind ReactToImpact(
+            DamageType incomingDamage,
+            Vector3 point,
+            GameObject source)
+        {
+            SurfacePatch patch =
+                FindPatchAt(point);
+
+            if (patch == null)
+                return ElementalReactionKind.None;
+
+            ElementalReactionKind reaction =
+                ResolveImpactReaction(
+                    patch.type,
+                    incomingDamage);
+
+            if (reaction ==
+                ElementalReactionKind.None)
+            {
+                return reaction;
+            }
+
+            float radius =
+                Mathf.Max(
+                    1.5f,
+                    patch.radius);
+
+            int bonusDamage = 0;
+            DamageType reactionDamage =
+                incomingDamage;
+
+            switch (reaction)
+            {
+                case ElementalReactionKind
+                    .ConductiveSurge:
+                    patch.type =
+                        SurfaceType.Electrified;
+                    patch.roundsRemaining =
+                        Mathf.Max(
+                            patch.roundsRemaining,
+                            2);
+                    bonusDamage = 6;
+                    reactionDamage =
+                        DamageType.Lightning;
+                    radius += 0.65f;
+                    break;
+
+                case ElementalReactionKind
+                    .FlashFreeze:
+                    patch.type =
+                        SurfaceType.Ice;
+                    patch.roundsRemaining =
+                        Mathf.Max(
+                            patch.roundsRemaining,
+                            2);
+                    bonusDamage = 3;
+                    reactionDamage =
+                        DamageType.Frost;
+                    break;
+
+                case ElementalReactionKind
+                    .ThermalShock:
+                    patch.type =
+                        SurfaceType.Steam;
+                    patch.roundsRemaining =
+                        Mathf.Max(
+                            patch.roundsRemaining,
+                            1);
+                    bonusDamage = 5;
+                    reactionDamage =
+                        DamageType.Fire;
+                    radius += 0.3f;
+                    break;
+
+                case ElementalReactionKind
+                    .Combustion:
+                    bonusDamage = 12;
+                    reactionDamage =
+                        DamageType.Fire;
+                    radius += 0.9f;
+                    patches.Remove(patch);
+                    break;
+
+                case ElementalReactionKind
+                    .ArcaneResonance:
+                    bonusDamage = 7;
+                    reactionDamage =
+                        DamageType.Arcane;
+                    radius += 0.55f;
+                    patch.type =
+                        SurfaceType.Arcane;
+                    patch.roundsRemaining =
+                        Mathf.Max(
+                            patch.roundsRemaining,
+                            1);
+                    break;
+            }
+
+            if (bonusDamage > 0)
+            {
+                ApplyReactionDamage(
+                    point,
+                    radius,
+                    bonusDamage,
+                    reactionDamage,
+                    source);
+            }
+
+            ReactionTriggered?.Invoke(
+                new ElementalReactionEvent(
+                    reaction,
+                    point,
+                    radius,
+                    reactionDamage,
+                    bonusDamage,
+                    source));
+
+            return reaction;
+        }
+
+        private SurfacePatch FindPatchAt(
+            Vector3 point)
+        {
+            return patches
+                .Where(value =>
+                    value != null &&
+                    Vector3.Distance(
+                        point,
+                        value.center) <=
+                    value.radius + 0.05f)
+                .OrderBy(value =>
+                    Vector3.Distance(
+                        point,
+                        value.center))
+                .FirstOrDefault();
+        }
+
+        private static ElementalReactionKind
+            ResolveImpactReaction(
+                SurfaceType existing,
+                DamageType incomingDamage)
+        {
+            if (existing == SurfaceType.Water &&
+                incomingDamage ==
+                    DamageType.Lightning)
+            {
+                return ElementalReactionKind
+                    .ConductiveSurge;
+            }
+
+            if (existing == SurfaceType.Water &&
+                incomingDamage ==
+                    DamageType.Frost)
+            {
+                return ElementalReactionKind
+                    .FlashFreeze;
+            }
+
+            if (existing == SurfaceType.Ice &&
+                incomingDamage ==
+                    DamageType.Fire)
+            {
+                return ElementalReactionKind
+                    .ThermalShock;
+            }
+
+            if (existing == SurfaceType.Poison &&
+                incomingDamage ==
+                    DamageType.Fire)
+            {
+                return ElementalReactionKind
+                    .Combustion;
+            }
+
+            if (incomingDamage ==
+                    DamageType.Arcane &&
+                existing != SurfaceType.Arcane &&
+                existing != SurfaceType.None)
+            {
+                return ElementalReactionKind
+                    .ArcaneResonance;
+            }
+
+            return ElementalReactionKind.None;
+        }
+
+        private static void ApplyReactionDamage(
+            Vector3 center,
+            float radius,
+            int damage,
+            DamageType damageType,
+            GameObject source)
+        {
+            CombatantRuntime[] combatants =
+                FindObjectsByType<
+                    CombatantRuntime>(
+                    FindObjectsSortMode.None);
+
+            foreach (CombatantRuntime target
+                     in combatants)
+            {
+                if (target == null ||
+                    !target.IsAlive ||
+                    Vector3.Distance(
+                        target.transform.position,
+                        center) >
+                    radius)
+                {
+                    continue;
+                }
+
+                target.ApplyDamage(
+                    new DamagePacket(
+                        damage,
+                        damageType,
+                        source));
+            }
+        }
+
         private void AddPatch(
             SurfaceType type,
             Vector3 center,
@@ -301,21 +586,21 @@ namespace KeeperFirstCovenant.Combat
                 {
                     case SurfaceType.Fire:
                         actor.ApplyDamage(new DamagePacket(
-                            UnityEngine.Random.Range(1, 5),
+                            4,
                             DamageType.Fire,
                             patch.source));
                         break;
 
                     case SurfaceType.Poison:
                         actor.ApplyDamage(new DamagePacket(
-                            UnityEngine.Random.Range(1, 5),
+                            3,
                             DamageType.Poison,
                             patch.source));
                         break;
 
                     case SurfaceType.Electrified:
                         actor.ApplyDamage(new DamagePacket(
-                            UnityEngine.Random.Range(1, 5),
+                            5,
                             DamageType.Lightning,
                             patch.source));
                         break;
@@ -327,7 +612,7 @@ namespace KeeperFirstCovenant.Combat
 
                     case SurfaceType.Arcane:
                         actor.ApplyDamage(new DamagePacket(
-                            UnityEngine.Random.Range(1, 4),
+                            4,
                             DamageType.Arcane,
                             patch.source));
                         break;
@@ -427,12 +712,8 @@ namespace KeeperFirstCovenant.Combat
                     continue;
                 }
 
-                int damage =
-                    UnityEngine.Random.Range(1, 7) +
-                    UnityEngine.Random.Range(1, 7);
-
                 target.ApplyDamage(new DamagePacket(
-                    damage,
+                    12,
                     DamageType.Fire,
                     source));
             }
