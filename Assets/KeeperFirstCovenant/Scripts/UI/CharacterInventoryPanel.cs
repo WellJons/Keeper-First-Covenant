@@ -94,6 +94,10 @@ namespace KeeperFirstCovenant.UI
             outline.effectDistance =
                 new Vector2(1f, -1f);
 
+            KeeperUiSkin.DecorateMajorPanel(
+                window,
+                false);
+
             Text heading =
                 MenuUiFactory.CreateText(
                     "Heading",
@@ -216,6 +220,9 @@ namespace KeeperFirstCovenant.UI
                         MainMenuTheme.PanelSoft.b,
                         0.64f));
 
+            KeeperUiSkin.DecorateSection(
+                panel);
+
             RectTransform rect =
                 panel.rectTransform;
 
@@ -278,6 +285,9 @@ namespace KeeperFirstCovenant.UI
                         0.031f,
                         0.037f,
                         0.74f));
+
+            KeeperUiSkin.DecorateSection(
+                panel);
 
             RectTransform rect =
                 panel.rectTransform;
@@ -426,6 +436,9 @@ namespace KeeperFirstCovenant.UI
                         0.037f,
                         0.74f));
 
+            KeeperUiSkin.DecorateSection(
+                panel);
+
             RectTransform rect =
                 panel.rectTransform;
 
@@ -502,6 +515,9 @@ namespace KeeperFirstCovenant.UI
                         MainMenuTheme.PanelSoft.g,
                         MainMenuTheme.PanelSoft.b,
                         0.54f));
+
+            KeeperUiSkin.DecorateSection(
+                details);
 
             RectTransform detailsRect =
                 details.rectTransform;
@@ -646,6 +662,9 @@ namespace KeeperFirstCovenant.UI
                 itemTitle.text =
                     "Выберите персонажа";
 
+                itemTitle.color =
+                    MainMenuTheme.Text;
+
                 itemDetails.text =
                     string.Empty;
 
@@ -756,6 +775,13 @@ namespace KeeperFirstCovenant.UI
 
                 element.preferredHeight = 43f;
                 element.minHeight = 43f;
+
+                if (item != null)
+                {
+                    KeeperUiSkin.AddRarityAccent(
+                        row.transform,
+                        item.rarity);
+                }
 
                 Text label =
                     MenuUiFactory.CreateText(
@@ -927,6 +953,10 @@ namespace KeeperFirstCovenant.UI
                 element.preferredHeight = 48f;
                 element.minHeight = 48f;
 
+                KeeperUiSkin.AddRarityAccent(
+                    row.transform,
+                    item.rarity);
+
                 Button inspect =
                     row.gameObject
                         .AddComponent<Button>();
@@ -1025,6 +1055,10 @@ namespace KeeperFirstCovenant.UI
 
             itemTitle.text =
                 item.displayName;
+
+            itemTitle.color =
+                KeeperUiSkin.GetRarityColor(
+                    item.rarity);
 
             string type =
                 CategoryName(
