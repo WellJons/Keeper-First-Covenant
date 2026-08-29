@@ -21,6 +21,7 @@ namespace KeeperFirstCovenant.Developer
             Items,
             Weapons,
             Abilities,
+            World,
             Log,
             Cheats
         }
@@ -147,6 +148,7 @@ namespace KeeperFirstCovenant.Developer
                     "Items",
                     "Weapons",
                     "Abilities",
+                    "World",
                     "Log",
                     "Cheats"
                 });
@@ -160,6 +162,10 @@ namespace KeeperFirstCovenant.Developer
             else if (_tab == Tab.Log)
             {
                 DrawLog();
+            }
+            else if (_tab == Tab.World)
+            {
+                DrawWorldDebug();
             }
             else
             {
@@ -670,6 +676,179 @@ namespace KeeperFirstCovenant.Developer
                 GUILayout.Space(5f);
                 GUILayout.Label(a.description);
             }
+        }
+
+        private void DrawWorldDebug()
+        {
+            GUILayout.BeginHorizontal();
+
+            GUILayout.BeginVertical(
+                GUI.skin.box,
+                GUILayout.Width(330f));
+
+            GUILayout.Label(
+                "PARTY STEALTH",
+                _sectionStyle);
+
+            foreach (CombatantRuntime member
+                     in PartyMembers())
+            {
+                if (member.Definition == null)
+                    continue;
+
+                StealthSignature signature =
+                    member.GetComponent<
+                        StealthSignature>();
+
+                GUILayout.Label(
+                    $"{member.Definition.displayName}: " +
+                    (signature != null &&
+                     signature.IsCrouched
+                        ? "CROUCHED"
+                        : "STANDING"));
+            }
+
+            GUILayout.Space(8f);
+            GUILayout.Label(
+                "NOISE TEST",
+                _sectionStyle);
+
+            if (GUILayout.Button(
+                    "Emit quiet noise — 5 m"))
+            {
+                EmitDevNoise(5f, 0.6f);
+            }
+
+            if (GUILayout.Button(
+                    "Emit loud noise — 15 m"))
+            {
+                EmitDevNoise(15f, 1f);
+            }
+
+            if (GUILayout.Button(
+                    "Emit massive noise — 30 m"))
+            {
+                EmitDevNoise(30f, 1.8f);
+            }
+
+            GUILayout.Space(8f);
+
+            if (GUILayout.Button(
+                    "Reveal hidden objects"))
+            {
+                foreach (HiddenDiscoverable hidden
+                         in FindObjectsByType<
+                             HiddenDiscoverable>(
+                             FindObjectsSortMode.None))
+                {
+                    hidden.Reveal();
+                }
+            }
+
+            if (GUILayout.Button(
+                    "Reset enemy awareness"))
+            {
+                foreach (PerceptionSensor sensor
+                         in FindObjectsByType<
+                             PerceptionSensor>(
+                             FindObjectsSortMode.None))
+                {
+                    sensor.DebugResetAwareness();
+                }
+            }
+
+            GUILayout.EndVertical();
+
+            GUILayout.Space(8f);
+
+            GUILayout.BeginVertical(
+                GUI.skin.box);
+
+            GUILayout.Label(
+                "ENEMY AWARENESS",
+                _sectionStyle);
+
+            _logScroll =
+                GUILayout.BeginScrollView(
+                    _logScroll);
+
+            Vector3 anchor =
+                GetPartyAnchor();
+
+            foreach (PerceptionSensor sensor
+                     in FindObjectsByType<
+                         PerceptionSensor>(
+                         FindObjectsSortMode.None))
+            {
+                CombatantRuntime enemy =
+                    sensor.GetComponent<
+                        CombatantRuntime>();
+
+                if (enemy == null ||
+                    enemy.Definition == null)
+                {
+                    continue;
+                }
+
+                float distance =
+                    Vector3.Distance(
+                        enemy.transform.position,
+                        anchor);
+
+                GUILayout.Label(
+                    $"{enemy.Definition.displayName} | " +
+                    $"{sensor.Awareness} | " +
+                    $"Suspicion {sensor.HighestSuspicion:0}/100 | " +
+                    $"{distance:0.0} m");
+            }
+
+            GUILayout.Space(8f);
+
+            GUILayout.Label(
+                "WORLD OBJECTS",
+                _sectionStyle);
+
+            foreach (LockableDoor door
+                     in FindObjectsByType<
+                         LockableDoor>(
+                         FindObjectsSortMode.None))
+            {
+                GUILayout.Label(
+                    $"{door.name}: " +
+                    $"{(door.IsOpen ? "OPEN" : door.IsLocked ? "LOCKED" : "CLOSED")}");
+            }
+
+            foreach (EnvironmentalDestructible prop
+                     in FindObjectsByType<
+                         EnvironmentalDestructible>(
+                         FindObjectsSortMode.None))
+            {
+                GUILayout.Label(
+                    $"{prop.name}: " +
+                    $"{(prop.IsDestroyed ? "DESTROYED" : $"Integrity {prop.Integrity:0}")}");
+            }
+
+            GUILayout.EndScrollView();
+            GUILayout.EndVertical();
+
+            GUILayout.EndHorizontal();
+        }
+
+        private static void EmitDevNoise(
+            float radius,
+            float intensity)
+        {
+            CombatantRuntime source =
+                PreferredPartyMember();
+
+            if (source == null)
+                return;
+
+            WorldNoiseSystem.Emit(
+                source.transform.position,
+                radius,
+                source.gameObject,
+                intensity);
         }
 
         private void DrawLog()
