@@ -82,6 +82,27 @@ namespace KeeperFirstCovenant.Combat
 
         public bool freeMovementSuppressesOpportunityAttacks;
 
+        [Header("Combo chain")]
+        [Tooltip("If set, this action is empowered when the actor currently holds this combo tag.")]
+        public string comboRequiresTag;
+
+        [Tooltip("If true, the action cannot be used without the required combo tag.")]
+        public bool comboRequirementMandatory;
+
+        [Tooltip("Tag opened for a following action after this action resolves.")]
+        public string comboGrantsTag;
+
+        [Min(0)]
+        public int comboWindowTurns = 1;
+
+        [Range(1f, 3f)]
+        public float comboDamageMultiplier = 1.25f;
+
+        [Min(0)]
+        public int comboBreakBonus = 10;
+
+        public bool consumeComboTag = true;
+
         [Header("Break / stagger")]
         [Min(0)]
         public int breakPower = 10;
