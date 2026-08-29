@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using KeeperFirstCovenant.Combat;
 using KeeperFirstCovenant.Inventory;
+using KeeperFirstCovenant.Relationships;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -691,10 +692,21 @@ namespace KeeperFirstCovenant.UI
                         ? "Тяжело ранен"
                         : "В строю";
 
+            string relationship =
+                selected.Faction ==
+                    CombatFaction.Ally
+                    ? "\nОТНОШЕНИЕ   " +
+                      RelationshipLedger
+                          .Instance
+                          .GetDispositionLabel(
+                              definition.characterId)
+                    : string.Empty;
+
             characterState.text =
                 $"{state}   •   " +
                 $"HP {selected.CurrentHealth}/{definition.maxHealth}   •   " +
-                $"MP {selected.CurrentMana}/{definition.maxMana}";
+                $"MP {selected.CurrentMana}/{definition.maxMana}" +
+                relationship;
 
             attributes.text =
                 "СИЛА        " + definition.strength + "\n" +
