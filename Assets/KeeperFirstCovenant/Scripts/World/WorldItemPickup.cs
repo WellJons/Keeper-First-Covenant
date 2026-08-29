@@ -65,6 +65,25 @@ namespace KeeperFirstCovenant.World
             ApplyVisualState();
         }
 
+        public void Configure(
+            ItemDefinition definition,
+            int count = 1,
+            string interactionPrompt = "Поднять")
+        {
+            item = definition;
+            amount = Mathf.Max(1, count);
+            remainingAmount = amount;
+            collected = false;
+
+            if (!string.IsNullOrWhiteSpace(
+                    interactionPrompt))
+            {
+                prompt = interactionPrompt;
+            }
+
+            ApplyVisualState();
+        }
+
         public bool CanInteract(
             GameObject actor)
         {
