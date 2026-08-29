@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using KeeperFirstCovenant.Combat;
+using KeeperFirstCovenant.Discoveries;
 using KeeperFirstCovenant.Quests;
 using KeeperFirstCovenant.Relationships;
 using KeeperFirstCovenant.World;
@@ -406,6 +408,32 @@ namespace KeeperFirstCovenant.Dialogue
                            QuestStatus.Failed;
 
                 case DialogueConditionKind
+                    .DiscoveryKnown:
+                    return DiscoveryJournal
+                        .Instance
+                        .HasDiscovery(
+                            condition.key);
+
+                case DialogueConditionKind
+                    .DiscoveryUnknown:
+                    return !DiscoveryJournal
+                        .Instance
+                        .HasDiscovery(
+                            condition.key);
+
+                case DialogueConditionKind
+                    .PlayerAttributeAtLeast:
+                    return GetPlayerAttribute(
+                               condition.attribute) >=
+                           condition.intValue;
+
+                case DialogueConditionKind
+                    .PlayerAttributeAtMost:
+                    return GetPlayerAttribute(
+                               condition.attribute) <=
+                           condition.intValue;
+
+                case DialogueConditionKind
                     .RelationshipAtLeast:
                     return RelationshipLedger
                                .Instance
@@ -424,6 +452,32 @@ namespace KeeperFirstCovenant.Dialogue
                 default:
                     return true;
             }
+        }
+
+        private static int GetPlayerAttribute(
+            AbilityAttribute attribute)
+        {
+            CombatantRuntime player =
+                FindObjectsByType<
+                        CombatantRuntime>(
+                        FindObjectsSortMode.None)
+                    .Where(value =>
+                        value != null &&
+                        value.IsAlive &&
+                        value.Faction ==
+                            CombatFaction.Player &&
+                        value.Definition != null)
+                    .OrderBy(value =>
+                        value.Definition.characterId ==
+                            "edward"
+                            ? 0
+                            : 1)
+                    .FirstOrDefault();
+
+            return player?.Definition != null
+                ? player.Definition.GetAttribute(
+                    attribute)
+                : 0;
         }
 
         private static void ApplyEffects(
