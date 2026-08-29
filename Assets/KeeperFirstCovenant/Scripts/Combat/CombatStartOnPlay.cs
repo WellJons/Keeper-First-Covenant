@@ -5,7 +5,7 @@ namespace KeeperFirstCovenant.Combat
 {
     public sealed class CombatStartOnPlay : MonoBehaviour
     {
-        [SerializeField] private bool startAutomatically = true;
+        [SerializeField] private bool startAutomatically = false;
         [SerializeField, Min(0f)] private float startDelay = 0.15f;
 
         private IEnumerator Start()
