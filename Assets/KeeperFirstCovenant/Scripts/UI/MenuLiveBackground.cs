@@ -193,7 +193,7 @@ namespace KeeperFirstCovenant.UI
 
                 if (!texture.LoadImage(bytes, true))
                 {
-                    Destroy(texture);
+                    UnityEngine.Object.Destroy(texture);
                     return null;
                 }
 
