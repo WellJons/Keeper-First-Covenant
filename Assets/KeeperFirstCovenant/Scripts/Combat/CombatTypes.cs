@@ -86,6 +86,16 @@ namespace KeeperFirstCovenant.Combat
         ArcaneResonance
     }
 
+    public enum ActiveDefenseOutcome
+    {
+        None,
+        Failed,
+        Dodge,
+        PerfectDodge,
+        Parry,
+        PerfectParry
+    }
+
     [Serializable]
     public struct DiceFormula
     {
