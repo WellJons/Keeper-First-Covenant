@@ -234,6 +234,8 @@ namespace KeeperFirstCovenant.Combat
                             ActionFailureReason
                                 .NotEnoughStrainCapacity);
                     }
+
+                    actor.ApplyCurrentStrainRestrictions();
                 }
 
                 if (!actor.TrySpendActionPoints(
