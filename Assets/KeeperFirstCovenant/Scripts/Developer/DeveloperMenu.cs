@@ -5,6 +5,7 @@ using KeeperFirstCovenant.AI;
 using KeeperFirstCovenant.Characters;
 using KeeperFirstCovenant.Combat;
 using KeeperFirstCovenant.Inventory;
+using KeeperFirstCovenant.World;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UObject = UnityEngine.Object;
