@@ -28,6 +28,13 @@ namespace KeeperFirstCovenant.World
         [SerializeField, Min(0f)]
         private float impactDamageMultiplier = 5f;
 
+        [Header("Noise")]
+        [SerializeField, Min(0f)]
+        private float impactNoiseRadius = 5f;
+
+        [SerializeField, Min(0f)]
+        private float destroyedNoiseRadius = 11f;
+
         [SerializeField]
         private bool disableCollidersWhenDestroyed = true;
 
@@ -99,6 +106,13 @@ namespace KeeperFirstCovenant.World
 
             _integrity -= damage;
 
+            WorldNoiseSystem.Emit(
+                impactPoint,
+                impactNoiseRadius,
+                gameObject,
+                0.55f +
+                (int)tier * 0.18f);
+
             if (_integrity > 0f)
                 return;
 
@@ -116,6 +130,12 @@ namespace KeeperFirstCovenant.World
 
             _destroyed = true;
             _integrity = 0f;
+
+            WorldNoiseSystem.Emit(
+                transform.position,
+                destroyedNoiseRadius,
+                gameObject,
+                1.35f);
 
             if (disableCollidersWhenDestroyed)
             {
