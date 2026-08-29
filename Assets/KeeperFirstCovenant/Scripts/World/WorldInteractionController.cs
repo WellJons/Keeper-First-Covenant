@@ -443,7 +443,8 @@ namespace KeeperFirstCovenant.World
                 actor != null
                     ? Vector3.Distance(
                         actor.transform.position,
-                        hit.point)
+                        hit.collider.ClosestPoint(
+                            actor.transform.position))
                     : float.PositiveInfinity;
 
             bool inRange =
