@@ -76,6 +76,76 @@ namespace KeeperFirstCovenant.AI
                         thinkDelay);
             }
 
+            ChargedActionComponent charge =
+                actor.GetComponent<
+                    ChargedActionComponent>();
+
+            if (charge != null &&
+                charge.HasCharge)
+            {
+                if (!charge.TryTakeReadyAction(
+                        out CombatActionDefinition
+                            readyAction,
+                        out CombatantRuntime
+                            readyTarget,
+                        out Vector3 readyPoint))
+                {
+                    EndTurn();
+                    yield break;
+                }
+
+                bool validCharge =
+                    readyAction != null &&
+                    (readyAction.targetKind ==
+                         TargetKind.Ground
+                        ? CombatTargetingService
+                            .Analyze(
+                                actor,
+                                readyAction,
+                                null,
+                                readyPoint)
+                            .Valid
+                        : readyTarget != null &&
+                          readyTarget.IsAlive &&
+                          CombatTargetingService
+                            .Analyze(
+                                actor,
+                                readyAction,
+                                readyTarget)
+                            .Valid);
+
+                if (validCharge)
+                {
+                    if (readyAction.targetKind ==
+                        TargetKind.Ground)
+                    {
+                        CombatActionExecutor.Execute(
+                            actor,
+                            readyAction,
+                            null,
+                            readyPoint);
+                    }
+                    else
+                    {
+                        yield return
+                            ExecuteActionWithDefense(
+                                actor,
+                                readyTarget,
+                                readyAction);
+                    }
+
+                    if (finishDelay > 0f)
+                    {
+                        yield return
+                            new WaitForSeconds(
+                                finishDelay);
+                    }
+
+                    EndTurn();
+                    yield break;
+                }
+            }
+
             CombatantRuntime target =
                 FindBestTarget(actor);
 
@@ -94,6 +164,15 @@ namespace KeeperFirstCovenant.AI
                     target,
                     action))
             {
+                if (TryBeginChargedAction(
+                        actor,
+                        target,
+                        action))
+                {
+                    EndTurn();
+                    yield break;
+                }
+
                 yield return
                     ExecuteActionWithDefense(
                         actor,
@@ -156,6 +235,15 @@ namespace KeeperFirstCovenant.AI
                                 target,
                                 action))
                         {
+                            if (TryBeginChargedAction(
+                                    actor,
+                                    target,
+                                    action))
+                            {
+                                EndTurn();
+                                yield break;
+                            }
+
                             yield return
                                 ExecuteActionWithDefense(
                                     actor,
@@ -406,6 +494,47 @@ namespace KeeperFirstCovenant.AI
             }
 
             return best;
+        }
+
+        private static bool
+            TryBeginChargedAction(
+                CombatantRuntime actor,
+                CombatantRuntime target,
+                CombatActionDefinition action)
+        {
+            if (actor == null ||
+                target == null ||
+                action == null ||
+                action.windUpTurns <= 0)
+            {
+                return false;
+            }
+
+            ChargedActionComponent charge =
+                actor.GetComponent<
+                    ChargedActionComponent>();
+
+            if (charge == null)
+            {
+                charge =
+                    actor.gameObject
+                        .AddComponent<
+                            ChargedActionComponent>();
+            }
+
+            Vector3? point =
+                action.targetKind ==
+                    TargetKind.Ground
+                    ? target.transform.position
+                    : (Vector3?)null;
+
+            return charge.TryBegin(
+                action,
+                action.targetKind ==
+                    TargetKind.Ground
+                    ? null
+                    : target,
+                point);
         }
 
         private static IEnumerator
