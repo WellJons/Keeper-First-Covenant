@@ -152,12 +152,22 @@ namespace KeeperFirstCovenant.Combat
             int attributeModifier =
                 actor.Definition.GetModifier(action.scalingAttribute);
 
+            ArcaneStrainComponent strain =
+                actor.GetComponent<
+                    ArcaneStrainComponent>();
+
+            int strainHitPenalty =
+                strain != null
+                    ? strain.GetHitChancePenalty()
+                    : 0;
+
             int hitChance = action.requiresAttackRoll
                 ? Mathf.Clamp(
                     action.baseHitChance +
                     attributeModifier * 5 +
                     heightModifier +
-                    coverModifier,
+                    coverModifier -
+                    strainHitPenalty,
                     5,
                     95)
                 : 100;
