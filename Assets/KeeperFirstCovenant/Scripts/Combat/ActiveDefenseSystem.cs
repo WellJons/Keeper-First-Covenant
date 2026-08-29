@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using KeeperFirstCovenant.UI;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
@@ -483,7 +484,7 @@ namespace KeeperFirstCovenant.Combat
                     RectTransform>();
 
             Image panel =
-                UI.MenuUiFactory.CreateImage(
+                MenuUiFactory.CreateImage(
                     "DefensePrompt",
                     canvasRect,
                     new Color(
@@ -497,7 +498,7 @@ namespace KeeperFirstCovenant.Combat
             RectTransform rect =
                 panel.rectTransform;
 
-            UI.MenuUiFactory.SetAnchoredRect(
+            MenuUiFactory.SetAnchoredRect(
                 rect,
                 new Vector2(0.5f, 0f),
                 new Vector2(0.5f, 0f),
@@ -505,19 +506,19 @@ namespace KeeperFirstCovenant.Combat
                 new Vector2(0f, 102f),
                 new Vector2(520f, 52f));
 
-            UI.KeeperUiSkin.DecorateSection(
+            KeeperUiSkin.DecorateSection(
                 panel);
 
             promptText =
-                UI.MenuUiFactory.CreateText(
+                MenuUiFactory.CreateText(
                     "Prompt",
                     panel.transform,
                     string.Empty,
                     14,
-                    UI.MainMenuTheme.Text,
+                    MainMenuTheme.Text,
                     TextAnchor.MiddleCenter);
 
-            UI.MenuUiFactory.Stretch(
+            MenuUiFactory.Stretch(
                 promptText.rectTransform,
                 10f,
                 5f,
