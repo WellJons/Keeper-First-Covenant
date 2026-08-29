@@ -71,6 +71,7 @@ namespace KeeperFirstCovenant.UI
         {
             if (Flow.IsTransitioning ||
                 DialogueRunner.IsDialogueActive ||
+                InspectionPanelController.IsOpen ||
                 (TurnCombatDirector.Instance != null &&
                  TurnCombatDirector.Instance.State ==
                     CombatState.Defeat))
