@@ -72,8 +72,6 @@ namespace KeeperFirstCovenant.Combat
                 for (int z = 0; z < _height; z++)
                 {
                     Vector3 horizontal = _origin + new Vector3((x + 0.5f) * cellSize, 0f, (z + 0.5f) * cellSize);
-                    Vector3 probeStart = horizontal + Vector3.up * groundProbeHeight;
-
                     bool hasGround =
                         TryProbeGround(
                             horizontal,
