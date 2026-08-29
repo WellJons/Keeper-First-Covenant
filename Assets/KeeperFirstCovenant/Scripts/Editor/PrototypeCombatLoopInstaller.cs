@@ -51,6 +51,7 @@ namespace KeeperFirstCovenant.EditorTools
 
             PrototypeTacticalContentV2.Apply();
             PrototypeDeveloperTestContent.Build();
+            PrototypeCombatPresentationContent.Build();
 
             GameObject systems =
                 director.gameObject;
@@ -63,6 +64,10 @@ namespace KeeperFirstCovenant.EditorTools
 
             AddIfMissing<
                 CombatLogService>(systems);
+
+            AddIfMissing<
+                CombatPresentationDirector>(
+                    systems);
 
             CombatStartOnPlay autoStart =
                 AddIfMissing<
@@ -164,6 +169,15 @@ namespace KeeperFirstCovenant.EditorTools
                 AddIfMissing<
                     EquipmentComponent>(
                         combatant.gameObject);
+
+                if (combatant.Definition != null &&
+                    combatant.Definition.characterId ==
+                        "edward")
+                {
+                    AddIfMissing<
+                        ArcaneStrainComponent>(
+                            combatant.gameObject);
+                }
 
                 if (combatant.Faction ==
                     CombatFaction.Enemy)
