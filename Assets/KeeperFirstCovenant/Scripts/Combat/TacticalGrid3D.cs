@@ -22,7 +22,7 @@ namespace KeeperFirstCovenant.Combat
 
         [Header("Grid")]
         [SerializeField] private Vector2 worldSize = new Vector2(36f, 36f);
-        [SerializeField] private float cellSize = 1.5f;
+        [SerializeField] private float cellSize = 0.75f;
         [SerializeField] private float agentRadius = 0.4f;
         [SerializeField] private float groundProbeHeight = 8f;
         [SerializeField] private float groundProbeDistance = 20f;
