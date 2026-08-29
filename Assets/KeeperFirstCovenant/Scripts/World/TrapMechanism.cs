@@ -98,6 +98,60 @@ namespace KeeperFirstCovenant.World
                    !_spent;
         }
 
+        public string GetInteractionHint(
+            GameObject actor)
+        {
+            if (_spent)
+                return "Ловушка обезврежена";
+
+            if (actor == null)
+                return string.Empty;
+
+            InventoryComponent inventory =
+                actor.GetComponentInParent<
+                    InventoryComponent>();
+
+            bool hasTool =
+                !toolRequired ||
+                (inventory != null &&
+                 inventory.ContainsItemId(
+                     requiredToolItemId));
+
+            if (!hasTool)
+                return "Нужен инструмент для обезвреживания";
+
+            CombatantRuntime combatant =
+                actor.GetComponentInParent<
+                    CombatantRuntime>();
+
+            int finesse =
+                combatant?.Definition != null
+                    ? combatant.Definition
+                        .GetAttribute(
+                            AbilityAttribute.Finesse)
+                    : 0;
+
+            int perception =
+                combatant?.Definition != null
+                    ? combatant.Definition
+                        .GetAttribute(
+                            AbilityAttribute.Perception)
+                    : 10;
+
+            SkillCheckResult result =
+                SkillCheckResolver.Resolve(
+                    finesse,
+                    disarmDifficulty,
+                    perception,
+                    toolRequired
+                        ? toolBonus
+                        : 0);
+
+            return
+                "ЛКМ — обезвредить   •   " +
+                $"Навык {result.Score}/{result.Difficulty}";
+        }
+
         public void Interact(
             GameObject actor)
         {
