@@ -445,6 +445,8 @@ namespace KeeperFirstCovenant.EditorTools
             healingLight.scalingMultiplier = 0.8f;
             healingLight.createsSurface =
                 SurfaceType.None;
+            healingLight.cooldownTurns = 1;
+            healingLight.breakPower = 0;
             EditorUtility.SetDirty(healingLight);
 
             CombatActionDefinition silverBarrier =
@@ -477,6 +479,8 @@ namespace KeeperFirstCovenant.EditorTools
             silverBarrier.scalingMultiplier = 0.6f;
             silverBarrier.createsSurface =
                 SurfaceType.None;
+            silverBarrier.cooldownTurns = 2;
+            silverBarrier.breakPower = 0;
             EditorUtility.SetDirty(silverBarrier);
 
             CharacterDefinition aelis =
