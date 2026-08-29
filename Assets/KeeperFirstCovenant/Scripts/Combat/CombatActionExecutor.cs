@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using KeeperFirstCovenant.World;
 using UnityEngine;
 
 namespace KeeperFirstCovenant.Combat
@@ -319,6 +320,11 @@ namespace KeeperFirstCovenant.Combat
 
             Vector3 effectPoint =
                 preview.EffectPoint;
+
+            actor.GetComponent<
+                    WorldFacing>()
+                ?.FacePoint(
+                    effectPoint);
 
             List<CombatantRuntime> affected =
                 CollectAffectedTargets(
