@@ -85,6 +85,180 @@ namespace KeeperFirstCovenant.Combat
             }
         }
 
+        public bool TryProjectWalkablePoint(
+            Vector3 world,
+            out Vector3 projected)
+        {
+            EnsureBuilt();
+
+            bool inside =
+                world.x >= _origin.x &&
+                world.z >= _origin.z &&
+                world.x <= _origin.x + worldSize.x &&
+                world.z <= _origin.z + worldSize.y;
+
+            if (!inside)
+            {
+                projected = world;
+                return false;
+            }
+
+            Vector3 probeStart =
+                new Vector3(
+                    world.x,
+                    transform.position.y +
+                    groundProbeHeight,
+                    world.z);
+
+            bool hasGround =
+                Physics.Raycast(
+                    probeStart,
+                    Vector3.down,
+                    out RaycastHit hit,
+                    groundProbeDistance,
+                    groundMask,
+                    QueryTriggerInteraction.Ignore);
+
+            if (!hasGround)
+            {
+                projected = world;
+                return false;
+            }
+
+            projected = hit.point;
+
+            bool blocked =
+                Physics.CheckSphere(
+                    projected +
+                    Vector3.up * agentRadius,
+                    agentRadius,
+                    obstacleMask,
+                    QueryTriggerInteraction.Ignore);
+
+            return !blocked;
+        }
+
+        public List<Vector3> FindContinuousPath(
+            Vector3 startWorld,
+            Vector3 endWorld)
+        {
+            if (!TryProjectWalkablePoint(
+                    endWorld,
+                    out Vector3 exactEnd))
+            {
+                return new List<Vector3>();
+            }
+
+            if (Vector3.Distance(
+                    startWorld,
+                    exactEnd) <= 0.05f)
+            {
+                return new List<Vector3>();
+            }
+
+            Node start = ClosestNode(startWorld);
+            Node goal = ClosestNode(exactEnd);
+
+            if (start == null ||
+                goal == null ||
+                !start.walkable ||
+                !goal.walkable)
+            {
+                return new List<Vector3>();
+            }
+
+            if (start == goal &&
+                IsDirectSegmentClear(
+                    startWorld,
+                    exactEnd))
+            {
+                return new List<Vector3>
+                {
+                    exactEnd
+                };
+            }
+
+            List<Vector3> raw =
+                FindPath(
+                    startWorld,
+                    exactEnd);
+
+            if (raw.Count == 0)
+                return raw;
+
+            if (Vector3.Distance(
+                    raw[raw.Count - 1],
+                    exactEnd) > 0.05f)
+            {
+                raw.Add(exactEnd);
+            }
+            else
+            {
+                raw[raw.Count - 1] =
+                    exactEnd;
+            }
+
+            return RemoveTinySegments(
+                raw,
+                startWorld);
+        }
+
+        private bool IsDirectSegmentClear(
+            Vector3 from,
+            Vector3 to)
+        {
+            Vector3 delta = to - from;
+            delta.y = 0f;
+
+            float distance = delta.magnitude;
+
+            if (distance <= 0.05f)
+                return true;
+
+            Vector3 origin =
+                from +
+                Vector3.up * agentRadius;
+
+            return !Physics.SphereCast(
+                origin,
+                agentRadius,
+                delta.normalized,
+                out _,
+                distance,
+                obstacleMask,
+                QueryTriggerInteraction.Ignore);
+        }
+
+        private static List<Vector3>
+            RemoveTinySegments(
+                IReadOnlyList<Vector3> path,
+                Vector3 start)
+        {
+            var result =
+                new List<Vector3>();
+
+            Vector3 previous = start;
+
+            for (int i = 0;
+                 i < path.Count;
+                 i++)
+            {
+                Vector3 point = path[i];
+
+                if (Vector3.Distance(
+                        previous,
+                        point) < 0.08f)
+                {
+                    continue;
+                }
+
+                result.Add(point);
+                previous = point;
+            }
+
+            return result;
+        }
+
         public bool TryGetDirectCellInfo(
             Vector3 world,
             out Vector3 cellWorld,
