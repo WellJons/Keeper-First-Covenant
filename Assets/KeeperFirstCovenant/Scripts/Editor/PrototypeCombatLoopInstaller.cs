@@ -79,6 +79,10 @@ namespace KeeperFirstCovenant.EditorTools
                     systems);
 
             AddIfMissing<
+                ExplorationMovementController>(
+                    systems);
+
+            AddIfMissing<
                 CombatDebugHUD>(systems);
 
             AddIfMissing<
