@@ -28,7 +28,7 @@ namespace KeeperFirstCovenant.Combat
         [SerializeField] private float groundProbeDistance = 20f;
 
         [Header("Layers")]
-        [SerializeField] private LayerMask obstacleMask;
+        [SerializeField] private LayerMask obstacleMask = ~0;
         [SerializeField] private LayerMask groundMask = ~0;
 
         private Node[,] _nodes;
@@ -73,11 +73,9 @@ namespace KeeperFirstCovenant.Combat
                         QueryTriggerInteraction.Ignore);
 
                     Vector3 world = hasGround ? hit.point : horizontal;
-                    bool blocked = Physics.CheckSphere(
-                        world + Vector3.up * agentRadius,
-                        agentRadius,
-                        obstacleMask,
-                        QueryTriggerInteraction.Ignore);
+                    bool blocked =
+                        IsBlockedByWorld(
+                            world);
 
                     _nodes[x, z] = new Node
                     {
@@ -134,12 +132,8 @@ namespace KeeperFirstCovenant.Combat
             projected = hit.point;
 
             bool blocked =
-                Physics.CheckSphere(
-                    projected +
-                    Vector3.up * agentRadius,
-                    agentRadius,
-                    obstacleMask,
-                    QueryTriggerInteraction.Ignore);
+                IsBlockedByWorld(
+                    projected);
 
             return !blocked;
         }
@@ -445,6 +439,45 @@ namespace KeeperFirstCovenant.Combat
                 previous = path[i];
             }
             return total;
+        }
+
+        private bool IsBlockedByWorld(
+            Vector3 groundPoint)
+        {
+            Vector3 bottom =
+                groundPoint +
+                Vector3.up *
+                (agentRadius + 0.08f);
+
+            Vector3 top =
+                groundPoint +
+                Vector3.up * 1.45f;
+
+            Collider[] overlaps =
+                Physics.OverlapCapsule(
+                    bottom,
+                    top,
+                    agentRadius,
+                    obstacleMask,
+                    QueryTriggerInteraction.Ignore);
+
+            foreach (Collider collider
+                     in overlaps)
+            {
+                if (collider == null)
+                    continue;
+
+                if (collider
+                        .GetComponentInParent<
+                            CombatantRuntime>() != null)
+                {
+                    continue;
+                }
+
+                return true;
+            }
+
+            return false;
         }
 
         private IEnumerable<Node> Neighbours(Node node)
