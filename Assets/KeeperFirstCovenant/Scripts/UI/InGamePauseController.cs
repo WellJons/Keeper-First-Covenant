@@ -4,6 +4,7 @@ using System.Linq;
 using KeeperFirstCovenant.Combat;
 using KeeperFirstCovenant.Core;
 using KeeperFirstCovenant.Dialogue;
+using KeeperFirstCovenant.Discoveries;
 using KeeperFirstCovenant.Quests;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -25,6 +26,9 @@ namespace KeeperFirstCovenant.UI
         private GameObject confirmPanel;
         private RectTransform loadList;
         private RectTransform journalList;
+        private Button journalQuestTabButton;
+        private Button journalDiscoveryTabButton;
+        private bool journalDiscoveryMode;
 
         private Text statusText;
         private Text activeSaveText;
@@ -453,22 +457,156 @@ namespace KeeperFirstCovenant.UI
                 mainPanel.SetActive(true);
             });
 
-            journalList =
+            RectTransform tabs =
                 MenuUiFactory.CreateRect(
-                    "QuestList",
+                    "JournalTabs",
                     content);
 
-            MenuUiFactory.Stretch(journalList);
+            tabs.anchorMin =
+                new Vector2(0f, 1f);
+
+            tabs.anchorMax =
+                new Vector2(1f, 1f);
+
+            tabs.pivot =
+                new Vector2(0.5f, 1f);
+
+            tabs.offsetMin =
+                new Vector2(0f, -54f);
+
+            tabs.offsetMax =
+                Vector2.zero;
+
+            HorizontalLayoutGroup tabLayout =
+                tabs.gameObject
+                    .AddComponent<
+                        HorizontalLayoutGroup>();
+
+            tabLayout.spacing = 10f;
+            tabLayout.childAlignment =
+                TextAnchor.MiddleLeft;
+
+            tabLayout.childControlHeight = true;
+            tabLayout.childControlWidth = false;
+            tabLayout.childForceExpandHeight = true;
+            tabLayout.childForceExpandWidth = false;
+
+            journalQuestTabButton =
+                MenuUiFactory.CreateMenuButton(
+                    "QuestTab",
+                    tabs,
+                    "Задания",
+                    16);
+
+            journalQuestTabButton.gameObject
+                .AddComponent<LayoutElement>()
+                .preferredWidth = 190f;
+
+            journalDiscoveryTabButton =
+                MenuUiFactory.CreateMenuButton(
+                    "DiscoveryTab",
+                    tabs,
+                    "Открытия",
+                    16);
+
+            journalDiscoveryTabButton.gameObject
+                .AddComponent<LayoutElement>()
+                .preferredWidth = 190f;
+
+            journalQuestTabButton.onClick
+                .AddListener(() =>
+                {
+                    GameAudioService.Instance.PlayClick();
+                    journalDiscoveryMode = false;
+                    RefreshJournal();
+                });
+
+            journalDiscoveryTabButton.onClick
+                .AddListener(() =>
+                {
+                    GameAudioService.Instance.PlayClick();
+                    journalDiscoveryMode = true;
+                    RefreshJournal();
+                });
+
+            RectTransform viewport =
+                MenuUiFactory.CreateRect(
+                    "JournalViewport",
+                    content);
+
+            viewport.anchorMin =
+                Vector2.zero;
+
+            viewport.anchorMax =
+                new Vector2(1f, 1f);
+
+            viewport.offsetMin =
+                Vector2.zero;
+
+            viewport.offsetMax =
+                new Vector2(0f, -66f);
+
+            Image maskImage =
+                viewport.gameObject
+                    .AddComponent<Image>();
+
+            maskImage.color =
+                new Color(0f, 0f, 0f, 0.01f);
+
+            viewport.gameObject
+                .AddComponent<RectMask2D>();
+
+            journalList =
+                MenuUiFactory.CreateRect(
+                    "JournalList",
+                    viewport);
+
+            journalList.anchorMin =
+                new Vector2(0f, 1f);
+
+            journalList.anchorMax =
+                new Vector2(1f, 1f);
+
+            journalList.pivot =
+                new Vector2(0.5f, 1f);
+
+            journalList.anchoredPosition =
+                Vector2.zero;
+
+            journalList.sizeDelta =
+                Vector2.zero;
 
             VerticalLayoutGroup layout =
                 journalList.gameObject
-                    .AddComponent<VerticalLayoutGroup>();
+                    .AddComponent<
+                        VerticalLayoutGroup>();
 
             layout.spacing = 12f;
             layout.childControlHeight = true;
             layout.childControlWidth = true;
             layout.childForceExpandHeight = false;
             layout.childForceExpandWidth = true;
+
+            ContentSizeFitter fitter =
+                journalList.gameObject
+                    .AddComponent<
+                        ContentSizeFitter>();
+
+            fitter.verticalFit =
+                ContentSizeFitter.FitMode
+                    .PreferredSize;
+
+            ScrollRect scroll =
+                viewport.gameObject
+                    .AddComponent<ScrollRect>();
+
+            scroll.horizontal = false;
+            scroll.vertical = true;
+            scroll.viewport = viewport;
+            scroll.content = journalList;
+            scroll.movementType =
+                ScrollRect.MovementType.Clamped;
+            scroll.scrollSensitivity = 28f;
 
             return panel;
         }
@@ -483,23 +621,27 @@ namespace KeeperFirstCovenant.UI
                     journalList.GetChild(i).gameObject);
             }
 
+            if (journalQuestTabButton != null)
+                journalQuestTabButton.interactable =
+                    journalDiscoveryMode;
+
+            if (journalDiscoveryTabButton != null)
+                journalDiscoveryTabButton.interactable =
+                    !journalDiscoveryMode;
+
+            if (journalDiscoveryMode)
+            {
+                RefreshDiscoveries();
+                return;
+            }
+
             IReadOnlyList<QuestEntryState> quests =
                 QuestJournal.Instance.Quests;
 
             if (quests == null || quests.Count == 0)
             {
-                Text empty = MenuUiFactory.CreateText(
-                    "Empty",
-                    journalList,
-                    "Журнал пока пуст.",
-                    19,
-                    MainMenuTheme.MutedText,
-                    TextAnchor.MiddleCenter);
-
-                empty.gameObject
-                    .AddComponent<LayoutElement>()
-                    .preferredHeight = 120f;
-
+                BuildJournalEmpty(
+                    "Активных записей о заданиях пока нет.");
                 return;
             }
 
@@ -510,6 +652,230 @@ namespace KeeperFirstCovenant.UI
             {
                 BuildQuestRow(quest);
             }
+        }
+
+        private void RefreshDiscoveries()
+        {
+            IReadOnlyList<DiscoveryEntryState> discoveries =
+                DiscoveryJournal.Instance.Entries;
+
+            if (discoveries == null ||
+                discoveries.Count == 0)
+            {
+                BuildJournalEmpty(
+                    "Открытий пока нет. Исследуйте мир, осматривайте странные места и ищите следы прошлого.");
+                return;
+            }
+
+            foreach (DiscoveryEntryState entry
+                     in discoveries
+                        .Where(value =>
+                            value != null)
+                        .OrderByDescending(value =>
+                            value.discoveredDay)
+                        .ThenByDescending(value =>
+                            value.discoveredHour)
+                        .ThenBy(value =>
+                            value.title))
+            {
+                BuildDiscoveryRow(entry);
+            }
+        }
+
+        private void BuildJournalEmpty(
+            string message)
+        {
+            Text empty =
+                MenuUiFactory.CreateText(
+                    "Empty",
+                    journalList,
+                    message,
+                    17,
+                    MainMenuTheme.MutedText,
+                    TextAnchor.MiddleCenter);
+
+            empty.gameObject
+                .AddComponent<LayoutElement>()
+                .preferredHeight = 140f;
+        }
+
+        private void BuildDiscoveryRow(
+            DiscoveryEntryState entry)
+        {
+            Image row =
+                MenuUiFactory.CreateImage(
+                    "Discovery_" +
+                    entry.discoveryId,
+                    journalList,
+                    new Color(
+                        MainMenuTheme.PanelSoft.r,
+                        MainMenuTheme.PanelSoft.g,
+                        MainMenuTheme.PanelSoft.b,
+                        0.92f));
+
+            KeeperUiSkin.DecorateSection(row);
+
+            LayoutElement element =
+                row.gameObject
+                    .AddComponent<
+                        LayoutElement>();
+
+            int lineEstimate =
+                Mathf.Max(
+                    1,
+                    Mathf.CeilToInt(
+                        (entry.description ?? string.Empty)
+                            .Length /
+                        78f));
+
+            element.preferredHeight =
+                Mathf.Clamp(
+                    126f +
+                    lineEstimate * 24f,
+                    150f,
+                    300f);
+
+            Text categoryText =
+                MenuUiFactory.CreateText(
+                    "Category",
+                    row.transform,
+                    DiscoveryCategoryLabel(
+                        entry.category),
+                    12,
+                    MainMenuTheme.Warm,
+                    TextAnchor.UpperLeft);
+
+            categoryText.rectTransform.anchorMin =
+                new Vector2(0f, 0.79f);
+
+            categoryText.rectTransform.anchorMax =
+                Vector2.one;
+
+            categoryText.rectTransform.offsetMin =
+                new Vector2(18f, 0f);
+
+            categoryText.rectTransform.offsetMax =
+                new Vector2(-18f, -12f);
+
+            Text heading =
+                MenuUiFactory.CreateText(
+                    "Heading",
+                    row.transform,
+                    entry.title,
+                    20,
+                    MainMenuTheme.Text,
+                    TextAnchor.UpperLeft);
+
+            heading.rectTransform.anchorMin =
+                new Vector2(0f, 0.62f);
+
+            heading.rectTransform.anchorMax =
+                new Vector2(1f, 0.84f);
+
+            heading.rectTransform.offsetMin =
+                new Vector2(18f, 0f);
+
+            heading.rectTransform.offsetMax =
+                new Vector2(-18f, 0f);
+
+            string meta =
+                "День " +
+                Mathf.Max(1, entry.discoveredDay) +
+                "   •   " +
+                FormatWorldHour(entry.discoveredHour);
+
+            if (!string.IsNullOrWhiteSpace(
+                    entry.locationName))
+            {
+                meta +=
+                    "   •   " +
+                    entry.locationName;
+            }
+
+            Text metaText =
+                MenuUiFactory.CreateText(
+                    "Meta",
+                    row.transform,
+                    meta,
+                    12,
+                    MainMenuTheme.Silver,
+                    TextAnchor.UpperLeft);
+
+            metaText.rectTransform.anchorMin =
+                new Vector2(0f, 0.51f);
+
+            metaText.rectTransform.anchorMax =
+                new Vector2(1f, 0.66f);
+
+            metaText.rectTransform.offsetMin =
+                new Vector2(18f, 0f);
+
+            metaText.rectTransform.offsetMax =
+                new Vector2(-18f, 0f);
+
+            Text descriptionText =
+                MenuUiFactory.CreateText(
+                    "Description",
+                    row.transform,
+                    string.IsNullOrWhiteSpace(
+                        entry.description)
+                        ? "Подробностей пока нет."
+                        : entry.description,
+                    14,
+                    MainMenuTheme.MutedText,
+                    TextAnchor.UpperLeft);
+
+            descriptionText.rectTransform.anchorMin =
+                Vector2.zero;
+
+            descriptionText.rectTransform.anchorMax =
+                new Vector2(1f, 0.52f);
+
+            descriptionText.rectTransform.offsetMin =
+                new Vector2(18f, 14f);
+
+            descriptionText.rectTransform.offsetMax =
+                new Vector2(-18f, 0f);
+        }
+
+        private static string DiscoveryCategoryLabel(
+            DiscoveryCategory category)
+        {
+            switch (category)
+            {
+                case DiscoveryCategory.Location:
+                    return "МЕСТО";
+                case DiscoveryCategory.Lore:
+                    return "ИСТОРИЯ";
+                case DiscoveryCategory.Person:
+                    return "ПЕРСОНА";
+                case DiscoveryCategory.Faction:
+                    return "ФРАКЦИЯ";
+                case DiscoveryCategory.Creature:
+                    return "СУЩЕСТВО";
+                case DiscoveryCategory.Magic:
+                    return "МАГИЯ";
+                case DiscoveryCategory.Clue:
+                    return "УЛИКА";
+                default:
+                    return "ОТКРЫТИЕ";
+            }
+        }
+
+        private static string FormatWorldHour(
+            float hour)
+        {
+            float normalized =
+                Mathf.Repeat(hour, 24f);
+
+            int h =
+                Mathf.FloorToInt(normalized);
+
+            int m =
+                Mathf.FloorToInt(
+                    (normalized - h) * 60f);
+
+            return $"{h:00}:{m:00}";
         }
 
         private void BuildQuestRow(
@@ -929,6 +1295,7 @@ namespace KeeperFirstCovenant.UI
 
         private void OpenJournal()
         {
+            journalDiscoveryMode = false;
             RefreshJournal();
             mainPanel.SetActive(false);
             journalPanel.SetActive(true);
