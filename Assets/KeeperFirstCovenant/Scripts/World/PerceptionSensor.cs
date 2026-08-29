@@ -5,6 +5,13 @@ using UnityEngine;
 
 namespace KeeperFirstCovenant.World
 {
+    public enum AwarenessLevel
+    {
+        Unaware,
+        Suspicious,
+        Alerted
+    }
+
     [RequireComponent(typeof(CombatantRuntime))]
     public sealed class PerceptionSensor : MonoBehaviour
     {
@@ -22,6 +29,9 @@ namespace KeeperFirstCovenant.World
         private LayerMask visionBlockerMask = ~0;
 
         [Header("Suspicion")]
+        [SerializeField, Min(0f)]
+        private float suspiciousThreshold = 25f;
+
         [SerializeField, Min(1f)]
         private float detectionThreshold = 100f;
 
@@ -55,6 +65,21 @@ namespace KeeperFirstCovenant.World
             _suspicion.Count == 0
                 ? 0f
                 : _suspicion.Values.Max();
+
+        public AwarenessLevel Awareness
+        {
+            get;
+            private set;
+        }
+
+        public Vector3 LastStimulusPosition
+        {
+            get;
+            private set;
+        }
+
+        public event System.Action<
+            AwarenessLevel> AwarenessChanged;
 
         private void Awake()
         {
@@ -192,6 +217,9 @@ namespace KeeperFirstCovenant.World
 
                 if (gain > 0f)
                 {
+                    LastStimulusPosition =
+                        target.transform.position;
+
                     seenThisScan.Add(target);
 
                     float current =
@@ -363,6 +391,9 @@ namespace KeeperFirstCovenant.World
                         0.01f,
                         noise.Radius));
 
+            LastStimulusPosition =
+                noise.Position;
+
             float gain =
                 25f *
                 noise.Intensity *
@@ -406,10 +437,46 @@ namespace KeeperFirstCovenant.World
                 _suspicion.Remove(target);
             else
                 _suspicion[target] = clamped;
+
+            RefreshAwareness();
+        }
+
+        private void RefreshAwareness()
+        {
+            if (Awareness ==
+                AwarenessLevel.Alerted)
+            {
+                return;
+            }
+
+            float highest =
+                HighestSuspicion;
+
+            AwarenessLevel next =
+                highest >= suspiciousThreshold
+                    ? AwarenessLevel.Suspicious
+                    : AwarenessLevel.Unaware;
+
+            if (next == Awareness)
+                return;
+
+            Awareness = next;
+            AwarenessChanged?.Invoke(
+                Awareness);
         }
 
         private void Engage()
         {
+            if (Awareness !=
+                AwarenessLevel.Alerted)
+            {
+                Awareness =
+                    AwarenessLevel.Alerted;
+
+                AwarenessChanged?.Invoke(
+                    Awareness);
+            }
+
             WorldCombatEngagementService service =
                 WorldCombatEngagementService.Instance;
 
