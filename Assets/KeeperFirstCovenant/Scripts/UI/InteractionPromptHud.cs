@@ -206,15 +206,22 @@ namespace KeeperFirstCovenant.UI
                     .CanInteract(
                         controller.CurrentActor);
 
+            bool canInspect =
+                controller.CurrentActor != null &&
+                controller.CurrentInspectable != null &&
+                controller.CurrentInspectable
+                    .CanInspect(
+                        controller.CurrentActor);
+
             bool usable =
                 controller.CurrentInRange &&
-                canInteract;
+                (canInteract || canInspect);
 
             prompt.text =
                 controller.CurrentPrompt;
 
             detail.text =
-                canInteract
+                canInteract || canInspect
                     ? controller.CurrentContextHint
                     : "Недоступно";
 
