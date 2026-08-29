@@ -238,6 +238,10 @@ namespace KeeperFirstCovenant.UI
             outline.effectDistance =
                 new Vector2(1f, -1f);
 
+            KeeperUiSkin.DecorateMajorPanel(
+                panel,
+                true);
+
             portrait =
                 MenuUiFactory.CreateImage(
                     "Portrait",
@@ -281,7 +285,7 @@ namespace KeeperFirstCovenant.UI
                     panel.transform,
                     string.Empty,
                     22,
-                    MainMenuTheme.Silver,
+                    MainMenuTheme.Warm,
                     TextAnchor.MiddleLeft);
 
             speaker.rectTransform
