@@ -238,7 +238,7 @@ namespace KeeperFirstCovenant.EditorTools
                     {
                         corpse.Configure(
                             loot,
-                            "Search body");
+                            "Обыскать тело");
                     }
                 }
             }
