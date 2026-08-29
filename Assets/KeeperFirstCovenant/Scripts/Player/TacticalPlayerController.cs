@@ -310,7 +310,7 @@ namespace KeeperFirstCovenant.Player
             _movementPreviewValid =
                 _movementPreviewCost > 0.01f &&
                 _movementPreviewCost <=
-                    _currentActor.RemainingMovement +
+                    _currentActor.TotalMovementAvailable +
                     0.01f &&
                 !IsOccupied(destination);
         }
@@ -405,7 +405,7 @@ namespace KeeperFirstCovenant.Player
                     _currentActor.transform.position);
 
             if (pathLength >
-                _currentActor.RemainingMovement +
+                _currentActor.TotalMovementAvailable +
                 0.01f)
             {
                 return;
