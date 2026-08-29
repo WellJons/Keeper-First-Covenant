@@ -149,6 +149,21 @@ namespace KeeperFirstCovenant.UI
             dim.color = new Color(0.008f, 0.012f, 0.016f, 0.88f);
 
             BuildDecor(root.transform);
+
+            // Status/toast is intentionally re-parented outside PauseRoot so F5
+            // feedback stays visible while gameplay itself is not paused.
+            if (statusText != null)
+            {
+                statusText.transform.SetParent(canvasRect, false);
+                MenuUiFactory.SetAnchoredRect(
+                    statusText.rectTransform,
+                    new Vector2(0f, 0f),
+                    new Vector2(0f, 0f),
+                    new Vector2(0f, 0f),
+                    new Vector2(54f, 42f),
+                    new Vector2(720f, 42f));
+            }
+
             mainPanel = BuildMainPanel(root.transform);
             loadPanel = BuildLoadPanel(root.transform);
             settingsPanel = BuildSettingsPanel(root.transform);
