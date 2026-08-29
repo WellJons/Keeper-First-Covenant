@@ -125,7 +125,7 @@ namespace KeeperFirstCovenant.UI
                     GUILayout.Space(5f);
 
                     GUILayout.Label(
-                        "LMB ground — move | " +
+                        "LMB ground — free move | " +
                         "1–8 — ability | " +
                         "Space — end turn",
                         _text);
@@ -135,6 +135,7 @@ namespace KeeperFirstCovenant.UI
                         "RMB/Esc — cancel",
                         _text);
 
+                    DrawMovementPreview(actor);
                     DrawAbilities(actor);
                     DrawPreview();
                 }
@@ -195,6 +196,34 @@ namespace KeeperFirstCovenant.UI
 
             if (any)
                 GUILayout.Space(5f);
+        }
+
+        private void DrawMovementPreview(
+            CombatantRuntime actor)
+        {
+            if (playerController == null ||
+                playerController.SelectedAction != null ||
+                !playerController.HasMovementPreview)
+            {
+                return;
+            }
+
+            GUILayout.Space(6f);
+            GUILayout.Label(
+                "MOVEMENT PREVIEW",
+                _title);
+
+            string state =
+                playerController.MovementPreviewValid
+                    ? "AVAILABLE"
+                    : "TOO FAR / BLOCKED";
+
+            GUILayout.Label(
+                $"Path: " +
+                $"{playerController.MovementPreviewCost:0.0} m / " +
+                $"{actor.RemainingMovement:0.0} m   " +
+                $"{state}",
+                _text);
         }
 
         private void DrawAbilities(
