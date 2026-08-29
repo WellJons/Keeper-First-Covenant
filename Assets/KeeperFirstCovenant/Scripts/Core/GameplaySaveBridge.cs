@@ -5,6 +5,7 @@ using KeeperFirstCovenant.Combat;
 using KeeperFirstCovenant.Discoveries;
 using KeeperFirstCovenant.Inventory;
 using KeeperFirstCovenant.Quests;
+using KeeperFirstCovenant.Relationships;
 using KeeperFirstCovenant.World;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -66,6 +67,9 @@ namespace KeeperFirstCovenant.Core
 
             save.discoveryStateJson =
                 DiscoveryJournal.Instance.CaptureJson();
+
+            save.relationshipStateJson =
+                RelationshipLedger.Instance.CaptureJson();
         }
 
         public static void RestoreFrom(SaveGameData save)
@@ -80,6 +84,9 @@ namespace KeeperFirstCovenant.Core
 
             DiscoveryJournal.Instance.RestoreJson(
                 save.discoveryStateJson);
+
+            RelationshipLedger.Instance.RestoreJson(
+                save.relationshipStateJson);
         }
 
         public static void ResetRuntimeState()
@@ -92,6 +99,7 @@ namespace KeeperFirstCovenant.Core
 
             QuestJournal.Instance.ResetJournal();
             DiscoveryJournal.Instance.ResetJournal();
+            RelationshipLedger.Instance.ResetLedger();
         }
 
         private static void CaptureWorld(SaveGameData save)
