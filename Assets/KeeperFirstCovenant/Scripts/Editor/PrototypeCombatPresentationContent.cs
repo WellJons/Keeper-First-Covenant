@@ -195,6 +195,10 @@ namespace KeeperFirstCovenant.EditorTools
                 lightning);
 
             Assign(
+                "Action_DevStormRupture.asset",
+                lightning);
+
+            Assign(
                 "Action_FrostField.asset",
                 frost);
 
