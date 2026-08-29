@@ -20,6 +20,9 @@ namespace KeeperFirstCovenant.Combat
 
             BreakGaugeComponent.Broken +=
                 OnBroken;
+
+            ForcedMovementSystem.CollisionOccurred +=
+                OnForcedMovementCollision;
         }
 
         private void OnDisable()
@@ -33,6 +36,9 @@ namespace KeeperFirstCovenant.Combat
 
             BreakGaugeComponent.Broken -=
                 OnBroken;
+
+            ForcedMovementSystem.CollisionOccurred -=
+                OnForcedMovementCollision;
         }
 
         private void OnActionPresentation(
@@ -174,6 +180,52 @@ namespace KeeperFirstCovenant.Combat
                 shakeAmount,
                 0.12f,
                 36f);
+        }
+
+        private void OnForcedMovementCollision(
+            ForcedMovementCollisionEvent value)
+        {
+            float intensity =
+                Mathf.Clamp(
+                    0.9f +
+                    value.ForceMeters * 0.16f,
+                    1f,
+                    2.2f);
+
+            Color color =
+                new Color(
+                    0.82f,
+                    0.72f,
+                    0.58f,
+                    1f);
+
+            SpawnBurst(
+                value.Point +
+                Vector3.up * 0.25f,
+                color,
+                Mathf.RoundToInt(
+                    28f +
+                    value.ForceMeters * 7f),
+                intensity);
+
+            StartCoroutine(
+                FlashLight(
+                    value.Point,
+                    color,
+                    4.5f +
+                    value.ForceMeters,
+                    3.5f +
+                    value.ForceMeters,
+                    0.12f));
+
+            AddShake(
+                Mathf.Clamp(
+                    0.10f +
+                    value.ForceMeters * 0.045f,
+                    0.12f,
+                    0.32f),
+                0.16f,
+                27f);
         }
 
         private void OnBroken(
