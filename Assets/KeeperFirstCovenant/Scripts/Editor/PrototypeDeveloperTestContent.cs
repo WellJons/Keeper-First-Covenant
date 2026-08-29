@@ -90,11 +90,74 @@ namespace KeeperFirstCovenant.EditorTools
             CombatActionDefinition shockNeedle =
                 GetAction(
                     "ShockNeedle",
-                    "Shock Needle",
+                    "Искровая игла",
                     DamageType.Lightning,
                     new DiceFormula(1, 8),
                     10f,
                     AbilityAttribute.Intellect);
+
+            shockNeedle.breakPower = 12;
+            shockNeedle.cooldownTurns = 0;
+            EditorUtility.SetDirty(
+                shockNeedle);
+
+            CombatActionDefinition stormRupture =
+                GetOrCreate<
+                    CombatActionDefinition>(
+                    DataRoot +
+                    "/Action_DevStormRupture.asset");
+
+            stormRupture.actionId =
+                "dev_storm_rupture";
+
+            stormRupture.displayName =
+                "Грозовой разлом";
+
+            stormRupture.category =
+                CombatActionCategory.Spell;
+
+            stormRupture.targetKind =
+                TargetKind.Ground;
+
+            stormRupture.actionPointCost = 2;
+            stormRupture.manaCost = 7;
+            stormRupture.strainCost = 0;
+            stormRupture.rangeMeters = 11f;
+            stormRupture.areaRadius = 3.4f;
+
+            stormRupture.areaTargetRule =
+                AreaTargetRule.EnemiesOnly;
+
+            stormRupture.requiresLineOfSight = true;
+            stormRupture.ignoresCover = true;
+            stormRupture.usesHeightAdvantage = false;
+            stormRupture.requiresAttackRoll = false;
+
+            stormRupture.damage =
+                new DiceFormula(3, 6, 3);
+
+            stormRupture.damageType =
+                DamageType.Lightning;
+
+            stormRupture.scalingAttribute =
+                AbilityAttribute.Intellect;
+
+            stormRupture.scalingMultiplier = 0.8f;
+            stormRupture.breakPower = 24;
+
+            stormRupture.createsSurface =
+                SurfaceType.Electrified;
+
+            stormRupture.surfaceRadius = 3.4f;
+            stormRupture.surfaceDurationTurns = 2;
+
+            stormRupture.windUpTurns = 1;
+            stormRupture.interruptWindUpOnBreak = true;
+            stormRupture.telegraphRadiusOverride = 3.4f;
+            stormRupture.cooldownTurns = 2;
+
+            EditorUtility.SetDirty(
+                stormRupture);
 
             CreateEnemy(
                 "dev_bandit_skirmisher",
@@ -160,9 +223,14 @@ namespace KeeperFirstCovenant.EditorTools
                     ? new[]
                     {
                         swordSlash,
-                        shockNeedle
+                        shockNeedle,
+                        stormRupture
                     }
-                    : new[] { shockNeedle },
+                    : new[]
+                    {
+                        shockNeedle,
+                        stormRupture
+                    },
                 new[]
                 {
                     new DamageAffinity
