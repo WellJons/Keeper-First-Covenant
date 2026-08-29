@@ -212,6 +212,174 @@ namespace KeeperFirstCovenant.Inventory
             }
         }
 
+        public bool TryEquipFromInventory(
+            InventoryComponent inventory,
+            ItemDefinition item,
+            out string error)
+        {
+            error = string.Empty;
+
+            if (inventory == null || item == null)
+            {
+                error = "Предмет или инвентарь недоступен.";
+                return false;
+            }
+
+            if (inventory.Count(item) <= 0)
+            {
+                error = "Предмета нет в инвентаре.";
+                return false;
+            }
+
+            if (!TryGetSlot(item, out EquipmentSlot slot))
+            {
+                error = "Этот предмет нельзя экипировать.";
+                return false;
+            }
+
+            ItemDefinition current =
+                Get(slot);
+
+            ItemDefinition displacedOffHand = null;
+
+            if (item is WeaponDefinition weapon &&
+                weapon.twoHanded)
+            {
+                displacedOffHand =
+                    Get(EquipmentSlot.OffHand);
+            }
+
+            if (!inventory.Remove(item, 1))
+            {
+                error = "Не удалось взять предмет из инвентаря.";
+                return false;
+            }
+
+            var returned =
+                new List<ItemDefinition>();
+
+            if (!TryReturnItem(
+                    inventory,
+                    current,
+                    returned))
+            {
+                RollbackInventoryTransaction(
+                    inventory,
+                    item,
+                    returned);
+
+                error = "Не хватает места, чтобы снять текущую экипировку.";
+                return false;
+            }
+
+            if (displacedOffHand != null &&
+                displacedOffHand != current &&
+                !TryReturnItem(
+                    inventory,
+                    displacedOffHand,
+                    returned))
+            {
+                RollbackInventoryTransaction(
+                    inventory,
+                    item,
+                    returned);
+
+                error = "Не хватает места для предмета из второй руки.";
+                return false;
+            }
+
+            if (!Equip(item))
+            {
+                RollbackInventoryTransaction(
+                    inventory,
+                    item,
+                    returned);
+
+                error = "Предмет нельзя экипировать в этот слот.";
+                return false;
+            }
+
+            return true;
+        }
+
+        public bool TryUnequipToInventory(
+            InventoryComponent inventory,
+            EquipmentSlot slot,
+            out string error)
+        {
+            error = string.Empty;
+
+            if (inventory == null)
+            {
+                error = "Инвентарь недоступен.";
+                return false;
+            }
+
+            ItemDefinition item =
+                Get(slot);
+
+            if (item == null)
+            {
+                error = "В этом слоте ничего нет.";
+                return false;
+            }
+
+            if (!inventory.Add(item, 1))
+            {
+                error = "Недостаточно места в инвентаре.";
+                return false;
+            }
+
+            ItemDefinition removed =
+                Unequip(slot);
+
+            if (removed == null)
+            {
+                inventory.Remove(item, 1);
+                error = "Не удалось снять предмет.";
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool TryReturnItem(
+            InventoryComponent inventory,
+            ItemDefinition item,
+            List<ItemDefinition> returned)
+        {
+            if (item == null)
+                return true;
+
+            if (!inventory.Add(item, 1))
+                return false;
+
+            returned.Add(item);
+            return true;
+        }
+
+        private static void RollbackInventoryTransaction(
+            InventoryComponent inventory,
+            ItemDefinition equippedCandidate,
+            List<ItemDefinition> returned)
+        {
+            if (returned != null)
+            {
+                for (int i = returned.Count - 1;
+                     i >= 0;
+                     i--)
+                {
+                    inventory.Remove(
+                        returned[i],
+                        1);
+                }
+            }
+
+            inventory.Add(
+                equippedCandidate,
+                1);
+        }
+
         public EquipmentSnapshot CaptureSnapshot()
         {
             var snapshot = new EquipmentSnapshot();
