@@ -56,6 +56,7 @@ namespace KeeperFirstCovenant.UI
             SceneManager.MoveGameObjectToScene(root, scene);
             root.AddComponent<InGamePauseController>();
             root.AddComponent<QuestTrackerHud>();
+            root.AddComponent<DialogueUiController>();
         }
     }
 }
