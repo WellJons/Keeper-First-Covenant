@@ -545,12 +545,23 @@ namespace KeeperFirstCovenant.Combat
             float multiplier =
                 GetDamageMultiplier(packet.Type);
 
+            BreakGaugeComponent breakGauge =
+                GetComponent<
+                    BreakGaugeComponent>();
+
+            float breakMultiplier =
+                breakGauge != null
+                    ? breakGauge
+                        .IncomingDamageMultiplier
+                    : 1f;
+
             int remaining =
                 Mathf.Max(
                     0,
                     Mathf.RoundToInt(
                         packet.Amount *
-                        multiplier));
+                        multiplier *
+                        breakMultiplier));
 
             if (remaining <= 0)
             {
