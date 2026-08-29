@@ -67,10 +67,18 @@ namespace KeeperFirstCovenant.World
 
         public void Configure(
             bool startsLit,
-            bool allowRelight = true)
+            bool allowRelight = true,
+            GameObject[] litVisuals = null,
+            GameObject[] unlitVisuals = null)
         {
             lit = startsLit;
             canRelight = allowRelight;
+
+            if (litVisuals != null)
+                visibleWhenLit = litVisuals;
+
+            if (unlitVisuals != null)
+                visibleWhenUnlit = unlitVisuals;
 
             if (controlledLights == null ||
                 controlledLights.Length == 0)
