@@ -94,10 +94,11 @@ namespace KeeperFirstCovenant.AI
                     target,
                     action))
             {
-                CombatActionExecutor.Execute(
-                    actor,
-                    action,
-                    target);
+                yield return
+                    ExecuteActionWithDefense(
+                        actor,
+                        target,
+                        action);
             }
             else if (grid != null &&
                      actor.RemainingMovement >
@@ -155,11 +156,11 @@ namespace KeeperFirstCovenant.AI
                                 target,
                                 action))
                         {
-                            CombatActionExecutor
-                                .Execute(
+                            yield return
+                                ExecuteActionWithDefense(
                                     actor,
-                                    action,
-                                    target);
+                                    target,
+                                    action);
                         }
                     }
                 }
@@ -301,6 +302,62 @@ namespace KeeperFirstCovenant.AI
             }
 
             return best;
+        }
+
+        private static IEnumerator
+            ExecuteActionWithDefense(
+                CombatantRuntime actor,
+                CombatantRuntime target,
+                CombatActionDefinition action)
+        {
+            if (actor == null ||
+                target == null ||
+                action == null ||
+                !actor.IsAlive ||
+                !target.IsAlive)
+            {
+                yield break;
+            }
+
+            ActiveDefenseOutcome outcome =
+                ActiveDefenseOutcome.None;
+
+            ActiveDefenseSystem defense =
+                ActiveDefenseSystem.Instance;
+
+            if (defense != null &&
+                defense.CanReact(
+                    target,
+                    action))
+            {
+                var resolution =
+                    new ActiveDefenseResolution();
+
+                yield return defense
+                    .ResolveIncomingAttack(
+                        actor,
+                        target,
+                        action,
+                        resolution);
+
+                outcome =
+                    resolution.Outcome;
+            }
+
+            if (actor == null ||
+                target == null ||
+                !actor.IsAlive ||
+                !target.CanBeTargeted)
+            {
+                yield break;
+            }
+
+            CombatActionExecutor
+                .ExecuteWithDefense(
+                    actor,
+                    action,
+                    target,
+                    outcome);
         }
 
         private void EndTurn()
