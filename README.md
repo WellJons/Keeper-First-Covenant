@@ -72,3 +72,14 @@ Playable scene:
 The scene uses the new top-down camera follower, Edward as the controllable character, Eleanor/Aelis as animated followers and modular production-art world pieces.
 
 See `Docs/PRODUCTION_ART_INTEGRATION.md` for the current frame coverage and remaining directional-art work.
+
+## Gameplay-ready environment foundation
+
+The project now includes a separate bright-fantasy environment foundation with
+independent ground/road textures, modular road topology, walkable colliders,
+surface physics and footstep reactions, plus wind-reactive interactive grass
+and wildflowers. It is built and validated from:
+
+`Keeper First Covenant -> Environment Foundation -> BUILD COMPLETE PACK`
+
+See `Docs/ENVIRONMENT_FOUNDATION_PACK.md` for the asset list and test scene.
