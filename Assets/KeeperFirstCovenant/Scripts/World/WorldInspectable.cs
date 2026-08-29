@@ -62,6 +62,28 @@ namespace KeeperFirstCovenant.World
                 this,
                 inspectionId);
 
+        public void Configure(
+            string title,
+            InspectionCategory inspectionCategory,
+            string inspectionDescription,
+            bool requiresDiscovery = false,
+            HiddenDiscoverable source = null)
+        {
+            displayName =
+                string.IsNullOrWhiteSpace(title)
+                    ? name
+                    : title;
+
+            category = inspectionCategory;
+            description =
+                inspectionDescription ?? string.Empty;
+
+            requireDiscovery =
+                requiresDiscovery;
+
+            discoverySource = source;
+        }
+
         public bool CanInspect(GameObject actor)
         {
             if (actor == null)
