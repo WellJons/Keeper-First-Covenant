@@ -22,12 +22,18 @@ namespace KeeperFirstCovenant.UI
 
             SearchableLoot.LootTransferred +=
                 OnLootTransferred;
+
+            WorldItemPickup.ItemTransferred +=
+                OnItemTransferred;
         }
 
         private void OnDestroy()
         {
             SearchableLoot.LootTransferred -=
                 OnLootTransferred;
+
+            WorldItemPickup.ItemTransferred -=
+                OnItemTransferred;
         }
 
         private void Build()
@@ -143,6 +149,35 @@ namespace KeeperFirstCovenant.UI
                 new Vector2(-18f, 0f);
         }
 
+        private void OnItemTransferred(
+            WorldItemPickup source,
+            GameObject actor,
+            InventoryStack stack,
+            bool hasRemaining)
+        {
+            if (stack == null ||
+                stack.item == null)
+            {
+                title.text = "НЕ ХВАТАЕТ МЕСТА";
+                body.text =
+                    "Предмет остаётся на месте.";
+
+                ShowToast();
+                return;
+            }
+
+            title.text = "ПОДОБРАНО";
+            body.text = FormatStack(stack);
+
+            if (hasRemaining)
+            {
+                body.text +=
+                    "\n<color=#B56B52>Часть предметов осталась — не хватает места.</color>";
+            }
+
+            ShowToast();
+        }
+
         private void OnLootTransferred(
             SearchableLoot source,
             GameObject actor,
@@ -191,6 +226,11 @@ namespace KeeperFirstCovenant.UI
                 }
             }
 
+            ShowToast();
+        }
+
+        private void ShowToast()
+        {
             if (routine != null)
                 StopCoroutine(routine);
 
