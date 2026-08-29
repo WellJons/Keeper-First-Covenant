@@ -188,6 +188,11 @@ namespace KeeperFirstCovenant.Combat
                     action.breakPower);
 
             amount +=
+                Mathf.Max(
+                    0,
+                    result.ComboBreakBonus);
+
+            amount +=
                 Mathf.RoundToInt(
                     Mathf.Max(
                         0f,
