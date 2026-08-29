@@ -1001,6 +1001,12 @@ namespace KeeperFirstCovenant.UI
         {
             if (paused)
                 RefreshActiveSaveLabel();
+
+            ShowStatus(
+                data != null &&
+                data.manualSave
+                    ? "Игра сохранена."
+                    : "Автосохранение...");
         }
 
         private void OnFlowError(string message)
