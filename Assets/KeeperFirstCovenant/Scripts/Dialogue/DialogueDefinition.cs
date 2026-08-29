@@ -1,4 +1,5 @@
 using System;
+using KeeperFirstCovenant.Combat;
 using KeeperFirstCovenant.Quests;
 using UnityEngine;
 
@@ -13,6 +14,10 @@ namespace KeeperFirstCovenant.Dialogue
         QuestActive,
         QuestCompleted,
         QuestFailed,
+        DiscoveryKnown,
+        DiscoveryUnknown,
+        PlayerAttributeAtLeast,
+        PlayerAttributeAtMost,
         RelationshipAtLeast,
         RelationshipAtMost
     }
@@ -38,6 +43,8 @@ namespace KeeperFirstCovenant.Dialogue
         public DialogueConditionKind kind;
         public string key;
         public int intValue;
+        public AbilityAttribute attribute =
+            AbilityAttribute.Intellect;
     }
 
     [Serializable]
