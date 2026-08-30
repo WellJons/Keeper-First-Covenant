@@ -40,6 +40,8 @@ namespace KeeperFirstCovenant.UI
         private Text turnText;
         private Text resourceText;
         private Text previewText;
+        private Button endTurnButton;
+        private Text endTurnLabel;
 
         private TacticalPlayerController playerController;
         private TurnCombatDirector director;
@@ -298,7 +300,7 @@ namespace KeeperFirstCovenant.UI
                 new Vector2(0f, 0f);
 
             actionRoot.anchorMax =
-                new Vector2(1f, 0.70f);
+                new Vector2(0.82f, 0.70f);
 
             actionRoot.offsetMin =
                 new Vector2(16f, 12f);
@@ -319,6 +321,58 @@ namespace KeeperFirstCovenant.UI
             layout.childControlWidth = true;
             layout.childForceExpandHeight = true;
             layout.childForceExpandWidth = true;
+
+            endTurnButton =
+                MenuUiFactory.CreateMenuButton(
+                    "EndTurn",
+                    panel.transform,
+                    "ЗАВЕРШИТЬ ХОД\nSPACE",
+                    17);
+
+            RectTransform endRect =
+                endTurnButton.GetComponent<
+                    RectTransform>();
+
+            endRect.anchorMin =
+                new Vector2(0.835f, 0.08f);
+
+            endRect.anchorMax =
+                new Vector2(0.985f, 0.66f);
+
+            endRect.offsetMin = Vector2.zero;
+            endRect.offsetMax = Vector2.zero;
+
+            endTurnLabel =
+                endTurnButton.GetComponentInChildren<
+                    Text>();
+
+            endTurnButton.onClick.AddListener(
+                () =>
+                {
+                    if (director == null ||
+                        director.State !=
+                            CombatState.Active)
+                    {
+                        return;
+                    }
+
+                    CombatantRuntime actor =
+                        director.CurrentActor;
+
+                    if (actor == null ||
+                        (actor.Faction !=
+                             CombatFaction.Player &&
+                         actor.Faction !=
+                             CombatFaction.Ally))
+                    {
+                        return;
+                    }
+
+                    playerController
+                        ?.CancelSelectedAction();
+
+                    director.EndCurrentTurn();
+                });
         }
 
         private void RefreshAll()
@@ -352,6 +406,50 @@ namespace KeeperFirstCovenant.UI
             RefreshActions(actor);
             RefreshResources(actor);
             RefreshPreview();
+            RefreshEndTurn(actor);
+        }
+
+        private void RefreshEndTurn(
+            CombatantRuntime actor)
+        {
+            if (endTurnButton == null)
+                return;
+
+            bool partyControlled =
+                actor != null &&
+                actor.IsAlive &&
+                (actor.Faction ==
+                     CombatFaction.Player ||
+                 actor.Faction ==
+                     CombatFaction.Ally);
+
+            endTurnButton.interactable =
+                partyControlled;
+
+            if (endTurnLabel == null)
+                return;
+
+            if (!partyControlled)
+            {
+                endTurnLabel.text =
+                    "ХОД ПРОТИВНИКА";
+                endTurnLabel.color =
+                    MainMenuTheme.MutedText;
+                return;
+            }
+
+            bool noAp =
+                actor.CurrentActionPoints <= 0;
+
+            endTurnLabel.text =
+                noAp
+                    ? "НЕТ AP\nЗАВЕРШИТЬ ХОД"
+                    : "ЗАВЕРШИТЬ ХОД\nSPACE";
+
+            endTurnLabel.color =
+                noAp
+                    ? MainMenuTheme.Warm
+                    : MainMenuTheme.Text;
         }
 
         private void RefreshParty()
@@ -477,14 +575,30 @@ namespace KeeperFirstCovenant.UI
             selectButton.onClick.AddListener(
                 () =>
                 {
+                    TurnCombatDirector activeDirector =
+                        TurnCombatDirector.Instance;
+
+                    if (activeDirector != null &&
+                        activeDirector.State ==
+                            CombatState.Active)
+                    {
+                        if (activeDirector.CurrentActor ==
+                            member)
+                        {
+                            return;
+                        }
+
+                        activeDirector
+                            .TrySwitchPartyTurn(
+                                member);
+
+                        return;
+                    }
+
                     PartySelectionService selection =
                         PartySelectionService.Instance;
 
-                    if (selection != null)
-                    {
-                        selection.Select(
-                            member);
-                    }
+                    selection?.Select(member);
                 });
 
             LayoutElement element =
@@ -748,8 +862,21 @@ namespace KeeperFirstCovenant.UI
 
             if (card.selectButton != null)
             {
-                card.selectButton.interactable =
+                bool canSelect =
                     runtime.IsAlive;
+
+                if (combatActive &&
+                    director != null &&
+                    director.CurrentActor !=
+                        runtime)
+                {
+                    canSelect =
+                        director.CanSwitchPartyTurn(
+                            runtime);
+                }
+
+                card.selectButton.interactable =
+                    canSelect;
             }
         }
 
