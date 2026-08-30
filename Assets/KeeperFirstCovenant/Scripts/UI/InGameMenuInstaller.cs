@@ -1,5 +1,6 @@
 using KeeperFirstCovenant.Core;
 using KeeperFirstCovenant.Combat;
+using KeeperFirstCovenant.World;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -49,6 +50,9 @@ namespace KeeperFirstCovenant.UI
                 return;
             }
 
+            EnsurePartySelectionAndCamera(
+                scene);
+
             InGamePauseController existing = FindFirstObjectByType<InGamePauseController>();
             if (existing != null)
                 return;
@@ -73,6 +77,41 @@ namespace KeeperFirstCovenant.UI
             root.AddComponent<DialogueUiController>();
             root.AddComponent<InspectionPanelController>();
             root.AddComponent<DefeatScreenController>();
+        private static void
+            EnsurePartySelectionAndCamera(
+                Scene scene)
+        {
+            PartySelectionService selection =
+                FindFirstObjectByType<
+                    PartySelectionService>();
+
+            if (selection == null)
+            {
+                GameObject selectionObject =
+                    new GameObject(
+                        "Keeper_PartySelection");
+
+                SceneManager.MoveGameObjectToScene(
+                    selectionObject,
+                    scene);
+
+                selectionObject.AddComponent<
+                    PartySelectionService>();
+            }
+
+            Camera camera =
+                Camera.main;
+
+            if (camera != null &&
+                camera.GetComponent<
+                    RpgOrbitCameraController>() ==
+                null)
+            {
+                camera.gameObject.AddComponent<
+                    RpgOrbitCameraController>();
+            }
+        }
+
         }
     }
 }
