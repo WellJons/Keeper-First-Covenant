@@ -21,6 +21,7 @@ namespace KeeperFirstCovenant.UI
             public Text name;
             public Text healthText;
             public Text manaText;
+            public Text turnResourceText;
             public RectTransform healthFill;
             public RectTransform manaFill;
             public Button selectButton;
@@ -606,8 +607,8 @@ namespace KeeperFirstCovenant.UI
                     .AddComponent<
                         LayoutElement>();
 
-            element.preferredHeight = 76f;
-            element.minHeight = 76f;
+            element.preferredHeight = 90f;
+            element.minHeight = 90f;
 
             Text name =
                 MenuUiFactory.CreateText(
@@ -686,6 +687,27 @@ namespace KeeperFirstCovenant.UI
             mana.rectTransform.offsetMax =
                 new Vector2(-12f, 0f);
 
+            Text turnResources =
+                MenuUiFactory.CreateText(
+                    "TurnResources",
+                    panel.transform,
+                    string.Empty,
+                    11,
+                    MainMenuTheme.Silver,
+                    TextAnchor.MiddleRight);
+
+            turnResources.rectTransform.anchorMin =
+                new Vector2(0.42f, 0.02f);
+
+            turnResources.rectTransform.anchorMax =
+                new Vector2(1f, 0.24f);
+
+            turnResources.rectTransform.offsetMin =
+                Vector2.zero;
+
+            turnResources.rectTransform.offsetMax =
+                new Vector2(-12f, 0f);
+
             return new PartyCard
             {
                 runtime = member,
@@ -693,6 +715,7 @@ namespace KeeperFirstCovenant.UI
                 name = name,
                 healthText = health,
                 manaText = mana,
+                turnResourceText = turnResources,
                 healthFill = hpFill,
                 manaFill = mpFill,
                 selectButton = selectButton,
@@ -821,6 +844,20 @@ namespace KeeperFirstCovenant.UI
                 combatActive &&
                 director.CurrentActor ==
                     runtime;
+
+            if (card.turnResourceText != null)
+            {
+                card.turnResourceText.text =
+                    combatActive
+                        ? $"AP {runtime.CurrentActionPoints}   " +
+                          $"{runtime.TotalMovementAvailable:0.0} м"
+                        : string.Empty;
+
+                card.turnResourceText.color =
+                    current
+                        ? MainMenuTheme.Warm
+                        : MainMenuTheme.Silver;
+            }
 
             bool selected =
                 !combatActive &&
