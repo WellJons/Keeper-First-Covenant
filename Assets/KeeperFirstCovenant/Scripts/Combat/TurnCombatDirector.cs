@@ -235,10 +235,10 @@ namespace KeeperFirstCovenant.Combat
             if (idCompare != 0)
                 return idCompare;
 
-            return a.combatant
-                .GetInstanceID()
-                .CompareTo(
-                    b.combatant.GetInstanceID());
+            return string.Compare(
+                a.combatant.name,
+                b.combatant.name,
+                StringComparison.Ordinal);
         }
 
         public void DebugRestartCombat()
