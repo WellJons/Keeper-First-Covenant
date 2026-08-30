@@ -4,6 +4,7 @@ using System.Linq;
 using KeeperFirstCovenant.Combat;
 using KeeperFirstCovenant.Core;
 using KeeperFirstCovenant.Player;
+using KeeperFirstCovenant.World;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem.UI;
@@ -22,6 +23,8 @@ namespace KeeperFirstCovenant.UI
             public Text manaText;
             public RectTransform healthFill;
             public RectTransform manaFill;
+            public Button selectButton;
+            public Image panel;
         }
 
         private sealed class ActionEntry
@@ -442,6 +445,48 @@ namespace KeeperFirstCovenant.UI
             KeeperUiSkin.DecorateSection(
                 panel);
 
+            Button selectButton =
+                panel.gameObject
+                    .AddComponent<Button>();
+
+            selectButton.targetGraphic = panel;
+
+            ColorBlock colors =
+                selectButton.colors;
+
+            colors.normalColor = Color.white;
+            colors.highlightedColor =
+                new Color(
+                    1.05f,
+                    1.05f,
+                    1.05f,
+                    1f);
+
+            colors.pressedColor =
+                new Color(
+                    0.86f,
+                    0.88f,
+                    0.92f,
+                    1f);
+
+            colors.selectedColor =
+                Color.white;
+
+            selectButton.colors = colors;
+
+            selectButton.onClick.AddListener(
+                () =>
+                {
+                    PartySelectionService selection =
+                        PartySelectionService.Instance;
+
+                    if (selection != null)
+                    {
+                        selection.Select(
+                            member);
+                    }
+                });
+
             LayoutElement element =
                 panel.gameObject
                     .AddComponent<
@@ -535,7 +580,9 @@ namespace KeeperFirstCovenant.UI
                 healthText = health,
                 manaText = mana,
                 healthFill = hpFill,
-                manaFill = mpFill
+                manaFill = mpFill,
+                selectButton = selectButton,
+                panel = panel
             };
         }
 
@@ -651,15 +698,59 @@ namespace KeeperFirstCovenant.UI
                     ? $"MP {runtime.CurrentMana}/{maxMana}"
                     : string.Empty;
 
-            bool current =
+            bool combatActive =
                 director != null &&
+                director.State ==
+                    CombatState.Active;
+
+            bool current =
+                combatActive &&
                 director.CurrentActor ==
-                runtime;
+                    runtime;
+
+            bool selected =
+                !combatActive &&
+                PartySelectionService.Instance !=
+                    null &&
+                PartySelectionService.Instance
+                    .SelectedMember ==
+                    runtime;
+
+            card.name.text =
+                selected
+                    ? "▶ " +
+                      runtime.Definition.displayName
+                    : runtime.Definition.displayName;
 
             card.name.color =
-                current
+                current || selected
                     ? MainMenuTheme.Warm
                     : MainMenuTheme.Text;
+
+            if (card.panel != null)
+            {
+                card.panel.color =
+                    selected
+                        ? new Color(
+                            MainMenuTheme.Panel.r +
+                                0.055f,
+                            MainMenuTheme.Panel.g +
+                                0.045f,
+                            MainMenuTheme.Panel.b +
+                                0.025f,
+                            0.92f)
+                        : new Color(
+                            MainMenuTheme.Panel.r,
+                            MainMenuTheme.Panel.g,
+                            MainMenuTheme.Panel.b,
+                            0.78f);
+            }
+
+            if (card.selectButton != null)
+            {
+                card.selectButton.interactable =
+                    runtime.IsAlive;
+            }
         }
 
         private void RefreshTurnHeader()
