@@ -26,6 +26,8 @@ namespace KeeperFirstCovenant.Combat
 
         private readonly List<CombatantRuntime> _registered = new List<CombatantRuntime>();
         private readonly List<InitiativeEntry> _turnOrder = new List<InitiativeEntry>();
+        private readonly HashSet<CombatantRuntime> _begunThisRound =
+            new HashSet<CombatantRuntime>();
 
         private int _turnIndex = -1;
 
@@ -115,6 +117,7 @@ namespace KeeperFirstCovenant.Combat
             State = CombatState.Active;
             Round = 1;
             _turnIndex = -1;
+            _begunThisRound.Clear();
             CombatStarted?.Invoke();
             RoundStarted?.Invoke(Round);
             AdvanceTurn();
@@ -266,6 +269,102 @@ namespace KeeperFirstCovenant.Combat
             BeginCombat(alive);
         }
 
+        public bool CanSwitchPartyTurn(
+            CombatantRuntime target)
+        {
+            if (State != CombatState.Active ||
+                CurrentActor == null ||
+                target == null ||
+                target == CurrentActor ||
+                !target.IsAlive)
+            {
+                return false;
+            }
+
+            bool currentParty =
+                CurrentActor.Faction ==
+                    CombatFaction.Player ||
+                CurrentActor.Faction ==
+                    CombatFaction.Ally;
+
+            bool targetParty =
+                target.Faction ==
+                    CombatFaction.Player ||
+                target.Faction ==
+                    CombatFaction.Ally;
+
+            if (!currentParty || !targetParty)
+                return false;
+
+            int targetIndex =
+                _turnOrder.FindIndex(
+                    entry =>
+                        entry.combatant == target);
+
+            if (targetIndex <= _turnIndex)
+                return false;
+
+            if (CurrentActor.Definition == null)
+                return false;
+
+            int expectedAp =
+                CurrentActor.Definition.actionPoints;
+
+            bool apUntouched =
+                CurrentActor.CurrentActionPoints >=
+                    expectedAp;
+
+            bool movementUntouched =
+                CurrentActor.TotalMovementAvailable +
+                    0.01f >=
+                CurrentActor.GetMovementCapacity();
+
+            return
+                apUntouched &&
+                movementUntouched;
+        }
+
+        public bool TrySwitchPartyTurn(
+            CombatantRuntime target)
+        {
+            if (!CanSwitchPartyTurn(target))
+                return false;
+
+            int targetIndex =
+                _turnOrder.FindIndex(
+                    entry =>
+                        entry.combatant == target);
+
+            InitiativeEntry currentEntry =
+                _turnOrder[_turnIndex];
+
+            InitiativeEntry targetEntry =
+                _turnOrder[targetIndex];
+
+            _turnOrder[_turnIndex] =
+                targetEntry;
+
+            _turnOrder[targetIndex] =
+                currentEntry;
+
+            CurrentActor = target;
+
+            if (!_begunThisRound.Contains(target))
+            {
+                target.BeginTurn();
+
+                if (!target.IsAlive)
+                    return false;
+
+                _begunThisRound.Add(target);
+            }
+
+            CurrentActorChanged?.Invoke(
+                CurrentActor);
+
+            return true;
+        }
+
         public void EndCurrentTurn()
         {
             if (State != CombatState.Active || CurrentActor == null)
@@ -295,6 +394,7 @@ namespace KeeperFirstCovenant.Combat
                 {
                     _turnIndex = 0;
                     Round++;
+                    _begunThisRound.Clear();
 
                     TickDownedCombatants();
 
@@ -309,12 +409,18 @@ namespace KeeperFirstCovenant.Combat
                     continue;
 
                 CurrentActor = candidate;
-                CurrentActor.BeginTurn();
 
-                // A damage-over-time status can kill an actor at turn start.
-                // In that case the death event already advanced the queue.
-                if (CurrentActor != candidate || !candidate.IsAlive)
-                    return;
+                if (!_begunThisRound.Contains(candidate))
+                {
+                    CurrentActor.BeginTurn();
+
+                    // A damage-over-time status can kill an actor at turn start.
+                    // In that case the death event already advanced the queue.
+                    if (CurrentActor != candidate || !candidate.IsAlive)
+                        return;
+
+                    _begunThisRound.Add(candidate);
+                }
 
                 CurrentActorChanged?.Invoke(CurrentActor);
                 return;
@@ -394,6 +500,7 @@ namespace KeeperFirstCovenant.Combat
             State = result;
             CurrentActor = null;
             _turnIndex = -1;
+            _begunThisRound.Clear();
             CombatEnded?.Invoke();
             CurrentActorChanged?.Invoke(null);
         }
