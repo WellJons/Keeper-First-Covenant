@@ -1,0 +1,36 @@
+{
+  "assets": [
+    {
+      "id": "edward_directions",
+      "targetPath": "Assets/KeeperFirstCovenant/Art/Runtime/Characters/Edward/Edward_Directions_5.png",
+      "chunkFolder": "Assets/KeeperFirstCovenant/ArtPacked/EdwardDirections",
+      "chunkPrefix": "Edward_Directions_5",
+      "chunkCount": 10,
+      "sha256": "f42e707120566babd793a3b3dadc1ef2cb56e99e68ab912a428a1c5de49c9a78"
+    },
+    {
+      "id": "eleanor_directions",
+      "targetPath": "Assets/KeeperFirstCovenant/Art/Runtime/Characters/Eleanor/Eleanor_Directions_5.png",
+      "chunkFolder": "Assets/KeeperFirstCovenant/ArtPacked/EleanorDirections",
+      "chunkPrefix": "Eleanor_Directions_5",
+      "chunkCount": 6,
+      "sha256": "58adc53cac5e8efb3c005ba0514fc87f66d196082477124071357ba91d8aa59f"
+    },
+    {
+      "id": "aelis_directions",
+      "targetPath": "Assets/KeeperFirstCovenant/Art/Runtime/Characters/Aelis/Aelis_Directions_5.png",
+      "chunkFolder": "Assets/KeeperFirstCovenant/ArtPacked/AelisDirections",
+      "chunkPrefix": "Aelis_Directions_5",
+      "chunkCount": 6,
+      "sha256": "67620c63f13ec1d893b10865d576c2c4458f8f0fab587121daf5d0375e1d61f0"
+    },
+    {
+      "id": "world_starter_atlas",
+      "targetPath": "Assets/KeeperFirstCovenant/Art/Runtime/World/World_StarterAtlas.png",
+      "chunkFolder": "Assets/KeeperFirstCovenant/ArtPacked/WorldStarterAtlas",
+      "chunkPrefix": "World_StarterAtlas",
+      "chunkCount": 6,
+      "sha256": "d1a5cf06f78406e601517ca7e4c08c0bc5c462e63b55904d0b499b3f08a26e24"
+    }
+  ]
+}
