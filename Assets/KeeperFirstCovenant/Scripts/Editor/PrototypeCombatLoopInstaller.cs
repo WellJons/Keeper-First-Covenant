@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using KeeperFirstCovenant.AI;
+using KeeperFirstCovenant.Characters;
 using KeeperFirstCovenant.Combat;
 using KeeperFirstCovenant.Developer;
 using KeeperFirstCovenant.Inventory;
