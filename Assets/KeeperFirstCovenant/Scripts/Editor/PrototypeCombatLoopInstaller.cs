@@ -367,7 +367,15 @@ namespace KeeperFirstCovenant.EditorTools
                 }
             }
 
-            PrototypeWorldMechanicsContent.Build();
+            GameObject devWorldMechanics =
+                GameObject.Find(
+                    "DEV_WorldMechanics");
+
+            if (devWorldMechanics != null)
+            {
+                Undo.DestroyObjectImmediate(
+                    devWorldMechanics);
+            }
 
             EditorSceneManager
                 .MarkSceneDirty(
