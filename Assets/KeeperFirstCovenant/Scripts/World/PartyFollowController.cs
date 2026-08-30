@@ -80,7 +80,11 @@ namespace KeeperFirstCovenant.World
                         x.Faction ==
                             CombatFaction.Ally)
                     .OrderBy(x =>
-                        x.GetInstanceID())
+                        x.Definition != null
+                            ? x.Definition.characterId
+                            : x.name)
+                    .ThenBy(x =>
+                        x.name)
                     .ToArray();
 
             for (int i = 0;
