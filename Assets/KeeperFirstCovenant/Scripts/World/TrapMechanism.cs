@@ -5,13 +5,29 @@ using UnityEngine;
 namespace KeeperFirstCovenant.World
 {
     [RequireComponent(typeof(Collider))]
-    public sealed class TrapMechanism : MonoBehaviour, IInteractable
+    public sealed class TrapMechanism :
+        MonoBehaviour,
+        IInteractable,
+        IPersistentWorldObject
     {
+        [System.Serializable]
+        private sealed class PersistentState
+        {
+            public bool revealed;
+            public bool spent;
+        }
+
+        [SerializeField]
+        private string persistenceId;
+
         [SerializeField]
         private bool revealed;
 
         [SerializeField, Min(1)]
         private int disarmDifficulty = 13;
+
+        [SerializeField, Min(0)]
+        private int toolBonus = 2;
 
         [SerializeField]
         private string requiredToolItemId =
@@ -48,10 +64,18 @@ namespace KeeperFirstCovenant.World
 
         private bool _spent;
 
+        public string PersistenceId =>
+            WorldPersistenceUtility.GetStableId(
+                this,
+                persistenceId);
+
+        public bool IsRevealed => revealed;
+        public bool IsSpent => _spent;
+
         public string InteractionPrompt =>
             revealed
-                ? "Disarm trap"
-                : "Unknown mechanism";
+                ? "Обезвредить ловушку"
+                : "Неизвестный механизм";
 
         private void Awake()
         {
@@ -72,6 +96,60 @@ namespace KeeperFirstCovenant.World
             return actor != null &&
                    revealed &&
                    !_spent;
+        }
+
+        public string GetInteractionHint(
+            GameObject actor)
+        {
+            if (_spent)
+                return "Ловушка обезврежена";
+
+            if (actor == null)
+                return string.Empty;
+
+            InventoryComponent inventory =
+                actor.GetComponentInParent<
+                    InventoryComponent>();
+
+            bool hasTool =
+                !toolRequired ||
+                (inventory != null &&
+                 inventory.ContainsItemId(
+                     requiredToolItemId));
+
+            if (!hasTool)
+                return "Нужен инструмент для обезвреживания";
+
+            CombatantRuntime combatant =
+                actor.GetComponentInParent<
+                    CombatantRuntime>();
+
+            int finesse =
+                combatant?.Definition != null
+                    ? combatant.Definition
+                        .GetAttribute(
+                            AbilityAttribute.Finesse)
+                    : 0;
+
+            int perception =
+                combatant?.Definition != null
+                    ? combatant.Definition
+                        .GetAttribute(
+                            AbilityAttribute.Perception)
+                    : 10;
+
+            SkillCheckResult result =
+                SkillCheckResolver.Resolve(
+                    finesse,
+                    disarmDifficulty,
+                    perception,
+                    toolRequired
+                        ? toolBonus
+                        : 0);
+
+            return
+                "ЛКМ — обезвредить   •   " +
+                $"Навык {result.Score}/{result.Difficulty}";
         }
 
         public void Interact(
@@ -105,25 +183,27 @@ namespace KeeperFirstCovenant.World
             int finesse =
                 combatant?.Definition != null
                     ? combatant.Definition
-                        .GetModifier(
+                        .GetAttribute(
                             AbilityAttribute.Finesse)
                     : 0;
 
             int perception =
                 combatant?.Definition != null
                     ? combatant.Definition
-                        .GetModifier(
+                        .GetAttribute(
                             AbilityAttribute.Perception)
-                    : 0;
+                    : 10;
 
-            int roll =
-                Random.Range(1, 21) +
-                finesse +
-                Mathf.Max(
-                    0,
-                    perception);
+            SkillCheckResult result =
+                SkillCheckResolver.Resolve(
+                    finesse,
+                    disarmDifficulty,
+                    perception,
+                    toolRequired
+                        ? toolBonus
+                        : 0);
 
-            if (roll >= disarmDifficulty)
+            if (result.Success)
             {
                 _spent = true;
                 return true;
@@ -201,6 +281,31 @@ namespace KeeperFirstCovenant.World
 
             if (triggerOnce)
                 _spent = true;
+        }
+
+        public string CapturePersistentState()
+        {
+            return JsonUtility.ToJson(
+                new PersistentState
+                {
+                    revealed = revealed,
+                    spent = _spent
+                });
+        }
+
+        public void RestorePersistentState(string json)
+        {
+            if (string.IsNullOrWhiteSpace(json))
+                return;
+
+            PersistentState state =
+                JsonUtility.FromJson<PersistentState>(json);
+
+            if (state == null)
+                return;
+
+            revealed = state.revealed;
+            _spent = state.spent;
         }
     }
 }

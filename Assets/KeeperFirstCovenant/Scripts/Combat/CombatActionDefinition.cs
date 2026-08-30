@@ -7,8 +7,20 @@ namespace KeeperFirstCovenant.Combat
     public struct StatusApplication
     {
         public StatusEffectDefinition effect;
-        [Range(0f, 1f)] public float chance;
-        [Min(0)] public int durationOverride;
+
+        [Tooltip("Legacy authoring value. Runtime status application is deterministic.")]
+        [Range(0f, 1f)]
+        public float chance;
+
+        public bool requiresResistanceCheck;
+
+        public AbilityAttribute resistanceAttribute;
+
+        [Min(0)]
+        public int statusPower;
+
+        [Min(0)]
+        public int durationOverride;
     }
 
     [CreateAssetMenu(
@@ -41,9 +53,26 @@ namespace KeeperFirstCovenant.Combat
         public bool ignoresCover;
         public bool usesHeightAdvantage = true;
 
+        [Tooltip("Direct attacks can gain deterministic impact from side/back positioning.")]
+        public bool usesFlanking;
+
+        [Range(0, 50)]
+        public int sideFlankImpactBonus = 10;
+
+        [Range(0, 75)]
+        public int backFlankImpactBonus = 25;
+
         [Header("Attack")]
+        [Tooltip("Legacy compatibility flag. Normal combat resolution is deterministic.")]
         public bool requiresAttackRoll = true;
-        [Range(0, 100)] public int baseHitChance = 75;
+
+        [Tooltip("Legacy compatibility value. No random hit roll is performed.")]
+        [Range(0, 100)]
+        public int baseHitChance = 75;
+
+        [Tooltip("Cover and elevation change impact strength instead of causing a random miss.")]
+        public bool usesTacticalImpactModifiers = true;
+
         public DiceFormula damage = new DiceFormula(1, 6);
         public DamageType damageType = DamageType.Physical;
         public AbilityAttribute scalingAttribute = AbilityAttribute.Strength;
@@ -61,6 +90,43 @@ namespace KeeperFirstCovenant.Combat
         public float freeMovementMetersGranted;
 
         public bool freeMovementSuppressesOpportunityAttacks;
+
+        [Header("Telegraphed charge")]
+        [Tooltip("If greater than zero, AI can spend a turn preparing this action before it resolves.")]
+        [Min(0)]
+        public int windUpTurns;
+
+        [Tooltip("Breaking the actor while this action is charging cancels it.")]
+        public bool interruptWindUpOnBreak = true;
+
+        [Tooltip("Optional extra radius for the telegraph. Zero uses the action area radius or a target-sized marker.")]
+        [Min(0f)]
+        public float telegraphRadiusOverride;
+
+        [Header("Combo chain")]
+        [Tooltip("If set, this action is empowered when the actor currently holds this combo tag.")]
+        public string comboRequiresTag;
+
+        [Tooltip("If true, the action cannot be used without the required combo tag.")]
+        public bool comboRequirementMandatory;
+
+        [Tooltip("Tag opened for a following action after this action resolves.")]
+        public string comboGrantsTag;
+
+        [Min(0)]
+        public int comboWindowTurns = 1;
+
+        [Range(1f, 3f)]
+        public float comboDamageMultiplier = 1.25f;
+
+        [Min(0)]
+        public int comboBreakBonus = 10;
+
+        public bool consumeComboTag = true;
+
+        [Header("Break / stagger")]
+        [Min(0)]
+        public int breakPower = 10;
 
         [Header("Forced movement")]
         [Min(0f)]

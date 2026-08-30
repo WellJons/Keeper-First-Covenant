@@ -222,7 +222,7 @@ namespace KeeperFirstCovenant.EditorTools
                 environment.transform);
 
             SearchableLoot searchable = hiddenCache.AddComponent<SearchableLoot>();
-            searchable.Configure(roadsideLoot, "Search cache", true);
+            searchable.Configure(roadsideLoot, "Обыскать тайник", true);
             EditorUtility.SetDirty(searchable);
             CreateLabel(hiddenCache.transform, "Perception can reveal hidden loot", new Vector3(0f, 1.1f, 0f));
 
@@ -246,6 +246,8 @@ namespace KeeperFirstCovenant.EditorTools
             EditorSceneManager.SaveScene(scene, ScenePath);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
+
+            ItemCatalogBuilder.Rebuild();
 
             Selection.activeGameObject = root;
             Debug.Log("Keeper: First Covenant prototype scene built at " + ScenePath);
@@ -460,7 +462,13 @@ namespace KeeperFirstCovenant.EditorTools
             GameObject logB = CreatePrimitive("LogB", PrimitiveType.Cylinder, position + Vector3.up * 0.20f, new Vector3(0.16f, 0.9f, 0.16f), bark, camp.transform);
             logB.transform.rotation = Quaternion.Euler(90f, 0f, 90f);
 
-            CreatePrimitive("Fire", PrimitiveType.Sphere, position + Vector3.up * 0.42f, new Vector3(0.38f, 0.55f, 0.38f), fire, camp.transform);
+            GameObject fireVisual = CreatePrimitive(
+                "Fire",
+                PrimitiveType.Sphere,
+                position + Vector3.up * 0.42f,
+                new Vector3(0.38f, 0.55f, 0.38f),
+                fire,
+                camp.transform);
 
             GameObject lightObject = new GameObject("Campfire Light");
             lightObject.transform.SetParent(camp.transform);
@@ -471,6 +479,23 @@ namespace KeeperFirstCovenant.EditorTools
             light.range = 8f;
             light.intensity = 3.2f;
             light.color = new Color(1f, 0.45f, 0.18f);
+
+            WorldLightSource lightSource =
+                camp.AddComponent<WorldLightSource>();
+
+            lightSource.Configure(
+                true,
+                true,
+                new[] { fireVisual });
+
+            WorldInspectable inspectable =
+                camp.AddComponent<WorldInspectable>();
+
+            inspectable.Configure(
+                "Дорожный костёр",
+                InspectionCategory.Object,
+                "Огонь освещает дорогу далеко вокруг. " +
+                "Погасив его, можно сделать этот участок заметно темнее.");
         }
 
         private static void CreateAncientShrine(

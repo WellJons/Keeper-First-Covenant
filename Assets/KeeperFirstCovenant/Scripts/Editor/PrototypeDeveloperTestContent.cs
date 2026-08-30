@@ -90,11 +90,132 @@ namespace KeeperFirstCovenant.EditorTools
             CombatActionDefinition shockNeedle =
                 GetAction(
                     "ShockNeedle",
-                    "Shock Needle",
+                    "Искровая игла",
                     DamageType.Lightning,
                     new DiceFormula(1, 8),
                     10f,
                     AbilityAttribute.Intellect);
+
+            shockNeedle.breakPower = 12;
+            shockNeedle.cooldownTurns = 0;
+            EditorUtility.SetDirty(
+                shockNeedle);
+
+            CombatActionDefinition stormRupture =
+                GetOrCreate<
+                    CombatActionDefinition>(
+                    DataRoot +
+                    "/Action_DevStormRupture.asset");
+
+            stormRupture.actionId =
+                "dev_storm_rupture";
+
+            stormRupture.displayName =
+                "Грозовой разлом";
+
+            stormRupture.category =
+                CombatActionCategory.Spell;
+
+            stormRupture.targetKind =
+                TargetKind.Ground;
+
+            stormRupture.actionPointCost = 2;
+            stormRupture.manaCost = 7;
+            stormRupture.strainCost = 0;
+            stormRupture.rangeMeters = 11f;
+            stormRupture.areaRadius = 3.4f;
+
+            stormRupture.areaTargetRule =
+                AreaTargetRule.EnemiesOnly;
+
+            stormRupture.requiresLineOfSight = true;
+            stormRupture.ignoresCover = true;
+            stormRupture.usesHeightAdvantage = false;
+            stormRupture.requiresAttackRoll = false;
+
+            stormRupture.damage =
+                new DiceFormula(3, 6, 3);
+
+            stormRupture.damageType =
+                DamageType.Lightning;
+
+            stormRupture.scalingAttribute =
+                AbilityAttribute.Intellect;
+
+            stormRupture.scalingMultiplier = 0.8f;
+            stormRupture.breakPower = 24;
+
+            stormRupture.createsSurface =
+                SurfaceType.Electrified;
+
+            stormRupture.surfaceRadius = 3.4f;
+            stormRupture.surfaceDurationTurns = 2;
+
+            stormRupture.windUpTurns = 1;
+            stormRupture.interruptWindUpOnBreak = true;
+            stormRupture.telegraphRadiusOverride = 3.4f;
+            stormRupture.cooldownTurns = 2;
+
+            EditorUtility.SetDirty(
+                stormRupture);
+
+            CombatActionDefinition stormExecution =
+                GetOrCreate<
+                    CombatActionDefinition>(
+                    DataRoot +
+                    "/Action_DevStormExecution.asset");
+
+            stormExecution.actionId =
+                "dev_storm_execution";
+
+            stormExecution.displayName =
+                "Удар сердца бури";
+
+            stormExecution.category =
+                CombatActionCategory.Unique;
+
+            stormExecution.targetKind =
+                TargetKind.Enemy;
+
+            stormExecution.actionPointCost = 2;
+            stormExecution.manaCost = 5;
+            stormExecution.strainCost = 0;
+            stormExecution.rangeMeters = 7.5f;
+            stormExecution.areaRadius = 0f;
+
+            stormExecution.areaTargetRule =
+                AreaTargetRule.PrimaryOnly;
+
+            stormExecution.requiresLineOfSight = true;
+            stormExecution.ignoresCover = false;
+            stormExecution.usesHeightAdvantage = true;
+            stormExecution.requiresAttackRoll = false;
+
+            stormExecution.damage =
+                new DiceFormula(4, 6, 4);
+
+            stormExecution.damageType =
+                DamageType.Lightning;
+
+            stormExecution.scalingAttribute =
+                AbilityAttribute.Intellect;
+
+            stormExecution.scalingMultiplier = 0.9f;
+            stormExecution.breakPower = 32;
+            stormExecution.pushDistanceMeters = 1.5f;
+            stormExecution.pushAwayFromActor = true;
+
+            stormExecution.createsSurface =
+                SurfaceType.Electrified;
+
+            stormExecution.surfaceRadius = 1.6f;
+            stormExecution.surfaceDurationTurns = 1;
+
+            stormExecution.windUpTurns = 0;
+            stormExecution.cooldownTurns = 2;
+
+            EditorUtility.SetDirty(
+                stormExecution);
 
             CreateEnemy(
                 "dev_bandit_skirmisher",
@@ -162,7 +283,10 @@ namespace KeeperFirstCovenant.EditorTools
                         swordSlash,
                         shockNeedle
                     }
-                    : new[] { shockNeedle },
+                    : new[]
+                    {
+                        shockNeedle
+                    },
                 new[]
                 {
                     new DamageAffinity

@@ -11,12 +11,26 @@ namespace KeeperFirstCovenant.Inventory
         [Min(1)] public int amount = 1;
     }
 
+    [Serializable]
+    public sealed class InventoryItemSnapshot
+    {
+        public string itemId;
+        public int amount;
+    }
+
+    [Serializable]
+    public sealed class InventorySnapshot
+    {
+        public List<InventoryItemSnapshot> items = new List<InventoryItemSnapshot>();
+    }
+
     public sealed class InventoryComponent : MonoBehaviour
     {
         [SerializeField] private List<InventoryStack> items = new List<InventoryStack>();
         [SerializeField] private float maxCarryWeight = 60f;
 
         public IReadOnlyList<InventoryStack> Items => items;
+        public float MaxCarryWeight => maxCarryWeight;
 
         public float CurrentWeight
         {
@@ -41,6 +55,28 @@ namespace KeeperFirstCovenant.Inventory
                 return false;
 
             return CurrentWeight + item.weight * amount <= maxCarryWeight + 0.001f;
+        }
+
+        public int GetMaxCarryableAmount(
+            ItemDefinition item)
+        {
+            if (item == null)
+                return 0;
+
+            if (item.weight <= 0.0001f)
+                return int.MaxValue;
+
+            float available =
+                Mathf.Max(
+                    0f,
+                    maxCarryWeight -
+                    CurrentWeight);
+
+            return Mathf.Max(
+                0,
+                Mathf.FloorToInt(
+                    (available + 0.001f) /
+                    item.weight));
         }
 
         public bool Add(ItemDefinition item, int amount = 1)
@@ -188,6 +224,76 @@ namespace KeeperFirstCovenant.Inventory
                 if (stack != null && stack.item == item)
                     count += Mathf.Max(0, stack.amount);
             return count;
+        }
+
+        public InventorySnapshot CaptureSnapshot()
+        {
+            var snapshot = new InventorySnapshot();
+
+            foreach (InventoryStack stack in items)
+            {
+                if (stack?.item == null ||
+                    string.IsNullOrWhiteSpace(stack.item.itemId) ||
+                    stack.amount <= 0)
+                {
+                    continue;
+                }
+
+                snapshot.items.Add(new InventoryItemSnapshot
+                {
+                    itemId = stack.item.itemId,
+                    amount = stack.amount
+                });
+            }
+
+            return snapshot;
+        }
+
+        public void RestoreSnapshot(
+            InventorySnapshot snapshot,
+            Func<string, ItemDefinition> resolver)
+        {
+            items.Clear();
+
+            if (snapshot?.items != null && resolver != null)
+            {
+                foreach (InventoryItemSnapshot saved in snapshot.items)
+                {
+                    if (saved == null ||
+                        string.IsNullOrWhiteSpace(saved.itemId) ||
+                        saved.amount <= 0)
+                    {
+                        continue;
+                    }
+
+                    ItemDefinition item = resolver(saved.itemId);
+                    if (item == null)
+                    {
+                        Debug.LogWarning(
+                            $"Inventory item '{saved.itemId}' could not be restored on {name}.");
+                        continue;
+                    }
+
+                    int remaining = saved.amount;
+
+                    while (remaining > 0)
+                    {
+                        int stackAmount = item.stackable
+                            ? Mathf.Min(Mathf.Max(1, item.maxStack), remaining)
+                            : 1;
+
+                        items.Add(new InventoryStack
+                        {
+                            item = item,
+                            amount = stackAmount
+                        });
+
+                        remaining -= stackAmount;
+                    }
+                }
+            }
+
+            Changed?.Invoke();
         }
     }
 }

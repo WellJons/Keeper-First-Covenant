@@ -4,6 +4,7 @@ using UnityEngine;
 namespace KeeperFirstCovenant.World
 {
     [RequireComponent(typeof(CombatantRuntime))]
+    [RequireComponent(typeof(StealthLightProbe))]
     public sealed class StealthSignature : MonoBehaviour
     {
         [SerializeField, Min(0f)]
@@ -18,22 +19,50 @@ namespace KeeperFirstCovenant.World
         [SerializeField, Min(0f)]
         private float crouchedMoveNoiseRadius = 1.4f;
 
+        [SerializeField, Range(0.2f, 1f)]
+        private float crouchedMoveSpeedMultiplier = 0.68f;
+
         [SerializeField]
         private bool crouched;
 
         private TacticalUnitMover _mover;
+        private StealthLightProbe _lightProbe;
 
         public bool IsCrouched => crouched;
 
-        public float VisibilityMultiplier =>
-            crouched
-                ? crouchedVisibility
-                : standingVisibility;
+        public StealthLightProbe LightProbe =>
+            _lightProbe;
+
+        public float VisibilityMultiplier
+        {
+            get
+            {
+                float posture =
+                    crouched
+                        ? crouchedVisibility
+                        : standingVisibility;
+
+                float light =
+                    _lightProbe != null
+                        ? _lightProbe.VisibilityMultiplier
+                        : 1f;
+
+                return
+                    Mathf.Max(
+                        0.05f,
+                        posture * light);
+            }
+        }
 
         public float CurrentMovementNoiseRadius =>
             crouched
                 ? crouchedMoveNoiseRadius
                 : standingMoveNoiseRadius;
+
+        public float MovementSpeedMultiplier =>
+            crouched
+                ? crouchedMoveSpeedMultiplier
+                : 1f;
 
         public bool IsMoving =>
             _mover != null &&
@@ -43,6 +72,9 @@ namespace KeeperFirstCovenant.World
         {
             _mover =
                 GetComponent<TacticalUnitMover>();
+
+            _lightProbe =
+                GetComponent<StealthLightProbe>();
         }
 
         private void Start()
@@ -51,6 +83,12 @@ namespace KeeperFirstCovenant.World
             {
                 _mover =
                     GetComponent<TacticalUnitMover>();
+            }
+
+            if (_lightProbe == null)
+            {
+                _lightProbe =
+                    GetComponent<StealthLightProbe>();
             }
         }
 

@@ -7,6 +7,18 @@ using UnityEngine;
 
 namespace KeeperFirstCovenant.Combat
 {
+    [Serializable]
+    public sealed class CombatantRuntimeSnapshot
+    {
+        public string characterId;
+        public int currentHealth;
+        public int currentMana;
+        public int barrier;
+        public int downedRoundsRemaining;
+        public bool isDowned;
+        public bool isDead;
+    }
+
     public sealed class CombatantRuntime : MonoBehaviour
     {
         [Serializable]
@@ -148,6 +160,13 @@ namespace KeeperFirstCovenant.Combat
 
             developerActions?.Collect(actions);
 
+            BossPhaseController bossPhases =
+                GetComponent<
+                    BossPhaseController>();
+
+            bossPhases?.CollectActions(
+                actions);
+
             return actions.ToArray();
         }
 
@@ -185,25 +204,49 @@ namespace KeeperFirstCovenant.Combat
             if (!IsAlive)
                 return;
 
+            CombatActionStateComponent
+                .Ensure(this)
+                ?.ResetState();
+
+            BreakGaugeComponent breakGauge =
+                GetComponent<
+                    BreakGaugeComponent>();
+
+            breakGauge?.ResetGauge();
+
+            ChargedActionComponent chargedAction =
+                GetComponent<
+                    ChargedActionComponent>();
+
+            chargedAction?.ResetCharge();
+
             _reactionsRemaining = 1;
             Changed?.Invoke(this);
         }
 
+        public int GetInitiativeScore()
+        {
+            if (definition == null)
+                return GetStatusInitiativeModifier();
+
+            int perception =
+                definition.GetAttribute(
+                    AbilityAttribute.Perception);
+
+            int finesse =
+                definition.GetAttribute(
+                    AbilityAttribute.Finesse);
+
+            return
+                perception * 2 +
+                finesse +
+                definition.initiativeBonus +
+                GetStatusInitiativeModifier();
+        }
+
         public int RollInitiative()
         {
-            int perception = definition != null
-                ? definition.GetModifier(AbilityAttribute.Perception)
-                : 0;
-
-            int bonus =
-                definition != null
-                    ? definition.initiativeBonus
-                    : 0;
-
-            return UnityEngine.Random.Range(1, 21) +
-                   perception +
-                   bonus +
-                   GetStatusInitiativeModifier();
+            return GetInitiativeScore();
         }
 
         public void BeginTurn()
@@ -370,6 +413,69 @@ namespace KeeperFirstCovenant.Combat
             return true;
         }
 
+        public CombatantRuntimeSnapshot CaptureRuntimeSnapshot()
+        {
+            return new CombatantRuntimeSnapshot
+            {
+                characterId = definition != null
+                    ? definition.characterId
+                    : string.Empty,
+                currentHealth = _currentHealth,
+                currentMana = _currentMana,
+                barrier = _barrier,
+                downedRoundsRemaining = _downedRoundsRemaining,
+                isDowned = _isDowned,
+                isDead = _isDead
+            };
+        }
+
+        public void RestoreRuntimeSnapshot(
+            CombatantRuntimeSnapshot snapshot)
+        {
+            if (snapshot == null)
+                return;
+
+            _statuses.Clear();
+            _freeMovementRemaining = 0f;
+            _freeMovementSuppressesReactions = false;
+            _currentActionPoints = 0;
+            _remainingMovement = 0f;
+            _reactionsRemaining = 0;
+
+            int maxHealth = definition != null
+                ? Mathf.Max(1, definition.maxHealth)
+                : 1;
+
+            int maxMana = definition != null
+                ? Mathf.Max(0, definition.maxMana)
+                : 0;
+
+            _currentHealth = Mathf.Clamp(
+                snapshot.currentHealth,
+                0,
+                maxHealth);
+
+            _currentMana = Mathf.Clamp(
+                snapshot.currentMana,
+                0,
+                maxMana);
+
+            _barrier = Mathf.Max(0, snapshot.barrier);
+            _isDead = snapshot.isDead;
+            _isDowned = !_isDead && snapshot.isDowned;
+            _downedRoundsRemaining = _isDowned
+                ? Mathf.Max(1, snapshot.downedRoundsRemaining)
+                : 0;
+
+            if (_isDead || _isDowned)
+                _currentHealth = 0;
+            else if (_currentHealth <= 0)
+                _currentHealth = 1;
+
+            _deathRaised = _isDead;
+            Changed?.Invoke(this);
+        }
+
         public void DebugRestoreFull()
         {
             if (definition == null)
@@ -462,12 +568,23 @@ namespace KeeperFirstCovenant.Combat
             float multiplier =
                 GetDamageMultiplier(packet.Type);
 
+            BreakGaugeComponent breakGauge =
+                GetComponent<
+                    BreakGaugeComponent>();
+
+            float breakMultiplier =
+                breakGauge != null
+                    ? breakGauge
+                        .IncomingDamageMultiplier
+                    : 1f;
+
             int remaining =
                 Mathf.Max(
                     0,
                     Mathf.RoundToInt(
                         packet.Amount *
-                        multiplier));
+                        multiplier *
+                        breakMultiplier));
 
             if (remaining <= 0)
             {
@@ -681,7 +798,8 @@ namespace KeeperFirstCovenant.Combat
                     active.definition.dealsDamageEachTurn)
                 {
                     int amount =
-                        active.definition.turnDamage.Roll() *
+                        active.definition.turnDamage
+                            .DeterministicValue *
                         Mathf.Max(1, active.intensity);
 
                     ApplyDamage(new DamagePacket(

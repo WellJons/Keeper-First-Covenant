@@ -4,8 +4,20 @@ using UnityEngine.Events;
 
 namespace KeeperFirstCovenant.World
 {
-    public sealed class EnvironmentalDestructible : MonoBehaviour
+    public sealed class EnvironmentalDestructible :
+        MonoBehaviour,
+        IPersistentWorldObject
     {
+        [System.Serializable]
+        private sealed class PersistentState
+        {
+            public float integrity;
+            public bool destroyed;
+        }
+
+        [SerializeField]
+        private string persistenceId;
+
         [SerializeField, Min(1f)]
         private float maxIntegrity = 30f;
 
@@ -15,6 +27,13 @@ namespace KeeperFirstCovenant.World
 
         [SerializeField, Min(0f)]
         private float impactDamageMultiplier = 5f;
+
+        [Header("Noise")]
+        [SerializeField, Min(0f)]
+        private float impactNoiseRadius = 5f;
+
+        [SerializeField, Min(0f)]
+        private float destroyedNoiseRadius = 11f;
 
         [SerializeField]
         private bool disableCollidersWhenDestroyed = true;
@@ -30,6 +49,11 @@ namespace KeeperFirstCovenant.World
 
         public float Integrity => _integrity;
         public bool IsDestroyed => _destroyed;
+
+        public string PersistenceId =>
+            WorldPersistenceUtility.GetStableId(
+                this,
+                persistenceId);
 
         private void Awake()
         {
@@ -82,6 +106,13 @@ namespace KeeperFirstCovenant.World
 
             _integrity -= damage;
 
+            WorldNoiseSystem.Emit(
+                impactPoint,
+                impactNoiseRadius,
+                gameObject,
+                0.55f +
+                (int)tier * 0.18f);
+
             if (_integrity > 0f)
                 return;
 
@@ -99,6 +130,12 @@ namespace KeeperFirstCovenant.World
 
             _destroyed = true;
             _integrity = 0f;
+
+            WorldNoiseSystem.Emit(
+                transform.position,
+                destroyedNoiseRadius,
+                gameObject,
+                1.35f);
 
             if (disableCollidersWhenDestroyed)
             {
@@ -148,8 +185,48 @@ namespace KeeperFirstCovenant.World
 
         public void DebugRestore()
         {
-            _destroyed = false;
-            _integrity = maxIntegrity;
+            ApplyRestoredState(
+                maxIntegrity,
+                false);
+        }
+
+        public string CapturePersistentState()
+        {
+            return JsonUtility.ToJson(
+                new PersistentState
+                {
+                    integrity = _integrity,
+                    destroyed = _destroyed
+                });
+        }
+
+        public void RestorePersistentState(string json)
+        {
+            if (string.IsNullOrWhiteSpace(json))
+                return;
+
+            PersistentState state =
+                JsonUtility.FromJson<PersistentState>(json);
+
+            if (state == null)
+                return;
+
+            ApplyRestoredState(
+                state.integrity,
+                state.destroyed);
+        }
+
+        private void ApplyRestoredState(
+            float integrity,
+            bool destroyed)
+        {
+            _destroyed = destroyed;
+            _integrity = destroyed
+                ? 0f
+                : Mathf.Clamp(
+                    integrity,
+                    0.01f,
+                    maxIntegrity);
 
             if (disableCollidersWhenDestroyed)
             {
@@ -157,9 +234,23 @@ namespace KeeperFirstCovenant.World
                          GetComponentsInChildren<
                              Collider>(true))
                 {
-                    collider.enabled = true;
+                    collider.enabled = !destroyed;
                 }
             }
+
+            if (releaseRigidbodyWhenDestroyed)
+            {
+                Rigidbody body =
+                    GetComponent<Rigidbody>();
+
+                if (body != null)
+                    body.isKinematic = !destroyed;
+            }
+
+            TacticalGrid3D navigation =
+                FindFirstObjectByType<TacticalGrid3D>();
+
+            navigation?.RebuildForDynamicWorld();
         }
     }
 }

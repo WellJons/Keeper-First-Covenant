@@ -103,20 +103,11 @@ namespace KeeperFirstCovenant.Combat
                 _turnOrder.Add(new InitiativeEntry
                 {
                     combatant = combatant,
-                    initiative = combatant.RollInitiative()
+                    initiative = combatant.GetInitiativeScore()
                 });
             }
 
-            _turnOrder.Sort((a, b) =>
-            {
-                int initiativeCompare = b.initiative.CompareTo(a.initiative);
-                if (initiativeCompare != 0)
-                    return initiativeCompare;
-
-                int aPerception = a.combatant.Definition != null ? a.combatant.Definition.perception : 0;
-                int bPerception = b.combatant.Definition != null ? b.combatant.Definition.perception : 0;
-                return bPerception.CompareTo(aPerception);
-            });
+            _turnOrder.Sort(CompareInitiative);
 
             if (_turnOrder.Count == 0)
                 return;
@@ -168,37 +159,86 @@ namespace KeeperFirstCovenant.Combat
                 new InitiativeEntry
                 {
                     combatant = combatant,
-                    initiative = combatant.RollInitiative()
+                    initiative = combatant.GetInitiativeScore()
                 });
 
-            _turnOrder.Sort((a, b) =>
-            {
-                int compare =
-                    b.initiative.CompareTo(
-                        a.initiative);
-
-                if (compare != 0)
-                    return compare;
-
-                int aPerception =
-                    a.combatant.Definition != null
-                        ? a.combatant.Definition.perception
-                        : 0;
-
-                int bPerception =
-                    b.combatant.Definition != null
-                        ? b.combatant.Definition.perception
-                        : 0;
-
-                return bPerception.CompareTo(
-                    aPerception);
-            });
+            _turnOrder.Sort(CompareInitiative);
 
             _turnIndex =
                 current != null
                     ? _turnOrder.FindIndex(
                         x => x.combatant == current)
                     : -1;
+        }
+
+        private static int CompareInitiative(
+            InitiativeEntry a,
+            InitiativeEntry b)
+        {
+            int score =
+                b.initiative.CompareTo(
+                    a.initiative);
+
+            if (score != 0)
+                return score;
+
+            int aPerception =
+                a.combatant.Definition != null
+                    ? a.combatant.Definition.perception
+                    : 0;
+
+            int bPerception =
+                b.combatant.Definition != null
+                    ? b.combatant.Definition.perception
+                    : 0;
+
+            int perception =
+                bPerception.CompareTo(
+                    aPerception);
+
+            if (perception != 0)
+                return perception;
+
+            int aFinesse =
+                a.combatant.Definition != null
+                    ? a.combatant.Definition.finesse
+                    : 0;
+
+            int bFinesse =
+                b.combatant.Definition != null
+                    ? b.combatant.Definition.finesse
+                    : 0;
+
+            int finesse =
+                bFinesse.CompareTo(
+                    aFinesse);
+
+            if (finesse != 0)
+                return finesse;
+
+            string aId =
+                a.combatant.Definition != null
+                    ? a.combatant.Definition.characterId
+                    : string.Empty;
+
+            string bId =
+                b.combatant.Definition != null
+                    ? b.combatant.Definition.characterId
+                    : string.Empty;
+
+            int idCompare =
+                string.Compare(
+                    aId,
+                    bId,
+                    StringComparison.Ordinal);
+
+            if (idCompare != 0)
+                return idCompare;
+
+            return a.combatant
+                .GetInstanceID()
+                .CompareTo(
+                    b.combatant.GetInstanceID());
         }
 
         public void DebugRestartCombat()

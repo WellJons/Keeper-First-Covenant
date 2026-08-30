@@ -1,6 +1,8 @@
 using System.Linq;
 using KeeperFirstCovenant.Combat;
 using KeeperFirstCovenant.Developer;
+using KeeperFirstCovenant.Dialogue;
+using KeeperFirstCovenant.UI;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -42,8 +44,12 @@ namespace KeeperFirstCovenant.World
 
         private void Update()
         {
-            if (DeveloperMenu.IsOpen)
+            if (DeveloperMenu.IsOpen ||
+                DialogueRunner.IsDialogueActive ||
+                InspectionPanelController.IsOpen)
+            {
                 return;
+            }
 
             TurnCombatDirector director =
                 TurnCombatDirector.Instance;

@@ -170,6 +170,30 @@ namespace KeeperFirstCovenant.EditorTools
                         LootTableDefinition>(
                         LootPath);
 
+            CharacterDefinition stormGuard =
+                AssetDatabase
+                    .LoadAssetAtPath<
+                        CharacterDefinition>(
+                        "Assets/KeeperFirstCovenant/" +
+                        "Generated/Data/" +
+                        "Character_dev_storm_guard.asset");
+
+            CombatActionDefinition stormRupture =
+                AssetDatabase
+                    .LoadAssetAtPath<
+                        CombatActionDefinition>(
+                        "Assets/KeeperFirstCovenant/" +
+                        "Generated/Data/" +
+                        "Action_DevStormRupture.asset");
+
+            CombatActionDefinition stormExecution =
+                AssetDatabase
+                    .LoadAssetAtPath<
+                        CombatActionDefinition>(
+                        "Assets/KeeperFirstCovenant/" +
+                        "Generated/Data/" +
+                        "Action_DevStormExecution.asset");
+
             CombatantRuntime[] combatants =
                 Object.FindObjectsByType<
                     CombatantRuntime>(
@@ -178,6 +202,88 @@ namespace KeeperFirstCovenant.EditorTools
             foreach (CombatantRuntime combatant
                      in combatants)
             {
+                if (stormGuard != null &&
+                    combatant.Definition != null &&
+                    combatant.Definition.characterId ==
+                        "road_bandit")
+                {
+                    combatant.SetDefinition(
+                        stormGuard);
+
+                    combatant.gameObject.name =
+                        "DEV Storm Guard";
+
+                    BossPhaseController bossPhases =
+                        AddIfMissing<
+                            BossPhaseController>(
+                                combatant.gameObject);
+
+                    bossPhases.Configure(
+                        new[]
+                        {
+                            new BossPhaseStep
+                            {
+                                healthThreshold = 0.68f,
+                                phaseName =
+                                    "Грозовой контур",
+                                phaseColor =
+                                    new Color(
+                                        0.24f,
+                                        0.68f,
+                                        1f,
+                                        1f),
+                                unlockActions =
+                                    stormRupture != null
+                                        ? new[]
+                                        {
+                                            stormRupture
+                                        }
+                                        : System.Array.Empty<
+                                            CombatActionDefinition>(),
+                                barrierGain = 8,
+                                resetBreakGauge = true,
+                                resetActionCooldowns = false,
+                                pulseSurface =
+                                    SurfaceType.Electrified,
+                                pulseRadius = 2.4f,
+                                pulseDurationTurns = 1
+                            },
+                            new BossPhaseStep
+                            {
+                                healthThreshold = 0.32f,
+                                phaseName =
+                                    "Сердце бури",
+                                phaseColor =
+                                    new Color(
+                                        0.62f,
+                                        0.84f,
+                                        1f,
+                                        1f),
+                                unlockActions =
+                                    stormExecution != null
+                                        ? new[]
+                                        {
+                                            stormExecution
+                                        }
+                                        : System.Array.Empty<
+                                            CombatActionDefinition>(),
+                                barrierGain = 12,
+                                resetBreakGauge = true,
+                                resetActionCooldowns = true,
+                                pulseSurface =
+                                    SurfaceType.Electrified,
+                                pulseRadius = 3.0f,
+                                pulseDurationTurns = 2
+                            }
+                        });
+
+                    EditorUtility.SetDirty(
+                        bossPhases);
+
+                    EditorUtility.SetDirty(
+                        combatant);
+                }
+
                 AddIfMissing<
                     CombatAutoRegister>(
                         combatant.gameObject);
@@ -199,6 +305,10 @@ namespace KeeperFirstCovenant.EditorTools
                     combatant.Faction ==
                         CombatFaction.Ally)
                 {
+                    AddIfMissing<
+                        StealthLightProbe>(
+                            combatant.gameObject);
+
                     AddIfMissing<
                         StealthSignature>(
                             combatant.gameObject);
@@ -238,7 +348,7 @@ namespace KeeperFirstCovenant.EditorTools
                     {
                         corpse.Configure(
                             loot,
-                            "Search body");
+                            "Обыскать тело");
                     }
                 }
             }

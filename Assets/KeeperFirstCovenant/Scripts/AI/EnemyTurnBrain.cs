@@ -76,6 +76,76 @@ namespace KeeperFirstCovenant.AI
                         thinkDelay);
             }
 
+            ChargedActionComponent charge =
+                actor.GetComponent<
+                    ChargedActionComponent>();
+
+            if (charge != null &&
+                charge.HasCharge)
+            {
+                if (!charge.TryTakeReadyAction(
+                        out CombatActionDefinition
+                            readyAction,
+                        out CombatantRuntime
+                            readyTarget,
+                        out Vector3 readyPoint))
+                {
+                    EndTurn();
+                    yield break;
+                }
+
+                bool validCharge =
+                    readyAction != null &&
+                    (readyAction.targetKind ==
+                         TargetKind.Ground
+                        ? CombatTargetingService
+                            .Analyze(
+                                actor,
+                                readyAction,
+                                null,
+                                readyPoint)
+                            .Valid
+                        : readyTarget != null &&
+                          readyTarget.IsAlive &&
+                          CombatTargetingService
+                            .Analyze(
+                                actor,
+                                readyAction,
+                                readyTarget)
+                            .Valid);
+
+                if (validCharge)
+                {
+                    if (readyAction.targetKind ==
+                        TargetKind.Ground)
+                    {
+                        CombatActionExecutor.Execute(
+                            actor,
+                            readyAction,
+                            null,
+                            readyPoint);
+                    }
+                    else
+                    {
+                        yield return
+                            ExecuteActionWithDefense(
+                                actor,
+                                readyTarget,
+                                readyAction);
+                    }
+
+                    if (finishDelay > 0f)
+                    {
+                        yield return
+                            new WaitForSeconds(
+                                finishDelay);
+                    }
+
+                    EndTurn();
+                    yield break;
+                }
+            }
+
             CombatantRuntime target =
                 FindBestTarget(actor);
 
@@ -94,10 +164,20 @@ namespace KeeperFirstCovenant.AI
                     target,
                     action))
             {
-                CombatActionExecutor.Execute(
-                    actor,
-                    action,
-                    target);
+                if (TryBeginChargedAction(
+                        actor,
+                        target,
+                        action))
+                {
+                    EndTurn();
+                    yield break;
+                }
+
+                yield return
+                    ExecuteActionWithDefense(
+                        actor,
+                        target,
+                        action);
             }
             else if (grid != null &&
                      actor.RemainingMovement >
@@ -155,11 +235,20 @@ namespace KeeperFirstCovenant.AI
                                 target,
                                 action))
                         {
-                            CombatActionExecutor
-                                .Execute(
+                            if (TryBeginChargedAction(
                                     actor,
-                                    action,
-                                    target);
+                                    target,
+                                    action))
+                            {
+                                EndTurn();
+                                yield break;
+                            }
+
+                            yield return
+                                ExecuteActionWithDefense(
+                                    actor,
+                                    target,
+                                    action);
                         }
                     }
                 }
@@ -196,10 +285,17 @@ namespace KeeperFirstCovenant.AI
             }
 
             TacticalTargetPreview preview =
-                CombatTargetingService.Analyze(
-                    actor,
-                    action,
-                    target);
+                action.targetKind ==
+                    TargetKind.Ground
+                    ? CombatTargetingService.Analyze(
+                        actor,
+                        action,
+                        null,
+                        target.transform.position)
+                    : CombatTargetingService.Analyze(
+                        actor,
+                        action,
+                        target);
 
             return preview.Valid;
         }
@@ -221,11 +317,60 @@ namespace KeeperFirstCovenant.AI
                          CombatFaction.Player ||
                      x.Faction ==
                          CombatFaction.Ally))
-                .OrderBy(x =>
-                    Vector3.SqrMagnitude(
-                        x.transform.position -
-                        actor.transform.position))
+                .OrderByDescending(x =>
+                    ScoreTarget(
+                        actor,
+                        x))
                 .FirstOrDefault();
+        }
+
+        private static float ScoreTarget(
+            CombatantRuntime actor,
+            CombatantRuntime target)
+        {
+            if (actor == null ||
+                target == null ||
+                target.Definition == null)
+            {
+                return float.MinValue;
+            }
+
+            float distance =
+                Vector3.Distance(
+                    actor.transform.position,
+                    target.transform.position);
+
+            float maxHealth =
+                Mathf.Max(
+                    1f,
+                    target.Definition.maxHealth);
+
+            float healthRatio =
+                Mathf.Clamp01(
+                    target.CurrentHealth /
+                    maxHealth);
+
+            float score =
+                -distance * 2.2f +
+                (1f - healthRatio) * 38f;
+
+            score -=
+                target.Barrier * 0.18f;
+
+            BreakGaugeComponent breakGauge =
+                target.GetComponent<
+                    BreakGaugeComponent>();
+
+            if (breakGauge != null)
+            {
+                score +=
+                    breakGauge.Normalized * 18f;
+
+                if (breakGauge.IsBroken)
+                    score += 26f;
+            }
+
+            return score;
         }
 
         private static CombatActionDefinition
@@ -249,8 +394,10 @@ namespace KeeperFirstCovenant.AI
                      in actions)
             {
                 if (action == null ||
-                    action.targetKind !=
-                        TargetKind.Enemy ||
+                    (action.targetKind !=
+                         TargetKind.Enemy &&
+                     action.targetKind !=
+                         TargetKind.Ground) ||
                     actor.CurrentActionPoints <
                         action.actionPointCost ||
                     actor.CurrentMana <
@@ -259,26 +406,84 @@ namespace KeeperFirstCovenant.AI
                     continue;
                 }
 
+                CombatActionStateComponent state =
+                    CombatActionStateComponent
+                        .Ensure(actor);
+
+                if (state != null &&
+                    !state.CanUse(
+                        action,
+                        out _))
+                {
+                    continue;
+                }
+
                 float expectedDamage =
-                    (action.damage.Minimum +
-                     action.damage.Maximum) *
-                    0.5f;
+                    action.damage
+                        .DeterministicValue;
 
                 TacticalTargetPreview preview =
-                    CombatTargetingService.Analyze(
-                        actor,
-                        action,
-                        target);
+                    action.targetKind ==
+                        TargetKind.Ground
+                        ? CombatTargetingService.Analyze(
+                            actor,
+                            action,
+                            null,
+                            target.transform.position)
+                        : CombatTargetingService.Analyze(
+                            actor,
+                            action,
+                            target);
 
                 float score =
                     expectedDamage +
                     action.rangeMeters;
 
+                ElementalSurfaceSystem surfaces =
+                    ElementalSurfaceSystem.Instance;
+
+                if (surfaces != null)
+                {
+                    score +=
+                        surfaces
+                            .GetImpactReactionScore(
+                                action.damageType,
+                                target.transform.position);
+                }
+
+                BreakGaugeComponent breakGauge =
+                    target.GetComponent<
+                        BreakGaugeComponent>();
+
+                if (breakGauge != null)
+                {
+                    if (breakGauge.IsBroken)
+                    {
+                        score +=
+                            expectedDamage * 0.85f;
+                    }
+                    else
+                    {
+                        score +=
+                            action.breakPower *
+                            (0.25f +
+                             breakGauge.Normalized *
+                             0.75f);
+                    }
+                }
+
+                if (action.areaRadius > 0.1f)
+                {
+                    score +=
+                        preview.AffectedTargets *
+                        8f;
+                }
+
                 if (preview.Valid)
                 {
                     score += 1000f;
                     score +=
-                        preview.HitChance * 0.2f;
+                        preview.DamageMax * 0.35f;
                 }
 
                 if (score > bestScore)
@@ -289,6 +494,115 @@ namespace KeeperFirstCovenant.AI
             }
 
             return best;
+        }
+
+        private static bool
+            TryBeginChargedAction(
+                CombatantRuntime actor,
+                CombatantRuntime target,
+                CombatActionDefinition action)
+        {
+            if (actor == null ||
+                target == null ||
+                action == null ||
+                action.windUpTurns <= 0)
+            {
+                return false;
+            }
+
+            ChargedActionComponent charge =
+                actor.GetComponent<
+                    ChargedActionComponent>();
+
+            if (charge == null)
+            {
+                charge =
+                    actor.gameObject
+                        .AddComponent<
+                            ChargedActionComponent>();
+            }
+
+            Vector3? point =
+                action.targetKind ==
+                    TargetKind.Ground
+                    ? target.transform.position
+                    : (Vector3?)null;
+
+            return charge.TryBegin(
+                action,
+                action.targetKind ==
+                    TargetKind.Ground
+                    ? null
+                    : target,
+                point);
+        }
+
+        private static IEnumerator
+            ExecuteActionWithDefense(
+                CombatantRuntime actor,
+                CombatantRuntime target,
+                CombatActionDefinition action)
+        {
+            if (actor == null ||
+                target == null ||
+                action == null ||
+                !actor.IsAlive ||
+                !target.IsAlive)
+            {
+                yield break;
+            }
+
+            if (action.targetKind ==
+                TargetKind.Ground)
+            {
+                CombatActionExecutor.Execute(
+                    actor,
+                    action,
+                    null,
+                    target.transform.position);
+
+                yield break;
+            }
+
+            ActiveDefenseOutcome outcome =
+                ActiveDefenseOutcome.None;
+
+            ActiveDefenseSystem defense =
+                ActiveDefenseSystem.Instance;
+
+            if (defense != null &&
+                defense.CanReact(
+                    target,
+                    action))
+            {
+                var resolution =
+                    new ActiveDefenseResolution();
+
+                yield return defense
+                    .ResolveIncomingAttack(
+                        actor,
+                        target,
+                        action,
+                        resolution);
+
+                outcome =
+                    resolution.Outcome;
+            }
+
+            if (actor == null ||
+                target == null ||
+                !actor.IsAlive ||
+                !target.CanBeTargeted)
+            {
+                yield break;
+            }
+
+            CombatActionExecutor
+                .ExecuteWithDefense(
+                    actor,
+                    action,
+                    target,
+                    outcome);
         }
 
         private void EndTurn()

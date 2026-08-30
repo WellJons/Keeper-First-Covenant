@@ -6,8 +6,19 @@ using UnityEngine.Events;
 
 namespace KeeperFirstCovenant.World
 {
-    public sealed class HiddenDiscoverable : MonoBehaviour
+    public sealed class HiddenDiscoverable :
+        MonoBehaviour,
+        IPersistentWorldObject
     {
+        [System.Serializable]
+        private sealed class PersistentState
+        {
+            public bool discovered;
+        }
+
+        [SerializeField]
+        private string persistenceId;
+
         [SerializeField, Min(1f)]
         private float discoveryRadius = 5f;
 
@@ -26,14 +37,21 @@ namespace KeeperFirstCovenant.World
         [SerializeField]
         private UnityEvent onDiscovered;
 
-        private readonly HashSet<int>
+        private readonly HashSet<
+            CombatantRuntime>
             _attemptedBy =
-                new HashSet<int>();
+                new HashSet<
+                    CombatantRuntime>();
 
         private bool _discovered;
         private float _nextScan;
 
         public bool IsDiscovered => _discovered;
+
+        public string PersistenceId =>
+            WorldPersistenceUtility.GetStableId(
+                this,
+                persistenceId);
 
         private void Awake()
         {
@@ -72,25 +90,22 @@ namespace KeeperFirstCovenant.World
             foreach (CombatantRuntime member
                      in nearby)
             {
-                int id =
-                    member.GetInstanceID();
-
-                if (!_attemptedBy.Add(id))
+                if (!_attemptedBy.Add(member))
                     continue;
 
-                int modifier =
+                int perception =
                     member.Definition != null
                         ? member.Definition
-                            .GetModifier(
+                            .GetAttribute(
                                 AbilityAttribute.Perception)
                         : 0;
 
-                int secretRoll =
-                    Random.Range(1, 21) +
-                    modifier;
+                SkillCheckResult result =
+                    SkillCheckResolver.Resolve(
+                        perception,
+                        perceptionDifficulty);
 
-                if (secretRoll >=
-                    perceptionDifficulty)
+                if (result.Success)
                 {
                     Reveal();
                     return;
@@ -141,6 +156,66 @@ namespace KeeperFirstCovenant.World
 
             navigation
                 ?.RebuildForDynamicWorld();
+        }
+
+        public string CapturePersistentState()
+        {
+            return JsonUtility.ToJson(
+                new PersistentState
+                {
+                    discovered = _discovered
+                });
+        }
+
+        public void RestorePersistentState(string json)
+        {
+            if (string.IsNullOrWhiteSpace(json))
+                return;
+
+            PersistentState state =
+                JsonUtility.FromJson<PersistentState>(json);
+
+            if (state == null)
+                return;
+
+            _attemptedBy.Clear();
+
+            if (state.discovered)
+            {
+                if (!_discovered)
+                    Reveal();
+                else
+                    ApplyRevealedState();
+            }
+            else
+            {
+                _discovered = false;
+                ApplyHiddenState();
+            }
+        }
+
+        private void ApplyRevealedState()
+        {
+            _discovered = true;
+
+            if (hideRenderers)
+            {
+                foreach (Renderer renderer in
+                         GetComponentsInChildren<Renderer>(true))
+                {
+                    renderer.enabled = true;
+                }
+            }
+
+            if (hideNonTriggerColliders)
+            {
+                foreach (Collider collider in
+                         GetComponentsInChildren<Collider>(true))
+                {
+                    if (!collider.isTrigger)
+                        collider.enabled = true;
+                }
+            }
         }
 
         private void ApplyHiddenState()

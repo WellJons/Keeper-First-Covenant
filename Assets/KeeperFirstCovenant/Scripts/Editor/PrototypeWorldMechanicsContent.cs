@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using System.Linq;
 using KeeperFirstCovenant.Combat;
+using KeeperFirstCovenant.Discoveries;
 using KeeperFirstCovenant.Inventory;
 using KeeperFirstCovenant.World;
 using UnityEditor;
@@ -89,6 +90,30 @@ namespace KeeperFirstCovenant.EditorTools
                     2.2f,
                     0.08f,
                     5.0f));
+
+            CreateInspectionStone(
+                root.transform,
+                anchor +
+                new Vector3(
+                    5.4f,
+                    0.35f,
+                    6.4f));
+
+            CreateWorldPickup(
+                root.transform,
+                anchor +
+                new Vector3(
+                    -0.4f,
+                    0.22f,
+                    3.8f));
+
+            CreateDiscoveryPoint(
+                root.transform,
+                anchor +
+                new Vector3(
+                    5.4f,
+                    0.5f,
+                    5.4f));
         }
 
         private static void CreateLockedDoor(
@@ -226,7 +251,7 @@ namespace KeeperFirstCovenant.EditorTools
 
             searchable.Configure(
                 loot,
-                "Search hidden cache",
+                "Обыскать тайник",
                 true);
 
             cache.AddComponent<
@@ -264,6 +289,140 @@ namespace KeeperFirstCovenant.EditorTools
                 HiddenDiscoverable>();
         }
 
+        private static void CreateInspectionStone(
+            Transform parent,
+            Vector3 position)
+        {
+            GameObject stone =
+                GameObject.CreatePrimitive(
+                    PrimitiveType.Cube);
+
+            stone.name =
+                "DEV_InspectableStone";
+
+            stone.transform.SetParent(
+                parent,
+                false);
+
+            stone.transform.position =
+                position;
+
+            stone.transform.localScale =
+                new Vector3(
+                    1.35f,
+                    0.34f,
+                    0.85f);
+
+            WorldInspectable inspectable =
+                stone.AddComponent<
+                    WorldInspectable>();
+
+            inspectable.Configure(
+                "Потрескавшаяся плита",
+                InspectionCategory.Lore,
+                "Камень старше дороги. По краю проходит почти стёртая резьба, " +
+                "а в одной из трещин застряла тёмная пыль. " +
+                "Это тестовый объект для механики осмотра.");
+
+            inspectable.ConfigureDiscovery(
+                "dev_cracked_road_stone",
+                DiscoveryCategory.Lore,
+                "Дорога к Рейнхольму");
+        }
+
+        private static void CreateWorldPickup(
+            Transform parent,
+            Vector3 position)
+        {
+            ItemDefinition coins =
+                AssetDatabase.LoadAssetAtPath<
+                    ItemDefinition>(
+                    "Assets/KeeperFirstCovenant/" +
+                    "Generated/Data/" +
+                    "Item_silver_coins.asset");
+
+            if (coins == null)
+                return;
+
+            GameObject pickup =
+                GameObject.CreatePrimitive(
+                    PrimitiveType.Cylinder);
+
+            pickup.name =
+                "DEV_WorldPickup_Silver";
+
+            pickup.transform.SetParent(
+                parent,
+                false);
+
+            pickup.transform.position =
+                position;
+
+            pickup.transform.localScale =
+                new Vector3(
+                    0.32f,
+                    0.08f,
+                    0.32f);
+
+            WorldItemPickup worldItem =
+                pickup.AddComponent<
+                    WorldItemPickup>();
+
+            worldItem.Configure(
+                coins,
+                3,
+                "Поднять монеты");
+
+            WorldInspectable inspectable =
+                pickup.AddComponent<
+                    WorldInspectable>();
+
+            inspectable.Configure(
+                "Рассыпанные серебряные монеты",
+                InspectionCategory.Object,
+                "Несколько монет лежат прямо в дорожной пыли. " +
+                "Их можно подобрать или просто осмотреть.");
+        }
+
+        private static void CreateDiscoveryPoint(
+            Transform parent,
+            Vector3 position)
+        {
+            GameObject trigger =
+                new GameObject(
+                    "DEV_DiscoveryPoint");
+
+            trigger.transform.SetParent(
+                parent,
+                false);
+
+            trigger.transform.position =
+                position;
+
+            BoxCollider collider =
+                trigger.AddComponent<
+                    BoxCollider>();
+
+            collider.isTrigger = true;
+            collider.size =
+                new Vector3(
+                    5.5f,
+                    2.5f,
+                    5.5f);
+
+            WorldDiscoveryPoint discovery =
+                trigger.AddComponent<
+                    WorldDiscoveryPoint>();
+
+            discovery.Configure(
+                "dev_old_road_stone",
+                "Старая дорожная отметка",
+                "На обочине сохранился участок дороги, который явно старше окружающего тракта. " +
+                "Пока это тестовая запись для проверки журнала открытий.",
+                DiscoveryCategory.Location,
+                "Дорога к Рейнхольму");
+        }
+
         private static void CreateLooseProp(
             Transform parent,
             Vector3 position)
@@ -289,6 +448,9 @@ namespace KeeperFirstCovenant.EditorTools
                 prop.AddComponent<Rigidbody>();
 
             body.mass = 0.7f;
+
+            prop.AddComponent<
+                WorldPhysicsNoiseEmitter>();
         }
     }
 }

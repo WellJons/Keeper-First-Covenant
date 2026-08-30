@@ -94,6 +94,25 @@ namespace KeeperFirstCovenant.EditorTools
                 3.5f,
                 3f);
 
+            CombatPresentationProfile arcaneHeavy =
+                GetOrCreateProfile(
+                    "Impact_ArcaneHeavy");
+
+            Configure(
+                arcaneHeavy,
+                ImpactTier.Devastating,
+                0.34f,
+                0.28f,
+                34f,
+                0.060f,
+                0.045f,
+                new Color(0.68f, 0.28f, 1f),
+                19f,
+                9f,
+                0.32f,
+                5.0f,
+                6.0f);
+
             CombatPresentationProfile frost =
                 GetOrCreateProfile(
                     "Impact_FrostControl");
@@ -168,7 +187,19 @@ namespace KeeperFirstCovenant.EditorTools
                 fireDevastating);
 
             Assign(
+                "Action_ArcaneCleave.asset",
+                arcaneHeavy);
+
+            Assign(
                 "Action_LightningArc.asset",
+                lightning);
+
+            Assign(
+                "Action_DevStormRupture.asset",
+                lightning);
+
+            Assign(
+                "Action_DevStormExecution.asset",
                 lightning);
 
             Assign(

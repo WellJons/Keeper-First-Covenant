@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using KeeperFirstCovenant.World;
 using UnityEngine;
 
 namespace KeeperFirstCovenant.Combat
@@ -17,7 +18,9 @@ namespace KeeperFirstCovenant.Combat
         NotEnoughActionPoints,
         NotEnoughMana,
         MissingStrainResource,
-        NotEnoughStrainCapacity
+        NotEnoughStrainCapacity,
+        ActionOnCooldown,
+        ComboRequirementMissing
     }
 
     public readonly struct CombatActionResult
@@ -32,6 +35,10 @@ namespace KeeperFirstCovenant.Combat
         public readonly int HitChance;
         public readonly int AffectedTargets;
         public readonly ActionFailureReason Failure;
+        public readonly ActiveDefenseOutcome DefenseOutcome;
+        public readonly bool ComboTriggered;
+        public readonly int ComboDepth;
+        public readonly int ComboBreakBonus;
 
         public CombatActionResult(
             bool executed,
@@ -43,7 +50,12 @@ namespace KeeperFirstCovenant.Combat
             int hitRoll,
             int hitChance,
             int affectedTargets,
-            ActionFailureReason failure)
+            ActionFailureReason failure,
+            ActiveDefenseOutcome defenseOutcome =
+                ActiveDefenseOutcome.None,
+            bool comboTriggered = false,
+            int comboDepth = 0,
+            int comboBreakBonus = 0)
         {
             Executed = executed;
             Hit = hit;
@@ -55,6 +67,10 @@ namespace KeeperFirstCovenant.Combat
             HitChance = hitChance;
             AffectedTargets = affectedTargets;
             Failure = failure;
+            DefenseOutcome = defenseOutcome;
+            ComboTriggered = comboTriggered;
+            ComboDepth = comboDepth;
+            ComboBreakBonus = comboBreakBonus;
         }
 
         public static CombatActionResult Failed(
@@ -123,7 +139,8 @@ namespace KeeperFirstCovenant.Combat
                 action,
                 target,
                 groundPoint,
-                false);
+                false,
+                ActiveDefenseOutcome.None);
         }
 
         public static CombatActionResult ExecuteReaction(
@@ -136,7 +153,23 @@ namespace KeeperFirstCovenant.Combat
                 action,
                 target,
                 null,
-                true);
+                true,
+                ActiveDefenseOutcome.None);
+        }
+
+        public static CombatActionResult ExecuteWithDefense(
+            CombatantRuntime actor,
+            CombatActionDefinition action,
+            CombatantRuntime target,
+            ActiveDefenseOutcome defenseOutcome)
+        {
+            return ExecuteInternal(
+                actor,
+                action,
+                target,
+                null,
+                false,
+                defenseOutcome);
         }
 
         private static CombatActionResult ExecuteInternal(
@@ -144,7 +177,8 @@ namespace KeeperFirstCovenant.Combat
             CombatActionDefinition action,
             CombatantRuntime target,
             Vector3? groundPoint,
-            bool reaction)
+            bool reaction,
+            ActiveDefenseOutcome defenseOutcome)
         {
             if (actor == null ||
                 !actor.IsAlive ||
@@ -160,8 +194,25 @@ namespace KeeperFirstCovenant.Combat
                     ActionFailureReason.InvalidAction);
             }
 
+            CombatActionStateComponent actionState =
+                null;
+
             if (!reaction)
             {
+                actionState =
+                    CombatActionStateComponent
+                        .Ensure(actor);
+
+                if (actionState != null &&
+                    !actionState.CanUse(
+                        action,
+                        out ActionFailureReason
+                            stateFailure))
+                {
+                    return CombatActionResult.Failed(
+                        stateFailure);
+                }
+
                 TurnCombatDirector director =
                     TurnCombatDirector.Instance;
 
@@ -260,8 +311,20 @@ namespace KeeperFirstCovenant.Combat
                 }
             }
 
+            ComboExecutionContext comboContext =
+                !reaction &&
+                actionState != null
+                    ? actionState.CommitAction(
+                        action)
+                    : ComboExecutionContext.None;
+
             Vector3 effectPoint =
                 preview.EffectPoint;
+
+            actor.GetComponent<
+                    WorldFacing>()
+                ?.FacePoint(
+                    effectPoint);
 
             List<CombatantRuntime> affected =
                 CollectAffectedTargets(
@@ -301,12 +364,19 @@ namespace KeeperFirstCovenant.Combat
                         ? candidatePreview.HitChance
                         : preview.HitChance;
 
+                ActiveDefenseOutcome candidateDefense =
+                    candidate == target
+                        ? defenseOutcome
+                        : ActiveDefenseOutcome.None;
+
                 SingleTargetResolution resolved =
                     ResolveTarget(
                         actor,
                         action,
                         candidate,
-                        hitChance);
+                        hitChance,
+                        candidateDefense,
+                        comboContext);
 
                 if (firstRoll == 0)
                 {
@@ -331,7 +401,11 @@ namespace KeeperFirstCovenant.Combat
                         resolved.hitRoll,
                         hitChance,
                         1,
-                        ActionFailureReason.None);
+                        ActionFailureReason.None,
+                        candidateDefense,
+                        comboContext.Matched,
+                        comboContext.Depth,
+                        comboContext.BreakBonus);
 
                 ActionResolved?.Invoke(
                     action,
@@ -340,8 +414,20 @@ namespace KeeperFirstCovenant.Combat
                     targetResult);
             }
 
+            if (anyHit &&
+                action.damageType !=
+                    DamageType.Physical &&
+                action.damageType !=
+                    DamageType.Bleeding)
+            {
+                ElementalSurfaceSystem.Instance
+                    ?.ReactToImpact(
+                        action.damageType,
+                        effectPoint,
+                        actor.gameObject);
+            }
+
             bool surfaceCanAppear =
-                !action.requiresAttackRoll ||
                 anyHit ||
                 action.targetKind == TargetKind.Ground;
 
@@ -371,7 +457,11 @@ namespace KeeperFirstCovenant.Combat
                 firstRoll,
                 firstChance,
                 affected.Count,
-                ActionFailureReason.None);
+                ActionFailureReason.None,
+                defenseOutcome,
+                comboContext.Matched,
+                comboContext.Depth,
+                comboContext.BreakBonus);
 
             if (affected.Count == 0)
             {
@@ -453,7 +543,9 @@ namespace KeeperFirstCovenant.Combat
                 CombatantRuntime actor,
                 CombatActionDefinition action,
                 CombatantRuntime target,
-                int hitChance)
+                int hitChance,
+                ActiveDefenseOutcome defenseOutcome,
+                ComboExecutionContext comboContext)
         {
             int attributeModifier =
                 actor.Definition != null
@@ -461,20 +553,9 @@ namespace KeeperFirstCovenant.Combat
                         action.scalingAttribute)
                     : 0;
 
-            int hitRoll = 0;
+            int hitRoll = 100;
             bool critical = false;
             bool hit = true;
-
-            if (action.requiresAttackRoll)
-            {
-                hitRoll =
-                    UnityEngine.Random.Range(1, 101);
-
-                critical = hitRoll <= 5;
-                hit =
-                    critical ||
-                    hitRoll <= hitChance;
-            }
 
             int damage = 0;
             int healing = 0;
@@ -488,6 +569,22 @@ namespace KeeperFirstCovenant.Combat
                     action.scalingMultiplier,
                     critical);
 
+                if (comboContext.Matched)
+                {
+                    damage =
+                        Mathf.RoundToInt(
+                            damage *
+                            Mathf.Max(
+                                1f,
+                                comboContext
+                                    .DamageMultiplier));
+                }
+
+                damage =
+                    ApplyActiveDefense(
+                        damage,
+                        defenseOutcome);
+
                 if (damage > 0)
                 {
                     target.ApplyDamage(
@@ -498,7 +595,22 @@ namespace KeeperFirstCovenant.Combat
                             critical));
                 }
 
-                if (target.CanBeTargeted)
+                bool avoidsSecondaryEffects =
+                    defenseOutcome ==
+                        ActiveDefenseOutcome.PerfectDodge ||
+                    defenseOutcome ==
+                        ActiveDefenseOutcome.PerfectParry;
+
+                if (defenseOutcome ==
+                    ActiveDefenseOutcome.PerfectParry)
+                {
+                    ApplyPerfectParryCounter(
+                        actor,
+                        target);
+                }
+
+                if (target.CanBeTargeted &&
+                    !avoidsSecondaryEffects)
                 {
                     healing = RollScaled(
                         action.healing,
@@ -521,6 +633,7 @@ namespace KeeperFirstCovenant.Combat
                             target.AddBarrier(barrier);
 
                         ApplyStatuses(
+                            actor,
                             action,
                             target);
                     }
@@ -548,6 +661,65 @@ namespace KeeperFirstCovenant.Combat
             };
         }
 
+        private static int ApplyActiveDefense(
+            int damage,
+            ActiveDefenseOutcome outcome)
+        {
+            switch (outcome)
+            {
+                case ActiveDefenseOutcome.Dodge:
+                    return Mathf.RoundToInt(
+                        damage * 0.45f);
+
+                case ActiveDefenseOutcome.Parry:
+                    return Mathf.RoundToInt(
+                        damage * 0.25f);
+
+                case ActiveDefenseOutcome.PerfectDodge:
+                case ActiveDefenseOutcome.PerfectParry:
+                    return 0;
+
+                default:
+                    return damage;
+            }
+        }
+
+        private static void ApplyPerfectParryCounter(
+            CombatantRuntime attacker,
+            CombatantRuntime defender)
+        {
+            if (attacker == null ||
+                defender == null ||
+                !attacker.IsAlive)
+            {
+                return;
+            }
+
+            int finesse =
+                defender.Definition != null
+                    ? defender.Definition.GetAttribute(
+                        AbilityAttribute.Finesse)
+                    : 10;
+
+            int counterDamage =
+                Mathf.Max(
+                    3,
+                    2 + finesse / 4);
+
+            attacker.ApplyDamage(
+                new DamagePacket(
+                    counterDamage,
+                    DamageType.Physical,
+                    defender.gameObject,
+                    true));
+
+            BreakGaugeComponent gauge =
+                attacker.GetComponent<
+                    BreakGaugeComponent>();
+
+            gauge?.AddBreak(28);
+        }
+
         private static int RollScaled(
             DiceFormula formula,
             int attributeModifier,
@@ -560,32 +732,25 @@ namespace KeeperFirstCovenant.Combat
                 return 0;
             }
 
-            int value = formula.Roll();
-
-            if (critical &&
-                formula.diceCount > 0)
-            {
-                for (int i = 0;
-                     i < formula.diceCount;
-                     i++)
-                {
-                    value +=
-                        UnityEngine.Random.Range(
-                            1,
-                            Mathf.Max(
-                                2,
-                                formula.dieSides) + 1);
-                }
-            }
+            int value =
+                formula.DeterministicValue;
 
             value += Mathf.RoundToInt(
                 attributeModifier *
                 scalingMultiplier);
 
+            if (critical)
+            {
+                value =
+                    Mathf.RoundToInt(
+                        value * 1.5f);
+            }
+
             return Mathf.Max(0, value);
         }
 
         private static void ApplyStatuses(
+            CombatantRuntime actor,
             CombatActionDefinition action,
             CombatantRuntime target)
         {
@@ -598,10 +763,27 @@ namespace KeeperFirstCovenant.Combat
                 if (application.effect == null)
                     continue;
 
-                if (UnityEngine.Random.value >
-                    application.chance)
+                if (application.requiresResistanceCheck)
                 {
-                    continue;
+                    int attackPower =
+                        actor.Definition != null
+                            ? actor.Definition.GetAttribute(
+                                action.scalingAttribute)
+                            : 0;
+
+                    attackPower +=
+                        Mathf.Max(
+                            0,
+                            application.statusPower);
+
+                    int resistance =
+                        target.Definition != null
+                            ? target.Definition.GetAttribute(
+                                application.resistanceAttribute)
+                            : 0;
+
+                    if (attackPower < resistance)
+                        continue;
                 }
 
                 target.ApplyStatus(

@@ -17,10 +17,26 @@ namespace KeeperFirstCovenant.AI
         [SerializeField, Min(0.1f)]
         private float repathInterval = 0.45f;
 
+        [Header("Search at stimulus")]
+        [SerializeField, Min(0.5f)]
+        private float searchDuration = 3.2f;
+
+        [SerializeField, Min(0.15f)]
+        private float searchTurnInterval = 0.65f;
+
+        [SerializeField, Range(10f, 120f)]
+        private float searchTurnAngle = 58f;
+
         private CombatantRuntime _owner;
         private PerceptionSensor _sensor;
         private TacticalUnitMover _mover;
+        private WorldFacing _facing;
         private float _nextRepath;
+        private float _searchUntil;
+        private float _nextSearchTurn;
+        private Vector3 _lastDestination;
+        private Vector3 _searchBaseDirection;
+        private int _searchStep;
 
         private void Awake()
         {
@@ -32,6 +48,9 @@ namespace KeeperFirstCovenant.AI
 
             _mover =
                 GetComponent<TacticalUnitMover>();
+
+            _facing =
+                GetComponent<WorldFacing>();
         }
 
         private void Start()
@@ -74,11 +93,27 @@ namespace KeeperFirstCovenant.AI
             if (_sensor.Awareness !=
                 AwarenessLevel.Suspicious)
             {
+                ResetSearch();
                 return;
             }
 
+            if (Time.timeScale <= 0f)
+                return;
+
             Vector3 destination =
                 _sensor.LastStimulusPosition;
+
+            if (Vector3.SqrMagnitude(
+                    destination -
+                    _lastDestination) >
+                0.25f)
+            {
+                _lastDestination =
+                    destination;
+
+                _searchUntil = 0f;
+                _searchStep = 0;
+            }
 
             float distance =
                 Vector3.Distance(
@@ -86,7 +121,10 @@ namespace KeeperFirstCovenant.AI
                     destination);
 
             if (distance <= stoppingDistance)
+            {
+                SearchArea(destination);
                 return;
+            }
 
             if (Time.unscaledTime <
                 _nextRepath)
@@ -104,6 +142,95 @@ namespace KeeperFirstCovenant.AI
             _mover.TryMoveExploration(
                 navigation,
                 destination);
+        }
+
+        private void SearchArea(
+            Vector3 destination)
+        {
+            if (_facing == null)
+            {
+                _facing =
+                    GetComponent<WorldFacing>();
+            }
+
+            if (_searchUntil <= 0f)
+            {
+                _searchUntil =
+                    Time.unscaledTime +
+                    searchDuration;
+
+                _nextSearchTurn =
+                    Time.unscaledTime;
+
+                Vector3 baseDirection =
+                    destination -
+                    transform.position;
+
+                baseDirection.y = 0f;
+
+                _searchBaseDirection =
+                    baseDirection.sqrMagnitude >
+                    0.001f
+                        ? baseDirection.normalized
+                        : _facing != null
+                            ? _facing.Forward
+                            : transform.forward;
+
+                _searchStep = 0;
+            }
+
+            if (Time.unscaledTime >
+                _searchUntil)
+            {
+                return;
+            }
+
+            if (Time.unscaledTime <
+                _nextSearchTurn)
+            {
+                return;
+            }
+
+            _nextSearchTurn =
+                Time.unscaledTime +
+                searchTurnInterval;
+
+            float angle;
+
+            switch (_searchStep % 4)
+            {
+                case 0:
+                    angle = 0f;
+                    break;
+                case 1:
+                    angle = -searchTurnAngle;
+                    break;
+                case 2:
+                    angle = searchTurnAngle;
+                    break;
+                default:
+                    angle = 0f;
+                    break;
+            }
+
+            _searchStep++;
+
+            Vector3 direction =
+                Quaternion.Euler(
+                    0f,
+                    angle,
+                    0f) *
+                _searchBaseDirection;
+
+            _facing?.FaceDirection(
+                direction);
+        }
+
+        private void ResetSearch()
+        {
+            _searchUntil = 0f;
+            _nextSearchTurn = 0f;
+            _searchStep = 0;
         }
     }
 }

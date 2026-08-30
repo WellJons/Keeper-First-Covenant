@@ -76,6 +76,33 @@ namespace KeeperFirstCovenant.Combat
         Detonation
     }
 
+    public enum ElementalReactionKind
+    {
+        None,
+        ConductiveSurge,
+        FlashFreeze,
+        ThermalShock,
+        Combustion,
+        ArcaneResonance
+    }
+
+    public enum ActiveDefenseOutcome
+    {
+        None,
+        Failed,
+        Dodge,
+        PerfectDodge,
+        Parry,
+        PerfectParry
+    }
+
+    public enum FlankQuality
+    {
+        None,
+        Side,
+        Back
+    }
+
     [Serializable]
     public struct DiceFormula
     {
@@ -92,11 +119,25 @@ namespace KeeperFirstCovenant.Combat
 
         public int Roll()
         {
-            int total = flatBonus;
-            for (int i = 0; i < diceCount; i++)
-                total += UnityEngine.Random.Range(1, dieSides + 1);
+            return DeterministicValue;
+        }
 
-            return total;
+        public int DeterministicValue
+        {
+            get
+            {
+                if (diceCount <= 0)
+                    return flatBonus;
+
+                float averagePerDie =
+                    (Mathf.Max(2, dieSides) + 1) *
+                    0.5f;
+
+                return Mathf.RoundToInt(
+                    diceCount *
+                    averagePerDie +
+                    flatBonus);
+            }
         }
 
         public int Minimum => diceCount + flatBonus;
@@ -104,16 +145,16 @@ namespace KeeperFirstCovenant.Combat
 
         public override string ToString()
         {
-            if (diceCount <= 0)
-                return flatBonus.ToString();
+            if (Minimum == Maximum)
+                return DeterministicValue.ToString();
 
-            string bonus = flatBonus == 0
-                ? string.Empty
-                : flatBonus > 0
-                    ? " + " + flatBonus
-                    : " - " + Mathf.Abs(flatBonus);
-
-            return diceCount + "d" + dieSides + bonus;
+            return
+                DeterministicValue +
+                " (" +
+                Minimum +
+                "-" +
+                Maximum +
+                ")";
         }
     }
 

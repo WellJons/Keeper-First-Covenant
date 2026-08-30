@@ -1,9 +1,24 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace KeeperFirstCovenant.World
 {
+    [Serializable]
+    public sealed class WorldStateIntEntry
+    {
+        public string key;
+        public int value;
+    }
+
+    [Serializable]
+    public sealed class WorldStateSnapshot
+    {
+        public List<string> flags = new List<string>();
+        public List<WorldStateIntEntry> values = new List<WorldStateIntEntry>();
+    }
+
     public sealed class WorldState : MonoBehaviour
     {
         public static WorldState Instance { get; private set; }
@@ -13,6 +28,7 @@ namespace KeeperFirstCovenant.World
 
         public event Action<string, bool> FlagChanged;
         public event Action<string, int> ValueChanged;
+        public event Action StateRestored;
 
         private void Awake()
         {
@@ -69,6 +85,68 @@ namespace KeeperFirstCovenant.World
             int value = GetValue(key) + delta;
             SetValue(key, value);
             return value;
+        }
+
+        public WorldStateSnapshot CaptureSnapshot()
+        {
+            var snapshot = new WorldStateSnapshot
+            {
+                flags = _flags
+                    .OrderBy(value => value, StringComparer.Ordinal)
+                    .ToList(),
+                values = _values
+                    .OrderBy(pair => pair.Key, StringComparer.Ordinal)
+                    .Select(pair => new WorldStateIntEntry
+                    {
+                        key = pair.Key,
+                        value = pair.Value
+                    })
+                    .ToList()
+            };
+
+            return snapshot;
+        }
+
+        public void RestoreSnapshot(WorldStateSnapshot snapshot)
+        {
+            _flags.Clear();
+            _values.Clear();
+
+            if (snapshot != null)
+            {
+                if (snapshot.flags != null)
+                {
+                    foreach (string flag in snapshot.flags)
+                    {
+                        if (!string.IsNullOrWhiteSpace(flag))
+                            _flags.Add(flag);
+                    }
+                }
+
+                if (snapshot.values != null)
+                {
+                    foreach (WorldStateIntEntry entry in snapshot.values)
+                    {
+                        if (entry == null || string.IsNullOrWhiteSpace(entry.key))
+                            continue;
+
+                        _values[entry.key] = entry.value;
+                    }
+                }
+            }
+
+            StateRestored?.Invoke();
+
+            foreach (string flag in _flags)
+                FlagChanged?.Invoke(flag, true);
+
+            foreach (KeyValuePair<string, int> pair in _values)
+                ValueChanged?.Invoke(pair.Key, pair.Value);
+        }
+
+        public void ResetState()
+        {
+            RestoreSnapshot(new WorldStateSnapshot());
         }
     }
 }

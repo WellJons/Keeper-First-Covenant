@@ -218,11 +218,21 @@ namespace KeeperFirstCovenant.Combat
                     if (!_combatant.IsAlive)
                         break;
 
+                    StealthSignature signature =
+                        GetComponent<StealthSignature>();
+
+                    float speedMultiplier =
+                        signature != null
+                            ? signature.MovementSpeedMultiplier
+                            : 1f;
+
                     transform.position =
                         Vector3.MoveTowards(
                             transform.position,
                             target,
-                            moveSpeed * Time.deltaTime);
+                            moveSpeed *
+                            speedMultiplier *
+                            Time.deltaTime);
 
                     yield return null;
                 }

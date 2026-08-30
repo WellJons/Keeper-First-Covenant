@@ -5,8 +5,21 @@ using UnityEngine;
 
 namespace KeeperFirstCovenant.World
 {
-    public sealed class LockableDoor : MonoBehaviour, IInteractable
+    public sealed class LockableDoor :
+        MonoBehaviour,
+        IInteractable,
+        IPersistentWorldObject
     {
+        [System.Serializable]
+        private sealed class PersistentState
+        {
+            public bool locked;
+            public bool open;
+        }
+
+        [SerializeField]
+        private string persistenceId;
+
         [Header("State")]
         [SerializeField]
         private bool locked;
@@ -27,6 +40,9 @@ namespace KeeperFirstCovenant.World
 
         [SerializeField, Min(1)]
         private int lockDifficulty = 12;
+
+        [SerializeField, Min(0)]
+        private int lockpickToolBonus = 2;
 
         [SerializeField, Min(1)]
         private int forceDifficulty = 14;
@@ -57,17 +73,22 @@ namespace KeeperFirstCovenant.World
         public bool IsLocked => locked;
         public bool IsOpen => open;
 
+        public string PersistenceId =>
+            WorldPersistenceUtility.GetStableId(
+                this,
+                persistenceId);
+
         public string InteractionPrompt
         {
             get
             {
                 if (open)
-                    return "Close";
+                    return "Закрыть";
 
                 if (locked)
-                    return "Locked";
+                    return "Заперто";
 
-                return "Open";
+                return "Открыть";
             }
         }
 
@@ -98,6 +119,89 @@ namespace KeeperFirstCovenant.World
                 Mathf.Max(
                     1,
                     bashDifficulty);
+        }
+
+        public string GetInteractionHint(
+            GameObject actor)
+        {
+            if (actor == null)
+                return string.Empty;
+
+            if (open)
+                return "ЛКМ — закрыть";
+
+            if (!locked)
+                return "ЛКМ — открыть";
+
+            InventoryComponent inventory =
+                actor.GetComponentInParent<
+                    InventoryComponent>();
+
+            if (inventory != null &&
+                !string.IsNullOrWhiteSpace(
+                    requiredKeyItemId) &&
+                inventory.ContainsItemId(
+                    requiredKeyItemId))
+            {
+                return "ЛКМ — открыть ключом";
+            }
+
+            CombatantRuntime combatant =
+                actor.GetComponentInParent<
+                    CombatantRuntime>();
+
+            int finesse =
+                combatant?.Definition != null
+                    ? combatant.Definition.GetAttribute(
+                        AbilityAttribute.Finesse)
+                    : 0;
+
+            int perception =
+                combatant?.Definition != null
+                    ? combatant.Definition.GetAttribute(
+                        AbilityAttribute.Perception)
+                    : 10;
+
+            int strength =
+                combatant?.Definition != null
+                    ? combatant.Definition.GetAttribute(
+                        AbilityAttribute.Strength)
+                    : 0;
+
+            bool hasLockpick =
+                inventory != null &&
+                !string.IsNullOrWhiteSpace(
+                    lockpickItemId) &&
+                inventory.ContainsItemId(
+                    lockpickItemId);
+
+            SkillCheckResult pick =
+                SkillCheckResolver.Resolve(
+                    finesse,
+                    lockDifficulty,
+                    perception,
+                    hasLockpick
+                        ? lockpickToolBonus
+                        : 0);
+
+            SkillCheckResult force =
+                SkillCheckResolver.Resolve(
+                    strength,
+                    forceDifficulty);
+
+            if (hasLockpick)
+            {
+                return
+                    "ЛКМ — взломать  " +
+                    $"{pick.Score}/{pick.Difficulty}   •   " +
+                    "Shift+ЛКМ — выбить  " +
+                    $"{force.Score}/{force.Difficulty}";
+            }
+
+            return
+                "Нет подходящего ключа/отмычки   •   " +
+                "Shift+ЛКМ — выбить  " +
+                $"{force.Score}/{force.Difficulty}";
         }
 
         public bool CanInteract(
@@ -178,34 +282,38 @@ namespace KeeperFirstCovenant.World
                 actor.GetComponentInParent<
                     CombatantRuntime>();
 
-            int finesseModifier =
+            int finesse =
                 combatant?.Definition != null
                     ? combatant.Definition
-                        .GetModifier(
+                        .GetAttribute(
                             AbilityAttribute.Finesse)
                     : 0;
 
-            int perceptionModifier =
+            int perception =
                 combatant?.Definition != null
                     ? combatant.Definition
-                        .GetModifier(
+                        .GetAttribute(
                             AbilityAttribute.Perception)
-                    : 0;
+                    : 10;
 
-            int roll =
-                Random.Range(1, 21) +
-                finesseModifier +
-                Mathf.FloorToInt(
-                    perceptionModifier * 0.5f);
+            SkillCheckResult result =
+                SkillCheckResolver.Resolve(
+                    finesse,
+                    lockDifficulty,
+                    perception,
+                    lockpickToolBonus);
 
-            if (roll >= lockDifficulty)
+            if (result.Success)
             {
                 locked = false;
 
                 SetOpen(
                     true,
                     actor,
-                    0.6f);
+                    result.Grade ==
+                        SkillCheckGrade.Mastery
+                            ? 0f
+                            : 0.6f);
 
                 return true;
             }
@@ -232,17 +340,19 @@ namespace KeeperFirstCovenant.World
                 actor.GetComponentInParent<
                     CombatantRuntime>();
 
-            int strengthModifier =
+            int strength =
                 combatant?.Definition != null
                     ? combatant.Definition
-                        .GetModifier(
+                        .GetAttribute(
                             AbilityAttribute.Strength)
                     : 0;
 
-            int roll =
-                Random.Range(1, 21) +
-                strengthModifier +
-                bonusForce;
+            SkillCheckResult result =
+                SkillCheckResolver.Resolve(
+                    strength,
+                    forceDifficulty,
+                    10,
+                    bonusForce);
 
             WorldNoiseSystem.Emit(
                 transform.position,
@@ -250,7 +360,7 @@ namespace KeeperFirstCovenant.World
                 actor,
                 1.25f);
 
-            if (roll < forceDifficulty)
+            if (!result.Success)
                 return false;
 
             locked = false;
@@ -272,6 +382,52 @@ namespace KeeperFirstCovenant.World
         {
             if (!open)
                 locked = true;
+        }
+
+        public string CapturePersistentState()
+        {
+            return JsonUtility.ToJson(
+                new PersistentState
+                {
+                    locked = locked,
+                    open = open
+                });
+        }
+
+        public void RestorePersistentState(string json)
+        {
+            if (string.IsNullOrWhiteSpace(json))
+                return;
+
+            PersistentState state =
+                JsonUtility.FromJson<PersistentState>(json);
+
+            if (state == null)
+                return;
+
+            locked = state.locked;
+            open = state.open;
+
+            if (_rotationRoutine != null)
+            {
+                StopCoroutine(_rotationRoutine);
+                _rotationRoutine = null;
+            }
+
+            Quaternion target =
+                open
+                    ? _closedRotation *
+                      Quaternion.Euler(
+                          0f,
+                          openAngle,
+                          0f)
+                    : _closedRotation;
+
+            if (hinge == null)
+                hinge = transform;
+
+            hinge.localRotation = target;
+            RebuildNavigation();
         }
 
         private void SetOpen(

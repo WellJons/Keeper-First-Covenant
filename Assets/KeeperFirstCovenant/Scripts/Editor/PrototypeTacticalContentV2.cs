@@ -63,10 +63,26 @@ namespace KeeperFirstCovenant.EditorTools
 
             ConfigureMelee(swordSlash);
 
+            swordSlash.displayName =
+                "Рассечение";
+            swordSlash.breakPower = 12;
+            swordSlash.comboRequiresTag =
+                string.Empty;
+            swordSlash.comboRequirementMandatory =
+                false;
+            swordSlash.comboGrantsTag =
+                "edward_pressure";
+            swordSlash.comboWindowTurns = 1;
+            swordSlash.comboDamageMultiplier = 1f;
+            swordSlash.comboBreakBonus = 0;
+            swordSlash.consumeComboTag = true;
+            swordSlash.cooldownTurns = 0;
+            EditorUtility.SetDirty(swordSlash);
+
             CombatActionDefinition shove =
                 GetOrCreateAction(
                     "Shove",
-                    "Shove");
+                    "Силовой толчок");
 
             shove.category =
                 CombatActionCategory.Control;
@@ -96,9 +112,66 @@ namespace KeeperFirstCovenant.EditorTools
             shove.scalingMultiplier = 0f;
             shove.pushDistanceMeters = 3f;
             shove.pushAwayFromActor = true;
+            shove.breakPower = 18;
+            shove.comboRequiresTag =
+                "edward_pressure";
+            shove.comboRequirementMandatory =
+                false;
+            shove.comboGrantsTag =
+                "edward_opening";
+            shove.comboWindowTurns = 1;
+            shove.comboDamageMultiplier = 1f;
+            shove.comboBreakBonus = 18;
+            shove.consumeComboTag = true;
+            shove.cooldownTurns = 0;
             shove.createsSurface =
                 SurfaceType.None;
             EditorUtility.SetDirty(shove);
+
+            CombatActionDefinition arcaneCleave =
+                GetOrCreateAction(
+                    "ArcaneCleave",
+                    "Арканное рассечение");
+
+            arcaneCleave.category =
+                CombatActionCategory.Unique;
+            arcaneCleave.targetKind =
+                TargetKind.Enemy;
+            arcaneCleave.actionPointCost = 2;
+            arcaneCleave.manaCost = 5;
+            arcaneCleave.strainCost = 0;
+            arcaneCleave.rangeMeters = 2.3f;
+            arcaneCleave.areaRadius = 0f;
+            arcaneCleave.areaTargetRule =
+                AreaTargetRule.PrimaryOnly;
+            arcaneCleave.requiresLineOfSight = true;
+            arcaneCleave.ignoresCover = true;
+            arcaneCleave.usesHeightAdvantage = false;
+            arcaneCleave.requiresAttackRoll = false;
+            arcaneCleave.damage =
+                new DiceFormula(3, 6, 3);
+            arcaneCleave.damageType =
+                DamageType.Arcane;
+            arcaneCleave.scalingAttribute =
+                AbilityAttribute.Intellect;
+            arcaneCleave.scalingMultiplier = 0.9f;
+            arcaneCleave.breakPower = 24;
+            arcaneCleave.comboRequiresTag =
+                "edward_opening";
+            arcaneCleave.comboRequirementMandatory =
+                true;
+            arcaneCleave.comboGrantsTag =
+                string.Empty;
+            arcaneCleave.comboWindowTurns = 0;
+            arcaneCleave.comboDamageMultiplier = 1.40f;
+            arcaneCleave.comboBreakBonus = 24;
+            arcaneCleave.consumeComboTag = true;
+            arcaneCleave.cooldownTurns = 2;
+            arcaneCleave.createsSurface =
+                SurfaceType.Arcane;
+            arcaneCleave.surfaceRadius = 1.4f;
+            arcaneCleave.surfaceDurationTurns = 1;
+            EditorUtility.SetDirty(arcaneCleave);
 
             CombatActionDefinition rift =
                 GetOrCreateAction(
@@ -138,7 +211,7 @@ namespace KeeperFirstCovenant.EditorTools
             CombatActionDefinition fireBurst =
                 GetOrCreateAction(
                     "FireBurst",
-                    "Fire Burst");
+                    "Огненный выброс");
 
             fireBurst.category =
                 CombatActionCategory.Spell;
@@ -175,13 +248,15 @@ namespace KeeperFirstCovenant.EditorTools
 
             fireBurst.surfaceRadius = 2.4f;
             fireBurst.surfaceDurationTurns = 2;
+            fireBurst.breakPower = 14;
+            fireBurst.cooldownTurns = 1;
 
             EditorUtility.SetDirty(fireBurst);
 
             CombatActionDefinition lightningArc =
                 GetOrCreateAction(
                     "LightningArc",
-                    "Lightning Arc");
+                    "Дуга молнии");
 
             lightningArc.category =
                 CombatActionCategory.Spell;
@@ -219,13 +294,25 @@ namespace KeeperFirstCovenant.EditorTools
 
             lightningArc.surfaceRadius = 1.5f;
             lightningArc.surfaceDurationTurns = 1;
+            lightningArc.breakPower = 16;
+            lightningArc.comboRequiresTag =
+                "lucian_conduit";
+            lightningArc.comboRequirementMandatory =
+                false;
+            lightningArc.comboGrantsTag =
+                string.Empty;
+            lightningArc.comboWindowTurns = 0;
+            lightningArc.comboDamageMultiplier = 1.25f;
+            lightningArc.comboBreakBonus = 14;
+            lightningArc.consumeComboTag = true;
+            lightningArc.cooldownTurns = 1;
 
             EditorUtility.SetDirty(lightningArc);
 
             CombatActionDefinition frostField =
                 GetOrCreateAction(
                     "FrostField",
-                    "Frost Field");
+                    "Поле инея");
 
             frostField.category =
                 CombatActionCategory.Control;
@@ -268,7 +355,7 @@ namespace KeeperFirstCovenant.EditorTools
             CombatActionDefinition waterRune =
                 GetOrCreateAction(
                     "WaterRune",
-                    "Water Rune");
+                    "Водная руна");
 
             waterRune.category =
                 CombatActionCategory.Control;
@@ -305,6 +392,18 @@ namespace KeeperFirstCovenant.EditorTools
 
             waterRune.surfaceRadius = 2.5f;
             waterRune.surfaceDurationTurns = 3;
+            waterRune.breakPower = 4;
+            waterRune.comboRequiresTag =
+                string.Empty;
+            waterRune.comboRequirementMandatory =
+                false;
+            waterRune.comboGrantsTag =
+                "lucian_conduit";
+            waterRune.comboWindowTurns = 1;
+            waterRune.comboDamageMultiplier = 1f;
+            waterRune.comboBreakBonus = 0;
+            waterRune.consumeComboTag = true;
+            waterRune.cooldownTurns = 1;
 
             EditorUtility.SetDirty(waterRune);
 
@@ -346,6 +445,8 @@ namespace KeeperFirstCovenant.EditorTools
             healingLight.scalingMultiplier = 0.8f;
             healingLight.createsSurface =
                 SurfaceType.None;
+            healingLight.cooldownTurns = 1;
+            healingLight.breakPower = 0;
             EditorUtility.SetDirty(healingLight);
 
             CombatActionDefinition silverBarrier =
@@ -378,6 +479,8 @@ namespace KeeperFirstCovenant.EditorTools
             silverBarrier.scalingMultiplier = 0.6f;
             silverBarrier.createsSurface =
                 SurfaceType.None;
+            silverBarrier.cooldownTurns = 2;
+            silverBarrier.breakPower = 0;
             EditorUtility.SetDirty(silverBarrier);
 
             CharacterDefinition aelis =
@@ -412,6 +515,7 @@ namespace KeeperFirstCovenant.EditorTools
                 {
                     swordSlash,
                     shove,
+                    arcaneCleave,
                     fireBurst
                 };
 
@@ -443,8 +547,8 @@ namespace KeeperFirstCovenant.EditorTools
 
             Debug.Log(
                 "Prototype tactical abilities upgraded: " +
-                "Fire Burst, Lightning Arc, " +
-                "Frost Field and Water Rune.");
+                "Edward combo chain, Fire Burst, " +
+                "Lightning Arc, Frost Field and Water Rune.");
         }
 
         private static void ConfigureMelee(

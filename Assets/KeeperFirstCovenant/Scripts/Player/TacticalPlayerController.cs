@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using KeeperFirstCovenant.Combat;
 using KeeperFirstCovenant.Developer;
+using KeeperFirstCovenant.Dialogue;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -154,8 +155,11 @@ namespace KeeperFirstCovenant.Player
 
         private bool CanAcceptInput()
         {
-            if (DeveloperMenu.IsOpen)
+            if (DeveloperMenu.IsOpen ||
+                DialogueRunner.IsDialogueActive)
+            {
                 return false;
+            }
 
             if (_currentActor == null ||
                 !_currentActor.IsAlive ||
@@ -181,6 +185,68 @@ namespace KeeperFirstCovenant.Player
                        CombatFaction.Player ||
                    faction ==
                        CombatFaction.Ally;
+        }
+
+        public bool SelectAction(
+            CombatActionDefinition action)
+        {
+            if (!CanAcceptInput() ||
+                action == null ||
+                _currentActor == null)
+            {
+                return false;
+            }
+
+            CombatActionDefinition[] actions =
+                _currentActor
+                    .GetAvailableActions();
+
+            if (actions == null ||
+                !actions.Contains(action))
+            {
+                return false;
+            }
+
+            CombatActionStateComponent actionState =
+                CombatActionStateComponent
+                    .Ensure(_currentActor);
+
+            if (actionState != null &&
+                !actionState.CanUse(
+                    action,
+                    out _))
+            {
+                return false;
+            }
+
+            _selectedAction = action;
+            ClearCursorPreview();
+
+            if (_selectedAction.targetKind ==
+                TargetKind.Self)
+            {
+                CombatActionResult result =
+                    CombatActionExecutor.Execute(
+                        _currentActor,
+                        _selectedAction,
+                        _currentActor);
+
+                if (result.Executed)
+                {
+                    _selectedAction = null;
+                    ClearCursorPreview();
+                }
+
+                return result.Executed;
+            }
+
+            return true;
+        }
+
+        public void CancelSelectedAction()
+        {
+            _selectedAction = null;
+            ClearCursorPreview();
         }
 
         private void HandleHotkeys()
@@ -240,25 +306,7 @@ namespace KeeperFirstCovenant.Player
                 return;
             }
 
-            _selectedAction = actions[index];
-            ClearCursorPreview();
-
-            if (_selectedAction != null &&
-                _selectedAction.targetKind ==
-                    TargetKind.Self)
-            {
-                CombatActionResult result =
-                    CombatActionExecutor.Execute(
-                        _currentActor,
-                        _selectedAction,
-                        _currentActor);
-
-                if (result.Executed)
-                {
-                    _selectedAction = null;
-                    ClearCursorPreview();
-                }
-            }
+            SelectAction(actions[index]);
         }
 
         private void UpdateCursorPreview(
