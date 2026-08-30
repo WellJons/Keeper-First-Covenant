@@ -847,16 +847,49 @@ namespace KeeperFirstCovenant.UI
 
             if (card.turnResourceText != null)
             {
-                card.turnResourceText.text =
-                    combatActive
-                        ? $"AP {runtime.CurrentActionPoints}   " +
-                          $"{runtime.TotalMovementAvailable:0.0} м"
-                        : string.Empty;
+                if (!combatActive ||
+                    director == null)
+                {
+                    card.turnResourceText.text =
+                        string.Empty;
+                }
+                else if (director
+                    .HasCompletedTurnThisRound(
+                        runtime))
+                {
+                    card.turnResourceText.text =
+                        "ХОД ЗАВЕРШЁН";
 
-                card.turnResourceText.color =
-                    current
-                        ? MainMenuTheme.Warm
-                        : MainMenuTheme.Silver;
+                    card.turnResourceText.color =
+                        MainMenuTheme.MutedText;
+                }
+                else if (!director
+                    .HasBegunTurnThisRound(
+                        runtime))
+                {
+                    int readyAp =
+                        runtime.Definition != null
+                            ? runtime.Definition
+                                .actionPoints
+                            : 0;
+
+                    card.turnResourceText.text =
+                        $"ГОТОВ   AP {readyAp}";
+
+                    card.turnResourceText.color =
+                        MainMenuTheme.Silver;
+                }
+                else
+                {
+                    card.turnResourceText.text =
+                        $"AP {runtime.CurrentActionPoints}   " +
+                        $"{runtime.TotalMovementAvailable:0.0} м";
+
+                    card.turnResourceText.color =
+                        current
+                            ? MainMenuTheme.Warm
+                            : MainMenuTheme.Silver;
+                }
             }
 
             bool selected =
@@ -868,7 +901,7 @@ namespace KeeperFirstCovenant.UI
                     runtime;
 
             card.name.text =
-                selected
+                current || selected
                     ? "▶ " +
                       runtime.Definition.displayName
                     : runtime.Definition.displayName;
@@ -881,7 +914,7 @@ namespace KeeperFirstCovenant.UI
             if (card.panel != null)
             {
                 card.panel.color =
-                    selected
+                    current || selected
                         ? new Color(
                             MainMenuTheme.Panel.r +
                                 0.055f,
