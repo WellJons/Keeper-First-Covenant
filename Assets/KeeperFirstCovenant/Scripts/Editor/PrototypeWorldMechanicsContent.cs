@@ -27,8 +27,7 @@ namespace KeeperFirstCovenant.EditorTools
 
             CombatantRuntime[] combatants =
                 Object.FindObjectsByType<
-                    CombatantRuntime>(
-                    FindObjectsSortMode.None);
+                    CombatantRuntime>();
 
             CombatantRuntime leader =
                 combatants
