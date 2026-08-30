@@ -44,6 +44,78 @@ namespace KeeperFirstCovenant.Combat
         private void OnActionPresentation(
             CombatPresentationRequest request)
         {
+            if (!request.Result.Executed ||
+                !request.Result.Hit)
+            {
+                return;
+            }
+
+            Color color =
+                GetDamageColor(
+                    request.Action != null
+                        ? request.Action.damageType
+                        : DamageType.Physical);
+
+            if (request.Result.Damage > 0)
+            {
+                float baseIntensity =
+                    Mathf.Clamp(
+                        0.85f +
+                        request.Result.Damage /
+                        18f,
+                        0.9f,
+                        1.9f);
+
+                SpawnBurst(
+                    request.ImpactPoint +
+                    Vector3.up * 0.42f,
+                    color,
+                    Mathf.Clamp(
+                        16 +
+                        request.Result.Damage,
+                        18,
+                        54),
+                    baseIntensity);
+
+                StartCoroutine(
+                    FlashLight(
+                        request.ImpactPoint,
+                        color,
+                        4.5f +
+                        baseIntensity,
+                        3.2f +
+                        baseIntensity * 1.6f,
+                        0.10f));
+
+                AddShake(
+                    Mathf.Clamp(
+                        0.045f +
+                        request.Result.Damage *
+                        0.0045f,
+                        0.05f,
+                        0.16f),
+                    0.10f,
+                    34f);
+
+                SpawnFloatingValue(
+                    request.ImpactPoint +
+                    Vector3.up * 1.35f,
+                    request.Result.Damage.ToString(),
+                    Color.Lerp(
+                        color,
+                        Color.white,
+                        0.48f));
+
+                if (request.Action == null ||
+                    request.Action
+                        .presentationProfile == null)
+                {
+                    StartCoroutine(
+                        FallbackHitStop(
+                            request.Result.Damage));
+                }
+            }
+
             if (!request.Result.ComboTriggered)
                 return;
 
@@ -54,12 +126,6 @@ namespace KeeperFirstCovenant.Combat
                     0.28f,
                     1.3f,
                     2.4f);
-
-            Color color =
-                GetDamageColor(
-                    request.Action != null
-                        ? request.Action.damageType
-                        : DamageType.Arcane);
 
             SpawnBurst(
                 request.ImpactPoint +
@@ -86,6 +152,151 @@ namespace KeeperFirstCovenant.Combat
                 0.035f,
                 0.15f,
                 31f);
+        }
+
+        private void SpawnFloatingValue(
+            Vector3 point,
+            string value,
+            Color color)
+        {
+            GameObject root =
+                new GameObject(
+                    "CombatFloatingValue");
+
+            root.transform.position = point;
+
+            TextMesh text =
+                root.AddComponent<TextMesh>();
+
+            text.text = value;
+            text.anchor =
+                TextAnchor.MiddleCenter;
+            text.alignment =
+                TextAlignment.Center;
+            text.fontSize = 64;
+            text.characterSize = 0.065f;
+            text.color = color;
+
+            StartCoroutine(
+                FloatingValueRoutine(
+                    root,
+                    text,
+                    color));
+        }
+
+        private IEnumerator FloatingValueRoutine(
+            GameObject root,
+            TextMesh text,
+            Color baseColor)
+        {
+            if (root == null ||
+                text == null)
+            {
+                yield break;
+            }
+
+            Camera camera =
+                Camera.main;
+
+            Vector3 start =
+                root.transform.position;
+
+            float elapsed = 0f;
+            const float duration = 0.72f;
+
+            while (elapsed < duration &&
+                   root != null &&
+                   text != null)
+            {
+                elapsed +=
+                    Time.unscaledDeltaTime;
+
+                float t =
+                    Mathf.Clamp01(
+                        elapsed / duration);
+
+                root.transform.position =
+                    start +
+                    Vector3.up *
+                    Mathf.Lerp(
+                        0f,
+                        0.85f,
+                        t);
+
+                if (camera != null)
+                {
+                    Vector3 direction =
+                        root.transform.position -
+                        camera.transform.position;
+
+                    if (direction.sqrMagnitude >
+                        0.001f)
+                    {
+                        root.transform.rotation =
+                            Quaternion.LookRotation(
+                                direction.normalized,
+                                Vector3.up);
+                    }
+                }
+
+                Color color =
+                    baseColor;
+
+                color.a =
+                    1f -
+                    Mathf.Clamp01(
+                        (t - 0.48f) /
+                        0.52f);
+
+                text.color = color;
+
+                float scale =
+                    Mathf.Lerp(
+                        1.18f,
+                        0.92f,
+                        t);
+
+                root.transform.localScale =
+                    Vector3.one * scale;
+
+                yield return null;
+            }
+
+            if (root != null)
+                Destroy(root);
+        }
+
+        private IEnumerator FallbackHitStop(
+            int damage)
+        {
+            if (Time.timeScale <= 0f)
+                yield break;
+
+            float previous =
+                Time.timeScale;
+
+            float duration =
+                Mathf.Clamp(
+                    0.018f +
+                    damage * 0.0012f,
+                    0.02f,
+                    0.045f);
+
+            Time.timeScale =
+                previous * 0.10f;
+
+            float elapsed = 0f;
+
+            while (elapsed < duration)
+            {
+                elapsed +=
+                    Time.unscaledDeltaTime;
+
+                yield return null;
+            }
+
+            if (Time.timeScale > 0f)
+                Time.timeScale = previous;
         }
 
         private void OnDefenseResolved(
