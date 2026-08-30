@@ -907,21 +907,13 @@ namespace KeeperFirstCovenant.EditorTools
             cameraObject.transform.LookAt(new Vector3(0f, 0.85f, 1.2f));
         }
 
-        private static void CreateLabel(Transform parent, string text, Vector3 localOffset)
+        private static void CreateLabel(
+            Transform parent,
+            string text,
+            Vector3 localOffset)
         {
-            GameObject labelObject = new GameObject("Label_" + text);
-            labelObject.transform.SetParent(parent);
-            labelObject.transform.localPosition = localOffset;
-
-            TextMesh mesh = labelObject.AddComponent<TextMesh>();
-            mesh.text = text;
-            mesh.fontSize = 32;
-            mesh.characterSize = 0.07f;
-            mesh.anchor = TextAnchor.MiddleCenter;
-            mesh.alignment = TextAlignment.Center;
-            mesh.color = new Color(0.92f, 0.92f, 0.88f);
-
-            labelObject.transform.rotation = Quaternion.Euler(35f, 0f, 0f);
+            // World-space DEV labels made the playable view unreadable.
+            // Identity and state are presented through the actual HUD instead.
         }
     }
 }
