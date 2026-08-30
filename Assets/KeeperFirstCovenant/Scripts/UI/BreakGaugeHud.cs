@@ -64,7 +64,11 @@ namespace KeeperFirstCovenant.UI
                             CombatFaction.Enemy &&
                         director.IsParticipant(value))
                     .OrderBy(value =>
-                        value.GetInstanceID())
+                        value.Definition != null
+                            ? value.Definition.characterId
+                            : value.name)
+                    .ThenBy(value =>
+                        value.name)
                     .ToArray();
 
             EnsureMarkerCount(enemies.Length);
