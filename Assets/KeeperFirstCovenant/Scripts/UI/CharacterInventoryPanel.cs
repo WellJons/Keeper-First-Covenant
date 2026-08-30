@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using KeeperFirstCovenant.Combat;
+using KeeperFirstCovenant.Core;
 using KeeperFirstCovenant.Inventory;
 using KeeperFirstCovenant.Relationships;
 using UnityEngine;
