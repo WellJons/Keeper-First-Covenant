@@ -77,6 +77,8 @@ namespace KeeperFirstCovenant.UI
             root.AddComponent<DialogueUiController>();
             root.AddComponent<InspectionPanelController>();
             root.AddComponent<DefeatScreenController>();
+        }
+
         private static void
             EnsurePartySelectionAndCamera(
                 Scene scene)
@@ -110,8 +112,6 @@ namespace KeeperFirstCovenant.UI
                 camera.gameObject.AddComponent<
                     RpgOrbitCameraController>();
             }
-        }
-
         }
     }
 }
