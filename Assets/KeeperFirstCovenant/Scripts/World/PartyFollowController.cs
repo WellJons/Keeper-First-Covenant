@@ -51,23 +51,37 @@ namespace KeeperFirstCovenant.World
 
             CombatantRuntime[] all =
                 FindObjectsByType<
-                    CombatantRuntime>(
-                    FindObjectsSortMode.None);
+                    CombatantRuntime>();
 
             CombatantRuntime leader =
-                all
-                    .Where(x =>
-                        x != null &&
-                        x.IsAlive &&
-                        x.Faction ==
-                            CombatFaction.Player)
-                    .OrderBy(x =>
-                        x.Definition != null &&
-                        x.Definition.characterId ==
-                            "edward"
-                            ? 0
-                            : 1)
-                    .FirstOrDefault();
+                PartySelectionService.Instance
+                    ?.GetSelectedOrDefault();
+
+            if (leader == null ||
+                !leader.IsAlive)
+            {
+                leader =
+                    all
+                        .Where(x =>
+                            x != null &&
+                            x.IsAlive &&
+                            (x.Faction ==
+                                 CombatFaction.Player ||
+                             x.Faction ==
+                                 CombatFaction.Ally))
+                        .OrderBy(x =>
+                            x.Faction ==
+                                CombatFaction.Player
+                                ? 0
+                                : 1)
+                        .ThenBy(x =>
+                            x.Definition != null &&
+                            x.Definition.characterId ==
+                                "edward"
+                                ? 0
+                                : 1)
+                        .FirstOrDefault();
+            }
 
             if (leader == null)
                 return;
@@ -76,9 +90,12 @@ namespace KeeperFirstCovenant.World
                 all
                     .Where(x =>
                         x != null &&
+                        x != leader &&
                         x.IsAlive &&
-                        x.Faction ==
-                            CombatFaction.Ally)
+                        (x.Faction ==
+                             CombatFaction.Player ||
+                         x.Faction ==
+                             CombatFaction.Ally))
                     .OrderBy(x =>
                         x.Definition != null
                             ? x.Definition.characterId
