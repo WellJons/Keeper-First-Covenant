@@ -4,6 +4,7 @@ using KeeperFirstCovenant.Developer;
 using KeeperFirstCovenant.Dialogue;
 using KeeperFirstCovenant.UI;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
 namespace KeeperFirstCovenant.World
@@ -90,6 +91,13 @@ namespace KeeperFirstCovenant.World
             if (mouse == null ||
                 !mouse.leftButton
                     .wasPressedThisFrame)
+            {
+                return;
+            }
+
+            if (EventSystem.current != null &&
+                EventSystem.current
+                    .IsPointerOverGameObject())
             {
                 return;
             }
