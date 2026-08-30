@@ -129,6 +129,24 @@ namespace KeeperFirstCovenant.Combat
             AdvanceTurn();
         }
 
+        public bool HasBegunTurnThisRound(
+            CombatantRuntime combatant)
+        {
+            return
+                combatant != null &&
+                _begunThisRound.Contains(
+                    combatant);
+        }
+
+        public bool HasCompletedTurnThisRound(
+            CombatantRuntime combatant)
+        {
+            return
+                combatant != null &&
+                _completedThisRound.Contains(
+                    combatant);
+        }
+
         public bool IsParticipant(
             CombatantRuntime combatant)
         {
