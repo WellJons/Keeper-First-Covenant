@@ -37,9 +37,11 @@ namespace KeeperFirstCovenant.World
         [SerializeField]
         private UnityEvent onDiscovered;
 
-        private readonly HashSet<int>
+        private readonly HashSet<
+            CombatantRuntime>
             _attemptedBy =
-                new HashSet<int>();
+                new HashSet<
+                    CombatantRuntime>();
 
         private bool _discovered;
         private float _nextScan;
@@ -88,10 +90,7 @@ namespace KeeperFirstCovenant.World
             foreach (CombatantRuntime member
                      in nearby)
             {
-                int id =
-                    member.GetInstanceID();
-
-                if (!_attemptedBy.Add(id))
+                if (!_attemptedBy.Add(member))
                     continue;
 
                 int perception =
