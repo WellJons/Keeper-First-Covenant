@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using KeeperFirstCovenant.Combat;
+using KeeperFirstCovenant.Player;
 using KeeperFirstCovenant.World;
 using UnityEngine;
 using UnityEngine.UI;
@@ -15,7 +17,9 @@ namespace KeeperFirstCovenant.UI
 
         private CanvasGroup group;
         private RectTransform frame;
+        private Text targetText;
         private WorldInteractionController controller;
+        private TacticalPlayerController tacticalController;
         private Camera worldCamera;
         private float nextLookup;
 
@@ -38,20 +42,105 @@ namespace KeeperFirstCovenant.UI
                         WorldInteractionController>();
             }
 
+            if (tacticalController == null &&
+                Time.unscaledTime >= nextLookup)
+            {
+                tacticalController =
+                    FindFirstObjectByType<
+                        TacticalPlayerController>();
+            }
+
             if (worldCamera == null)
                 worldCamera = Camera.main;
 
-            if (controller == null ||
-                worldCamera == null ||
-                !controller.HasHoverTarget ||
-                controller.CurrentCollider == null)
+            Bounds bounds;
+            Color color;
+            string label;
+
+            CombatantRuntime combatant =
+                tacticalController != null
+                    ? tacticalController.HoveredTarget
+                    : null;
+
+            if (combatant != null)
             {
-                SetVisible(false);
-                return;
+                if (!TryGetCombatantBounds(
+                        combatant,
+                        out bounds))
+                {
+                    SetVisible(false);
+                    return;
+                }
+
+                bool enemy =
+                    combatant.Faction ==
+                        CombatFaction.Enemy;
+
+                bool actionSelected =
+                    tacticalController.SelectedAction !=
+                    null;
+
+                if (actionSelected &&
+                    tacticalController.HasHoverPreview)
+                {
+                    color =
+                        tacticalController
+                            .CurrentPreview.Valid
+                            ? MainMenuTheme.Warm
+                            : MainMenuTheme.Danger;
+                }
+                else
+                {
+                    color =
+                        enemy
+                            ? MainMenuTheme.Danger
+                            : MainMenuTheme.Silver;
+                }
+
+                string faction =
+                    enemy
+                        ? "ВРАГ"
+                        : "СОЮЗНИК";
+
+                string name =
+                    combatant.Definition != null
+                        ? combatant.Definition.displayName
+                        : combatant.name;
+
+                string hp =
+                    combatant.Definition != null
+                        ? $"  HP {combatant.CurrentHealth}/" +
+                          combatant.Definition.maxHealth
+                        : string.Empty;
+
+                label =
+                    $"{faction}   {name}{hp}";
+            }
+            else
+            {
+                if (controller == null ||
+                    worldCamera == null ||
+                    !controller.HasHoverTarget ||
+                    controller.CurrentCollider == null)
+                {
+                    SetVisible(false);
+                    return;
+                }
+
+                bounds =
+                    controller.CurrentCollider.bounds;
+
+                color =
+                    controller.CurrentInRange
+                        ? MainMenuTheme.Warm
+                        : MainMenuTheme.Danger;
+
+                label = string.Empty;
             }
 
-            if (!TryProjectBounds(
-                    controller.CurrentCollider.bounds,
+            if (worldCamera == null ||
+                !TryProjectBounds(
+                    bounds,
                     out Vector2 min,
                     out Vector2 max))
             {
@@ -107,10 +196,11 @@ namespace KeeperFirstCovenant.UI
             frame.sizeDelta =
                 size;
 
-            Color color =
-                controller.CurrentInRange
-                    ? MainMenuTheme.Warm
-                    : MainMenuTheme.Danger;
+            if (targetText != null)
+            {
+                targetText.text = label;
+                targetText.color = color;
+            }
 
             foreach (Image stroke
                      in strokes)
@@ -206,6 +296,30 @@ namespace KeeperFirstCovenant.UI
                 new Vector2(1f, 0f),
                 false,
                 false);
+
+            targetText =
+                MenuUiFactory.CreateText(
+                    "TargetInfo",
+                    frame,
+                    string.Empty,
+                    13,
+                    MainMenuTheme.Text,
+                    TextAnchor.MiddleCenter);
+
+            targetText.rectTransform.anchorMin =
+                new Vector2(0f, 1f);
+
+            targetText.rectTransform.anchorMax =
+                new Vector2(1f, 1f);
+
+            targetText.rectTransform.pivot =
+                new Vector2(0.5f, 0f);
+
+            targetText.rectTransform.anchoredPosition =
+                new Vector2(0f, 8f);
+
+            targetText.rectTransform.sizeDelta =
+                new Vector2(0f, 24f);
         }
 
         private void BuildCorner(
@@ -287,6 +401,73 @@ namespace KeeperFirstCovenant.UI
 
             strokes.Add(horizontal);
             strokes.Add(vertical);
+        }
+
+        private static bool
+            TryGetCombatantBounds(
+                CombatantRuntime combatant,
+                out Bounds bounds)
+        {
+            bounds = default;
+
+            if (combatant == null)
+                return false;
+
+            Collider[] colliders =
+                combatant.GetComponentsInChildren<
+                    Collider>();
+
+            bool hasBounds = false;
+
+            foreach (Collider collider in colliders)
+            {
+                if (collider == null ||
+                    !collider.enabled ||
+                    collider.isTrigger)
+                {
+                    continue;
+                }
+
+                if (!hasBounds)
+                {
+                    bounds = collider.bounds;
+                    hasBounds = true;
+                }
+                else
+                {
+                    bounds.Encapsulate(
+                        collider.bounds);
+                }
+            }
+
+            if (hasBounds)
+                return true;
+
+            Renderer[] renderers =
+                combatant.GetComponentsInChildren<
+                    Renderer>();
+
+            foreach (Renderer renderer in renderers)
+            {
+                if (renderer == null ||
+                    !renderer.enabled)
+                {
+                    continue;
+                }
+
+                if (!hasBounds)
+                {
+                    bounds = renderer.bounds;
+                    hasBounds = true;
+                }
+                else
+                {
+                    bounds.Encapsulate(
+                        renderer.bounds);
+                }
+            }
+
+            return hasBounds;
         }
 
         private bool TryProjectBounds(
