@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using KeeperFirstCovenant.Combat;
+using KeeperFirstCovenant.Core;
 using KeeperFirstCovenant.Player;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -730,16 +731,14 @@ namespace KeeperFirstCovenant.UI
 
             string signature =
                 actor != null
-                    ? actor.GetInstanceID() +
-                      ":" +
-                      string.Join(
-                          "|",
-                          actions
-                              .Where(value =>
-                                  value != null)
-                              .Take(8)
-                              .Select(value =>
-                                  value.actionId))
+                    ? string.Join(
+                        "|",
+                        actions
+                            .Where(value =>
+                                value != null)
+                            .Take(8)
+                            .Select(value =>
+                                value.actionId))
                     : string.Empty;
 
             if (actor != lastActionActor ||
