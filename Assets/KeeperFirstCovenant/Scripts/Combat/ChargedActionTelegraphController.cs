@@ -24,9 +24,13 @@ namespace KeeperFirstCovenant.Combat
             public float radius;
         }
 
-        private readonly Dictionary<int, TelegraphVisual>
+        private readonly Dictionary<
+            CombatantRuntime,
+            TelegraphVisual>
             visuals =
-                new Dictionary<int, TelegraphVisual>();
+                new Dictionary<
+                    CombatantRuntime,
+                    TelegraphVisual>();
 
         private CanvasGroup notificationGroup;
         private Text notificationTitle;
@@ -280,9 +284,8 @@ namespace KeeperFirstCovenant.Combat
                     radius = radius
                 };
 
-            visuals[
-                value.Owner.GetInstanceID()] =
-                    visual;
+            visuals[value.Owner] =
+                visual;
 
             ShowNotification(
                 value.Action.displayName,
@@ -493,17 +496,14 @@ namespace KeeperFirstCovenant.Combat
             if (owner == null)
                 return;
 
-            int key =
-                owner.GetInstanceID();
-
             if (!visuals.TryGetValue(
-                    key,
+                    owner,
                     out TelegraphVisual visual))
             {
                 return;
             }
 
-            visuals.Remove(key);
+            visuals.Remove(owner);
 
             if (visual.light != null &&
                 released)
