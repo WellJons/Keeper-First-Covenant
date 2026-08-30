@@ -4,6 +4,7 @@ using KeeperFirstCovenant.Combat;
 using KeeperFirstCovenant.Developer;
 using KeeperFirstCovenant.Dialogue;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
 namespace KeeperFirstCovenant.Player
@@ -119,6 +120,17 @@ namespace KeeperFirstCovenant.Player
             HandleHotkeys();
 
             if (!CanAcceptInput())
+            {
+                ClearCursorPreview();
+                return;
+            }
+
+            bool pointerOverUi =
+                EventSystem.current != null &&
+                EventSystem.current
+                    .IsPointerOverGameObject();
+
+            if (pointerOverUi)
             {
                 ClearCursorPreview();
                 return;
