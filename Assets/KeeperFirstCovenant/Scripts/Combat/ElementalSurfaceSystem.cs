@@ -49,8 +49,11 @@ namespace KeeperFirstCovenant.Combat
         [SerializeField] private List<SurfacePatch> patches =
             new List<SurfacePatch>();
 
-        private readonly HashSet<string> _appliedThisRound =
-            new HashSet<string>();
+        private readonly HashSet<
+            SurfaceApplicationKey>
+            _appliedThisRound =
+                new HashSet<
+                    SurfaceApplicationKey>();
 
         private int _nextId = 1;
 
@@ -576,8 +579,11 @@ namespace KeeperFirstCovenant.Combat
                     continue;
                 }
 
-                string key =
-                    $"{actor.GetInstanceID()}:{patch.id}:{round}";
+                var key =
+                    new SurfaceApplicationKey(
+                        actor,
+                        patch.id,
+                        round);
 
                 if (!_appliedThisRound.Add(key))
                     continue;
@@ -620,6 +626,67 @@ namespace KeeperFirstCovenant.Combat
 
                 if (!actor.IsAlive)
                     return;
+            }
+        }
+
+        private readonly struct SurfaceApplicationKey :
+            IEquatable<SurfaceApplicationKey>
+        {
+            private readonly CombatantRuntime actor;
+            private readonly int patchId;
+            private readonly int round;
+
+            public SurfaceApplicationKey(
+                CombatantRuntime actor,
+                int patchId,
+                int round)
+            {
+                this.actor = actor;
+                this.patchId = patchId;
+                this.round = round;
+            }
+
+            public bool Equals(
+                SurfaceApplicationKey other)
+            {
+                return
+                    ReferenceEquals(
+                        actor,
+                        other.actor) &&
+                    patchId == other.patchId &&
+                    round == other.round;
+            }
+
+            public override bool Equals(
+                object obj)
+            {
+                return
+                    obj is SurfaceApplicationKey other &&
+                    Equals(other);
+            }
+
+            public override int GetHashCode()
+            {
+                unchecked
+                {
+                    int hash = 17;
+
+                    hash =
+                        hash * 31 +
+                        (actor != null
+                            ? actor.GetHashCode()
+                            : 0);
+
+                    hash =
+                        hash * 31 +
+                        patchId;
+
+                    hash =
+                        hash * 31 +
+                        round;
+
+                    return hash;
+                }
             }
         }
 
