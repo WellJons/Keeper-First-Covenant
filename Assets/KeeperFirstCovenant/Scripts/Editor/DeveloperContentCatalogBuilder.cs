@@ -80,7 +80,7 @@ namespace KeeperFirstCovenant.EditorTools
         public static void RebuildCurrentScene()
         {
             TurnCombatDirector director =
-                Object.FindFirstObjectByType<
+                Object.FindAnyObjectByType<
                     TurnCombatDirector>();
 
             if (director == null)
