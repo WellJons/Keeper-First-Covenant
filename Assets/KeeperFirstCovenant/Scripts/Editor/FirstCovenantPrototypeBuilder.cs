@@ -7,6 +7,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.Rendering;
 
 namespace KeeperFirstCovenant.EditorTools
 {
@@ -274,24 +275,67 @@ namespace KeeperFirstCovenant.EditorTools
             string path = GeneratedRoot + "/Materials/" + name + ".mat";
             Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
 
+            Shader shader = GetCompatibleLitShader();
+
             if (material == null)
             {
-                Shader shader = Shader.Find("Universal Render Pipeline/Lit");
-                if (shader == null)
-                    shader = Shader.Find("Standard");
-
                 material = new Material(shader);
                 AssetDatabase.CreateAsset(material, path);
             }
+            else if (material.shader != shader)
+            {
+                material.shader = shader;
+            }
 
             material.color = color;
+
+            if (material.HasProperty("_BaseColor"))
+                material.SetColor("_BaseColor", color);
+
+            if (material.HasProperty("_Color"))
+                material.SetColor("_Color", color);
+
             if (material.HasProperty("_Metallic"))
                 material.SetFloat("_Metallic", metallic);
+
             if (material.HasProperty("_Smoothness"))
                 material.SetFloat("_Smoothness", smoothness);
 
+            if (material.HasProperty("_Glossiness"))
+                material.SetFloat("_Glossiness", smoothness);
+
             EditorUtility.SetDirty(material);
             return material;
+        }
+
+        private static Shader GetCompatibleLitShader()
+        {
+            bool hasScriptableRenderPipeline =
+                GraphicsSettings.currentRenderPipeline != null;
+
+            Shader shader =
+                hasScriptableRenderPipeline
+                    ? Shader.Find("Universal Render Pipeline/Lit")
+                    : Shader.Find("Standard");
+
+            if (shader == null)
+            {
+                shader =
+                    hasScriptableRenderPipeline
+                        ? Shader.Find("Standard")
+                        : Shader.Find("Universal Render Pipeline/Lit");
+            }
+
+            if (shader == null)
+                shader = Shader.Find("Diffuse");
+
+            if (shader == null)
+            {
+                throw new System.InvalidOperationException(
+                    "No compatible lit shader was found for the active render pipeline.");
+            }
+
+            return shader;
         }
 
         private static CombatActionDefinition GetAction(
