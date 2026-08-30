@@ -160,6 +160,26 @@ namespace KeeperFirstCovenant.Player
             }
             else
             {
+                if (_hoveredTarget != null)
+                {
+                    TurnCombatDirector director =
+                        TurnCombatDirector.Instance;
+
+                    if (director != null &&
+                        director.State ==
+                            CombatState.Active &&
+                        ( _hoveredTarget.Faction ==
+                              CombatFaction.Player ||
+                          _hoveredTarget.Faction ==
+                              CombatFaction.Ally))
+                    {
+                        director.TrySwitchPartyTurn(
+                            _hoveredTarget);
+                    }
+
+                    return;
+                }
+
                 TryMove(
                     mouse.position.ReadValue());
             }
@@ -331,6 +351,20 @@ namespace KeeperFirstCovenant.Player
 
             if (_selectedAction == null)
             {
+                Ray ray =
+                    worldCamera.ScreenPointToRay(
+                        screenPosition);
+
+                CombatantRuntime hovered =
+                    TryGetCombatant(ray);
+
+                if (hovered != null &&
+                    hovered != _currentActor)
+                {
+                    _hoveredTarget = hovered;
+                    return;
+                }
+
                 UpdateMovementPreview(
                     screenPosition);
                 return;
