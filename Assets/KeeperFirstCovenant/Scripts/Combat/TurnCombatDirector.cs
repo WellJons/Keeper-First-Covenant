@@ -29,6 +29,9 @@ namespace KeeperFirstCovenant.Combat
         private readonly HashSet<CombatantRuntime> _begunThisRound =
             new HashSet<CombatantRuntime>();
 
+        private readonly HashSet<CombatantRuntime> _completedThisRound =
+            new HashSet<CombatantRuntime>();
+
         private int _turnIndex = -1;
 
         public CombatState State { get; private set; } = CombatState.Exploration;
@@ -75,6 +78,8 @@ namespace KeeperFirstCovenant.Combat
             combatant.Died -= OnCombatantDied;
             combatant.Downed -= OnCombatantDowned;
             _registered.Remove(combatant);
+            _begunThisRound.Remove(combatant);
+            _completedThisRound.Remove(combatant);
 
             int removedIndex = _turnOrder.FindIndex(x => x.combatant == combatant);
             if (removedIndex >= 0)
@@ -118,6 +123,7 @@ namespace KeeperFirstCovenant.Combat
             Round = 1;
             _turnIndex = -1;
             _begunThisRound.Clear();
+            _completedThisRound.Clear();
             CombatStarted?.Invoke();
             RoundStarted?.Invoke(Round);
             AdvanceTurn();
@@ -304,24 +310,12 @@ namespace KeeperFirstCovenant.Combat
             if (targetIndex <= _turnIndex)
                 return false;
 
-            if (CurrentActor.Definition == null)
+            if (_completedThisRound.Contains(target))
                 return false;
 
-            int expectedAp =
-                CurrentActor.Definition.actionPoints;
-
-            bool apUntouched =
-                CurrentActor.CurrentActionPoints >=
-                    expectedAp;
-
-            bool movementUntouched =
-                CurrentActor.TotalMovementAvailable +
-                    0.01f >=
-                CurrentActor.GetMovementCapacity();
-
             return
-                apUntouched &&
-                movementUntouched;
+                !CurrentActor
+                    .HasSpentTurnResources;
         }
 
         public bool TrySwitchPartyTurn(
@@ -370,6 +364,9 @@ namespace KeeperFirstCovenant.Combat
             if (State != CombatState.Active || CurrentActor == null)
                 return;
 
+            _completedThisRound.Add(
+                CurrentActor);
+
             CurrentActor.EndTurn();
             AdvanceTurn();
         }
@@ -395,6 +392,7 @@ namespace KeeperFirstCovenant.Combat
                     _turnIndex = 0;
                     Round++;
                     _begunThisRound.Clear();
+                    _completedThisRound.Clear();
 
                     TickDownedCombatants();
 
@@ -406,6 +404,9 @@ namespace KeeperFirstCovenant.Combat
 
                 CombatantRuntime candidate = _turnOrder[_turnIndex].combatant;
                 if (candidate == null || !candidate.IsAlive)
+                    continue;
+
+                if (_completedThisRound.Contains(candidate))
                     continue;
 
                 CurrentActor = candidate;
@@ -501,6 +502,7 @@ namespace KeeperFirstCovenant.Combat
             CurrentActor = null;
             _turnIndex = -1;
             _begunThisRound.Clear();
+            _completedThisRound.Clear();
             CombatEnded?.Invoke();
             CurrentActorChanged?.Invoke(null);
         }
@@ -513,6 +515,8 @@ namespace KeeperFirstCovenant.Combat
             State = CombatState.Exploration;
             Round = 0;
             _turnOrder.Clear();
+            _begunThisRound.Clear();
+            _completedThisRound.Clear();
             CurrentActor = null;
         }
     }
