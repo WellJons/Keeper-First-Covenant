@@ -112,6 +112,20 @@ namespace KeeperFirstCovenant.EditorTools
                     systems);
 
             AddIfMissing<
+                PartySelectionService>(
+                    systems);
+
+            Camera mainCamera =
+                Camera.main;
+
+            if (mainCamera != null)
+            {
+                AddIfMissing<
+                    RpgOrbitCameraController>(
+                        mainCamera.gameObject);
+            }
+
+            AddIfMissing<
                 CombatDebugHUD>(systems);
 
             AddIfMissing<
