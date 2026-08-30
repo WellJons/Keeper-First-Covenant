@@ -27,7 +27,7 @@ namespace KeeperFirstCovenant.EditorTools
         public static void Install()
         {
             TurnCombatDirector director =
-                Object.FindFirstObjectByType<
+                Object.FindAnyObjectByType<
                     TurnCombatDirector>();
 
             if (director == null)
@@ -40,7 +40,7 @@ namespace KeeperFirstCovenant.EditorTools
             }
 
             TacticalGrid3D grid =
-                Object.FindFirstObjectByType<
+                Object.FindAnyObjectByType<
                     TacticalGrid3D>();
 
             if (grid == null)
@@ -197,8 +197,7 @@ namespace KeeperFirstCovenant.EditorTools
 
             CombatantRuntime[] combatants =
                 Object.FindObjectsByType<
-                    CombatantRuntime>(
-                    FindObjectsSortMode.None);
+                    CombatantRuntime>();
 
             foreach (CombatantRuntime combatant
                      in combatants)
