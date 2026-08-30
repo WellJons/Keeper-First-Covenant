@@ -220,7 +220,9 @@ namespace KeeperFirstCovenant.UI
                     FindObjectsSortMode.None);
 
             var unique =
-                new Dictionary<int, FocusTarget>();
+                new Dictionary<
+                    GameObject,
+                    FocusTarget>();
 
             foreach (MonoBehaviour behaviour
                      in behaviours)
@@ -281,9 +283,8 @@ namespace KeeperFirstCovenant.UI
                 if (distance > focusRadius)
                     continue;
 
-                int key =
-                    behaviour.gameObject
-                        .GetInstanceID();
+                GameObject key =
+                    behaviour.gameObject;
 
                 string label =
                     interactable != null &&
