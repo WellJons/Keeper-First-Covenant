@@ -46,6 +46,7 @@ namespace KeeperFirstCovenant.Combat
         private bool _isDowned;
         private bool _isDead;
         private bool _deathRaised;
+        private bool _spentTurnResources;
 
         public CharacterDefinition Definition => definition;
         public CombatFaction Faction =>
@@ -82,6 +83,8 @@ namespace KeeperFirstCovenant.Combat
 
         public int Barrier => _barrier;
         public int ReactionsRemaining => _reactionsRemaining;
+        public bool HasSpentTurnResources =>
+            _spentTurnResources;
 
         public event Action<CombatantRuntime> Changed;
         public event Action<CombatantRuntime, DamagePacket> Damaged;
@@ -115,6 +118,7 @@ namespace KeeperFirstCovenant.Combat
             _isDowned = false;
             _isDead = false;
             _deathRaised = false;
+            _spentTurnResources = false;
 
             if (definition == null)
             {
@@ -266,6 +270,7 @@ namespace KeeperFirstCovenant.Combat
 
             _freeMovementRemaining = 0f;
             _freeMovementSuppressesReactions = false;
+            _spentTurnResources = false;
 
             int strainApPenalty =
                 strain != null
@@ -313,6 +318,10 @@ namespace KeeperFirstCovenant.Combat
             }
 
             _currentActionPoints -= amount;
+
+            if (amount > 0)
+                _spentTurnResources = true;
+
             Changed?.Invoke(this);
             return true;
         }
@@ -339,6 +348,9 @@ namespace KeeperFirstCovenant.Combat
             {
                 return false;
             }
+
+            if (meters > 0.001f)
+                _spentTurnResources = true;
 
             float remainingCost = meters;
 
