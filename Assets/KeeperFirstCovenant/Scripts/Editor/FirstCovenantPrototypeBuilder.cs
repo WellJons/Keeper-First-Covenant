@@ -21,11 +21,13 @@ namespace KeeperFirstCovenant.EditorTools
         {
             EnsureProjectFolders();
 
-            Material grass = GetMaterial("Grass", new Color(0.16f, 0.23f, 0.13f), 0f, 0.15f);
-            Material road = GetMaterial("Road", new Color(0.28f, 0.22f, 0.16f), 0f, 0.1f);
-            Material bark = GetMaterial("Bark", new Color(0.20f, 0.12f, 0.07f), 0f, 0.1f);
-            Material leaves = GetMaterial("Leaves", new Color(0.12f, 0.25f, 0.12f), 0f, 0.12f);
-            Material stone = GetMaterial("OldStone", new Color(0.31f, 0.33f, 0.34f), 0f, 0.2f);
+            Material grass = GetMaterial("Grass", new Color(0.105f, 0.175f, 0.095f), 0f, 0.10f);
+            Material grassLight = GetMaterial("GrassLight", new Color(0.18f, 0.28f, 0.13f), 0f, 0.08f);
+            Material soil = GetMaterial("RoadSoil", new Color(0.24f, 0.17f, 0.105f), 0f, 0.06f);
+            Material road = GetMaterial("Road", new Color(0.32f, 0.235f, 0.145f), 0f, 0.08f);
+            Material bark = GetMaterial("Bark", new Color(0.16f, 0.085f, 0.04f), 0f, 0.06f);
+            Material leaves = GetMaterial("Leaves", new Color(0.085f, 0.205f, 0.085f), 0f, 0.08f);
+            Material stone = GetMaterial("OldStone", new Color(0.27f, 0.30f, 0.31f), 0f, 0.16f);
             Material silver = GetMaterial("AncientSilver", new Color(0.60f, 0.72f, 0.78f), 0.65f, 0.75f);
             Material black = GetMaterial("RestraintBlack", new Color(0.035f, 0.04f, 0.045f), 0.45f, 0.35f);
             Material white = GetMaterial("White", new Color(0.90f, 0.90f, 0.84f), 0f, 0.25f);
@@ -177,7 +179,11 @@ namespace KeeperFirstCovenant.EditorTools
             environment.transform.SetParent(root.transform);
 
             CreatePrimitive("Ground", PrimitiveType.Plane, Vector3.zero, new Vector3(4f, 1f, 4f), grass, environment.transform);
+            CreatePrimitive("RoadShoulderLeft", PrimitiveType.Cube, new Vector3(-2.25f, 0.035f, 0f), new Vector3(1.2f, 0.05f, 34f), soil, environment.transform);
+            CreatePrimitive("RoadShoulderRight", PrimitiveType.Cube, new Vector3(2.25f, 0.035f, 0f), new Vector3(1.2f, 0.05f, 34f), soil, environment.transform);
             CreatePrimitive("Road", PrimitiveType.Cube, new Vector3(0f, 0.08f, 0f), new Vector3(3.4f, 0.12f, 34f), road, environment.transform);
+
+            CreateGroundPatches(grassLight, soil, environment.transform);
 
             for (int i = 0; i < 8; i++)
             {
@@ -186,6 +192,7 @@ namespace KeeperFirstCovenant.EditorTools
                 CreateTree(new Vector3(6.4f + ((i + 1) % 2) * 1.2f, 0f, z + 1.4f), bark, leaves, environment.transform);
             }
 
+            CreateEnvironmentDressing(stone, bark, grassLight, environment.transform);
             CreateCamp(new Vector3(-5.2f, 0f, -3.5f), bark, fire, environment.transform);
             CreateAncientShrine(new Vector3(6.2f, 0f, 7.0f), stone, silver, black, environment.transform);
 
@@ -484,6 +491,167 @@ namespace KeeperFirstCovenant.EditorTools
             return go;
         }
 
+        private static void CreateGroundPatches(
+            Material grassLight,
+            Material soil,
+            Transform parent)
+        {
+            Vector3[] grassPatches =
+            {
+                new Vector3(-8.5f, 0.025f, -9f),
+                new Vector3(7.8f, 0.025f, -6f),
+                new Vector3(-7.5f, 0.025f, 7f),
+                new Vector3(8.3f, 0.025f, 11f)
+            };
+
+            foreach (Vector3 position in grassPatches)
+            {
+                GameObject patch = CreatePrimitive(
+                    "Grass Patch",
+                    PrimitiveType.Cylinder,
+                    position,
+                    new Vector3(2.2f, 0.018f, 2.2f),
+                    grassLight,
+                    parent);
+
+                DisableCollider(patch);
+            }
+
+            Vector3[] soilPatches =
+            {
+                new Vector3(-4.6f, 0.028f, -11f),
+                new Vector3(4.3f, 0.028f, 2.5f),
+                new Vector3(-4.9f, 0.028f, 10.5f)
+            };
+
+            foreach (Vector3 position in soilPatches)
+            {
+                GameObject patch = CreatePrimitive(
+                    "Bare Soil",
+                    PrimitiveType.Cylinder,
+                    position,
+                    new Vector3(1.5f, 0.02f, 1.25f),
+                    soil,
+                    parent);
+
+                DisableCollider(patch);
+            }
+        }
+
+        private static void CreateEnvironmentDressing(
+            Material stone,
+            Material bark,
+            Material foliage,
+            Transform parent)
+        {
+            Vector3[] rocks =
+            {
+                new Vector3(-4.8f, 0.35f, -7.2f),
+                new Vector3(5.1f, 0.28f, -10.2f),
+                new Vector3(-5.5f, 0.42f, 3.5f),
+                new Vector3(4.9f, 0.34f, 12.2f),
+                new Vector3(-8.5f, 0.50f, 12.5f)
+            };
+
+            for (int i = 0; i < rocks.Length; i++)
+            {
+                GameObject rock = CreatePrimitive(
+                    "Roadside Rock",
+                    PrimitiveType.Sphere,
+                    rocks[i],
+                    new Vector3(
+                        0.65f + (i % 3) * 0.18f,
+                        0.45f + (i % 2) * 0.16f,
+                        0.75f + ((i + 1) % 3) * 0.14f),
+                    stone,
+                    parent);
+
+                rock.transform.rotation =
+                    Quaternion.Euler(
+                        0f,
+                        i * 37f,
+                        i % 2 == 0 ? 8f : -11f);
+            }
+
+            Vector3[] shrubs =
+            {
+                new Vector3(-4.6f, 0.32f, -1.8f),
+                new Vector3(4.7f, 0.32f, -5.2f),
+                new Vector3(-5.0f, 0.32f, 8.4f),
+                new Vector3(5.7f, 0.32f, 4.2f),
+                new Vector3(-7.2f, 0.32f, 14.0f)
+            };
+
+            foreach (Vector3 position in shrubs)
+            {
+                GameObject shrub = new GameObject("Roadside Shrub");
+                shrub.transform.SetParent(parent);
+                shrub.transform.position = position;
+
+                for (int i = 0; i < 3; i++)
+                {
+                    GameObject clump = CreatePrimitive(
+                        "Foliage",
+                        PrimitiveType.Sphere,
+                        position + new Vector3(
+                            (i - 1) * 0.32f,
+                            0.22f + (i % 2) * 0.12f,
+                            (i % 2 == 0 ? -0.16f : 0.18f)),
+                        new Vector3(
+                            0.55f,
+                            0.38f,
+                            0.55f),
+                        foliage,
+                        shrub.transform);
+
+                    DisableCollider(clump);
+                }
+            }
+
+            GameObject ruin = new GameObject("Broken Roadside Ruin");
+            ruin.transform.SetParent(parent);
+
+            CreatePrimitive(
+                "BrokenWallA",
+                PrimitiveType.Cube,
+                new Vector3(-8.0f, 1.0f, 4.0f),
+                new Vector3(0.65f, 2.0f, 4.5f),
+                stone,
+                ruin.transform);
+
+            GameObject wallB = CreatePrimitive(
+                "BrokenWallB",
+                PrimitiveType.Cube,
+                new Vector3(-6.6f, 0.65f, 6.2f),
+                new Vector3(2.6f, 1.3f, 0.55f),
+                stone,
+                ruin.transform);
+
+            wallB.transform.rotation =
+                Quaternion.Euler(0f, 13f, -7f);
+
+            CreatePrimitive(
+                "FallenBeam",
+                PrimitiveType.Cylinder,
+                new Vector3(-6.8f, 0.55f, 3.3f),
+                new Vector3(0.18f, 2.2f, 0.18f),
+                bark,
+                ruin.transform)
+                .transform.rotation =
+                    Quaternion.Euler(0f, 0f, 68f);
+        }
+
+        private static void DisableCollider(GameObject go)
+        {
+            Collider collider =
+                go != null
+                    ? go.GetComponent<Collider>()
+                    : null;
+
+            if (collider != null)
+                collider.enabled = false;
+        }
+
         private static void CreateTree(Vector3 position, Material bark, Material leaves, Transform parent)
         {
             GameObject tree = new GameObject("Tree");
@@ -691,14 +859,35 @@ namespace KeeperFirstCovenant.EditorTools
         {
             GameObject sunObject = new GameObject("Sun");
             sunObject.transform.SetParent(parent);
-            sunObject.transform.rotation = Quaternion.Euler(48f, -32f, 0f);
+            sunObject.transform.rotation = Quaternion.Euler(38f, -42f, 0f);
 
             Light sun = sunObject.AddComponent<Light>();
             sun.type = LightType.Directional;
-            sun.intensity = 1.25f;
-            sun.color = new Color(1f, 0.88f, 0.72f);
+            sun.intensity = 1.18f;
+            sun.color = new Color(1f, 0.73f, 0.48f);
+            sun.shadows = LightShadows.Soft;
+            sun.shadowStrength = 0.82f;
 
-            RenderSettings.ambientLight = new Color(0.30f, 0.34f, 0.38f);
+            GameObject fillObject = new GameObject("Cool Sky Fill");
+            fillObject.transform.SetParent(parent);
+            fillObject.transform.rotation = Quaternion.Euler(58f, 138f, 0f);
+
+            Light fill = fillObject.AddComponent<Light>();
+            fill.type = LightType.Directional;
+            fill.intensity = 0.22f;
+            fill.color = new Color(0.36f, 0.47f, 0.67f);
+            fill.shadows = LightShadows.None;
+
+            RenderSettings.ambientMode = AmbientMode.Trilight;
+            RenderSettings.ambientSkyColor = new Color(0.27f, 0.31f, 0.39f);
+            RenderSettings.ambientEquatorColor = new Color(0.20f, 0.19f, 0.18f);
+            RenderSettings.ambientGroundColor = new Color(0.075f, 0.065f, 0.055f);
+            RenderSettings.ambientIntensity = 0.82f;
+
+            RenderSettings.fog = true;
+            RenderSettings.fogMode = FogMode.ExponentialSquared;
+            RenderSettings.fogColor = new Color(0.31f, 0.27f, 0.25f);
+            RenderSettings.fogDensity = 0.0085f;
         }
 
         private static void CreateCamera(Transform parent)
@@ -706,11 +895,16 @@ namespace KeeperFirstCovenant.EditorTools
             GameObject cameraObject = new GameObject("Main Camera");
             cameraObject.tag = "MainCamera";
             cameraObject.transform.SetParent(parent);
-            cameraObject.transform.position = new Vector3(12f, 14f, -16f);
+            cameraObject.transform.position = new Vector3(11.5f, 11.8f, -15.8f);
 
             Camera camera = cameraObject.AddComponent<Camera>();
-            camera.fieldOfView = 48f;
-            cameraObject.transform.LookAt(new Vector3(0f, 0.7f, 0f));
+            camera.fieldOfView = 44f;
+            camera.clearFlags = CameraClearFlags.SolidColor;
+            camera.backgroundColor = new Color(0.17f, 0.15f, 0.16f);
+            camera.nearClipPlane = 0.2f;
+            camera.farClipPlane = 160f;
+
+            cameraObject.transform.LookAt(new Vector3(0f, 0.85f, 1.2f));
         }
 
         private static void CreateLabel(Transform parent, string text, Vector3 localOffset)
