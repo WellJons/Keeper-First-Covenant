@@ -39,7 +39,16 @@ namespace KeeperFirstCovenant.World
                         TacticalGrid3D>();
             }
 
+            PartySelectionService.SelectionChanged +=
+                OnSelectionChanged;
+
             ResolveLeader();
+        }
+
+        private void OnDestroy()
+        {
+            PartySelectionService.SelectionChanged -=
+                OnSelectionChanged;
         }
 
         private void Update()
@@ -128,25 +137,61 @@ namespace KeeperFirstCovenant.World
 
         private void ResolveLeader()
         {
+            PartySelectionService selection =
+                PartySelectionService.Instance;
+
+            if (selection != null)
+            {
+                CombatantRuntime selected =
+                    selection.GetSelectedOrDefault();
+
+                if (selected != null &&
+                    selected.IsAlive)
+                {
+                    leader = selected;
+                    return;
+                }
+            }
+
             CombatantRuntime[] combatants =
                 FindObjectsByType<
-                    CombatantRuntime>(
-                    FindObjectsSortMode.None);
+                    CombatantRuntime>();
 
             leader =
                 combatants
                     .Where(x =>
                         x != null &&
                         x.IsAlive &&
-                        x.Faction ==
-                            CombatFaction.Player)
+                        (x.Faction ==
+                             CombatFaction.Player ||
+                         x.Faction ==
+                             CombatFaction.Ally))
                     .OrderBy(x =>
+                        x.Faction ==
+                            CombatFaction.Player
+                            ? 0
+                            : 1)
+                    .ThenBy(x =>
                         x.Definition != null &&
                         x.Definition.characterId ==
                             "edward"
                             ? 0
                             : 1)
                     .FirstOrDefault();
+        }
+
+        private void OnSelectionChanged(
+            CombatantRuntime member)
+        {
+            if (member != null &&
+                member.IsAlive)
+            {
+                leader = member;
+            }
+            else
+            {
+                ResolveLeader();
+            }
         }
 
         private bool TryGetGroundHit(
