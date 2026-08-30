@@ -25,17 +25,17 @@ namespace KeeperFirstCovenant.EditorTools
             Configure(
                 light,
                 ImpactTier.Light,
-                0.07f,
-                0.08f,
-                28f,
-                0.012f,
-                0.15f,
-                new Color(1f, 0.92f, 0.75f),
-                2.5f,
-                4f,
-                0.10f,
-                1.5f,
-                1.0f);
+                0.16f,
+                0.13f,
+                31f,
+                0.030f,
+                0.09f,
+                new Color(1f, 0.86f, 0.62f),
+                5.5f,
+                5.5f,
+                0.14f,
+                2.2f,
+                2.2f);
 
             CombatPresentationProfile fireHeavy =
                 GetOrCreateProfile(
