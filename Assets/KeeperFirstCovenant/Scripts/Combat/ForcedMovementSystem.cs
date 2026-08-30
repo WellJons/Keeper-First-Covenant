@@ -405,7 +405,7 @@ namespace KeeperFirstCovenant.Combat
                     0.35f,
                     cellSize * 0.42f);
 
-            return Object
+            return UnityEngine.Object
                 .FindObjectsByType<
                     CombatantRuntime>(
                     FindObjectsSortMode.None)
